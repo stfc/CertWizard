@@ -658,7 +658,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             this.email.setText("");
             return;
         }
-        /*   */
+        /*   */ 
 
         this.DN.requestFocus();
         this.btnDelete.setEnabled(true);
