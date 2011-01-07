@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<jnlp spec="1.0+"  codebase=" UPDATE URL HERE "
+   href="bcprov.jnlp">
+    <information>
+        <title>Java Cryptography Extension</title>
+        <vendor>Sun Microsystems, Inc.</vendor>
+    </information>
+    <security>
+        <all-permissions/>
+    </security>
+    <resources>
+        <jar href="lib/bcprov-jdk15-145.jar"/>
+    </resources>
+    <component-desc/>
+</jnlp>

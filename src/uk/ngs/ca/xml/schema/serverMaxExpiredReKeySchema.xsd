@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:element name="CA" type="CAType" />
+
+    <xs:complexType name="CAType">
+        <xs:sequence>
+            <xs:element name="Policy" type="PolicyType" minOccurs="1" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="PolicyType" >
+        <xs:sequence>
+            <xs:element name="MaxExpiredReKey" type="xs:string" minOccurs="1" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+
+</xs:schema>

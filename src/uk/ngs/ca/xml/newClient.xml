@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<Certificates xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <Certificate>
+        <DN>C=UK, O=eScience, OU=CLRC, L=DL, CN=xiao wang</DN>
+        <Status>OFFLINE</Status>
+        <ReqID>3456</ReqID>
+        <PrivateKey>ree</PrivateKey>
+        <PublicKey>ere</PublicKey>
+        <CSR>ryertetre</CSR>
+    </Certificate>
+</Certificates>

@@ -1,0 +1,63 @@
+
+<CA>
+    <certificates>
+        <certificate>-----BEGIN CERTIFICATE-----
+root here
+                 -----END CERTIFICATE-----
+        </certificate>
+        <certificate>-----BEGIN CERTIFICATE-----
+CA here
+                 -----END CERTIFICATE-----
+        </certificate>
+    </certificates>
+    <RAlist>
+        <ra>
+            <ou>CLRC</ou>
+            <l>RAL</l>
+            <operator>
+                <id>1</id>
+                <id>2</id>
+            </operator>
+        </ra> <!-- two active ops -->
+        <ra>
+            <ou>CLRC</ou>
+            <l>DL</l>
+            <operator>
+                <id>3737</id>
+                <id>293</id>
+                <id>44</id>
+            </operator>
+        </ra>
+        <ra>
+            <ou>Manchester</ou>
+            <l>OneRA</l>
+            <operator>
+                <id>401</id>
+                <id>207</id>
+            </operator>
+        </ra>
+        <ra>
+            <ou>Manchester</ou>
+            <l>AnotherRA</l>
+            <operator>
+                <id>24</id>
+            </operator>
+        </ra> <!-- one active operator -->
+        <ra>
+            <ou>Manchester</ou>
+            <l>AThirdRA</l>
+            <operator></operator>
+        </ra> <!-- no active operators -->
+    <!-- etc -->
+    </RAlist>
+    <PreferredRA>
+        <ra>
+            <ou>CLRC</ou>
+            <l>RAL</l>
+        </ra>
+    </PreferredRA>
+    <Policy>
+        <MaxExpiredReKey>30</MaxExpiredReKey>
+        <MaxPrivateKeyLifeTime>395</MaxPrivateKeyLifeTime>
+    </Policy>
+</CA>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:element name="Certificates" type="CertificatesType" />
+    <xs:complexType name="CertificatesType">
+        <xs:sequence>
+            <xs:element name="Item" type="ItemType" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="ItemType">
+        <xs:sequence>
+            <xs:element name="Certificate" type="CertificateType" minOccurs="1" maxOccurs="1" />
+            <xs:element name="Proxy" type="ProxyType" minOccurs="0" maxOccurs="1" />
+        </xs:sequence>
+        <xs:attribute name="DN" type="xs:string" use="required"/>
+    </xs:complexType>
+    <!-- ProxyType will be done later -->
+    <xs:complexType name="ProxyType" >
+        <xs:sequence>
+            <xs:element name="StartDate" type="xs:string" />
+            <xs:element name="EndDate" type="xs:string" />
+            <xs:element name="StartTime" type="xs:decimal" />
+            <xs:element name="EndTime" type="xs:decimal" />
+            <xs:element name="Status" type="xs:string" />
+            <xs:element name="File" type="xs:string" />
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="CertificateType">
+        <xs:sequence>
+            <xs:element name="DN" type="xs:string" />
+            <xs:element name="Status" type="xs:string" />
+            <xs:element name="CertFile" type="xs:string" minOccurs="0" maxOccurs="1" />
+            <xs:element name="KeyFile" type="xs:string" />
+            <xs:element name="ReqID" type="xs:string" />
+            <xs:element name="PrivateKey" type="xs:string" />
+            <xs:element name="PublicKey" type="xs:string" />
+        </xs:sequence>
+    </xs:complexType>
+</xs:schema>
