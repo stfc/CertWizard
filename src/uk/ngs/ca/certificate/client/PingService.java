@@ -20,6 +20,7 @@ import org.restlet.data.Request;
 import org.restlet.data.Method;
 
 import org.restlet.data.Status;
+import org.restlet.resource.Representation;
 import uk.ngs.ca.common.ClientHostName;
 import uk.ngs.ca.tools.property.SysProperty;
 
@@ -77,9 +78,14 @@ public class PingService {
             request.setClientInfo(info);
 
             Response response = c.handle(request);
+            //System.out.println("======== STATUS RECEIVED" + response.getStatus().toString() + " ===============================================");
             if (response.getStatus().equals(Status.SUCCESS_OK)) {
                 isPing = true;
             }
+
+            //Representation out = response.getEntity();
+            //out.write(System.out);
+            
         } catch (Exception ep) {
             ep.printStackTrace();
         } finally {

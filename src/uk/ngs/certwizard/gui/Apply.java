@@ -17,6 +17,7 @@ import uk.ngs.ca.common.SystemStatus;
 import uk.ngs.ca.certificate.OffLineUserCertificateRequest;
 import uk.ngs.ca.certificate.OnLineUserCertificateRequest;
 import uk.ngs.ca.common.MyPattern;
+import uk.ngs.ca.certificate.client.PingService;
 //import uk.ngs.ca.certificate.client.PingService;
 
 /**
@@ -292,6 +293,11 @@ public class Apply extends javax.swing.JFrame {
         this.dispose();
     }//GEN-LAST:event_btnCancelActionPerformed
 
+    private boolean isPing(){
+        PingService pingService = new PingService();
+        return pingService.isPingService();
+    }
+
     private void btnApplyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnApplyActionPerformed
 
         WaitDialog.showDialog();
@@ -333,7 +339,12 @@ public class Apply extends javax.swing.JFrame {
             setInformation(text);
         } else {
             if (SystemStatus.ISONLINE) {
-
+                //The following checks if the CA Database as well as the CA Server is up or not.
+                if( !isPing() ){
+                    JOptionPane.showMessageDialog(this, "There is a problem to connect with server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
+                    WaitDialog.hideDialog();
+                    return;
+                }
                 onLineCertRequest.setEmail(this.txtEmail.getText());
                 onLineCertRequest.setName(myCN);
                 onLineCertRequest.setPIN1(new String(this.txtPin.getPassword()));

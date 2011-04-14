@@ -240,24 +240,29 @@ public class CertWizardMain implements Observer{
 
                 WaitDialog.hideDialog();
  */
-                WaitDialog.showDialog();
-                if( jp.getTabCount() != 5 ){
-                    String _id = _info.getId();
-                    CertificateDownload certDownload = new CertificateDownload(_id);
-                    if( ! certDownload.isCertificateExpired() ){
-                        if( ( this.raopPanel == null ) || ( this.rautilPanel == null ) ){
-                            this.raopPanel = new RAOperationPanel( _info );
-                            this.rautilPanel = new RAUtilityPanel( _info );
-                        }
-                        jp.addTab("RA Operation", this.raopPanel);
-                        jp.addTab("RA Utilities", this.rautilPanel);
-                    }
+//================///commented out as RA Utils tab is currently not supported!
 
-                }else{
-                    jp.remove( 4 );
-                    jp.remove(3);
-                }
-                WaitDialog.hideDialog();
+//                WaitDialog.showDialog();
+//                if( jp.getTabCount() != 5 ){
+//                    String _id = _info.getId();
+//                    CertificateDownload certDownload = new CertificateDownload(_id);
+//                    if( ! certDownload.isCertificateExpired() ){
+//                        if( ( this.raopPanel == null ) || ( this.rautilPanel == null ) ){
+//                            this.raopPanel = new RAOperationPanel( _info );
+//                            this.rautilPanel = new RAUtilityPanel( _info );
+//                        }
+//                        jp.addTab("RA Operation", this.raopPanel);
+//                        jp.addTab("RA Utilities", this.rautilPanel);
+//                    }
+//
+//                }else{
+//                    jp.remove( 4 );
+//                    jp.remove(3);
+//                }
+//                WaitDialog.hideDialog();
+
+//================///
+                
             }else{
                 if( jp.getTabCount() == 5 ){
                     jp.remove( 4 );

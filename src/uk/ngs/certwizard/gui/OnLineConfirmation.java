@@ -16,6 +16,7 @@ import java.security.PrivateKey;
 import uk.ngs.ca.certificate.management.OnLineCertificateInfo;
 import uk.ngs.ca.certificate.OnLineUserCertificateReKey;
 import uk.ngs.ca.certificate.client.CertificateDownload;
+import uk.ngs.ca.certificate.client.PingService;
 import uk.ngs.ca.certificate.client.RevokeRequest;
 import uk.ngs.ca.certificate.management.CertificateCSRInfo;
 import uk.ngs.ca.common.ClientKeyStore;
@@ -87,6 +88,11 @@ public class OnLineConfirmation extends javax.swing.JFrame {
             this.status.setForeground(new PendingColor());
         }
 
+    }
+
+    private boolean isPing(){
+        PingService pingService = new PingService();
+        return pingService.isPingService();
     }
 
     /** This method is called from within the constructor to
@@ -268,8 +274,14 @@ public class OnLineConfirmation extends javax.swing.JFrame {
 
     private void btnAcceptActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAcceptActionPerformed
         // TODO add your handling code here:
-
+            //check if connection is fine.
         WaitDialog.showDialog();
+        if( !isPing() ){
+            JOptionPane.showMessageDialog(this, "There is a problem to connect with server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
+            WaitDialog.hideDialog();
+            return;
+        }
+        
         if (this.action.equals("Renew")) {
             String _id = this.certCSRInfo.getId();
             CertificateDownload certDownload = new CertificateDownload(_id);

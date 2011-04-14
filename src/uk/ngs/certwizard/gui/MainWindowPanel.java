@@ -342,7 +342,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
                     .add(email)
                     .add(DN, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 384, Short.MAX_VALUE))
-                .addContainerGap(34, Short.MAX_VALUE))
+                .addContainerGap(55, Short.MAX_VALUE))
         );
         pnlAllDetailsLayout.setVerticalGroup(
             pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -376,9 +376,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel5Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(jPanel5Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, lblCertificateGenerated, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 435, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, lblRequestApproved, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 435, Short.MAX_VALUE)
-                    .add(lblRequestReceived, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 435, Short.MAX_VALUE))
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, lblCertificateGenerated, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 458, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, lblRequestApproved, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 458, Short.MAX_VALUE)
+                    .add(lblRequestReceived, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 458, Short.MAX_VALUE))
                 .addContainerGap())
         );
         jPanel5Layout.setVerticalGroup(
@@ -563,7 +563,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                         .add(btnRevoke)
                         .add(4, 4, 4)
                         .add(btnDelete))
-                    .add(jComboBox1, 0, 491, Short.MAX_VALUE)
+                    .add(jComboBox1, 0, 522, Short.MAX_VALUE)
                     .add(pnlAllDetails, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .add(jPanel4, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .add(12, 12, 12))
@@ -599,13 +599,13 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel3Layout.createSequentialGroup()
                 .addContainerGap()
-                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 130, Short.MAX_VALUE)
+                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 141, Short.MAX_VALUE)
                 .addContainerGap())
         );
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel3Layout.createSequentialGroup()
-                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 207, Short.MAX_VALUE)
+                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 242, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -618,7 +618,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             .add(layout.createSequentialGroup()
                 .addContainerGap()
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(jLabel7, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .add(jLabel7, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 181, Short.MAX_VALUE)
                     .add(jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .add(jPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
@@ -630,7 +630,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel2, 0, 385, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel2, 0, 432, Short.MAX_VALUE)
                     .add(layout.createSequentialGroup()
                         .add(jLabel7, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 47, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
@@ -649,6 +649,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private void jComboBox1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBox1ActionPerformed
         // TODO add your handling code here:
 //System.out.println("------------------------------------------------------------------------");
+
         if (jComboBox1.getItemCount() == 0) {
             this.DN.setText("");
             this.vFrom.setText("");
@@ -671,22 +672,41 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         this.pnlValidDates.setVisible(true);
         this.jPanel5.setVisible(false);
 
+
+        int index = jComboBox1.getSelectedIndex();
+
+
+
         if (SystemStatus.ISONLINE) {
-            int index = jComboBox1.getSelectedIndex();
+           if( !isPing() ){
+                JOptionPane.showMessageDialog(this, "There is a problem to connect with server, "
+                        + "\nplease report to helpdesk or work under offline by restarting "
+                        + "CertWizard and select offline.", "Server Connection Fault",
+                        JOptionPane.INFORMATION_MESSAGE);
+                
+                //return;
+            } else {
+                //update the selected item. This update will only be done if the ping check succeeds
+                // i.e. the detabase connection is available
 
-            //only updated the status modified item.
-            Object[] _obj = (Object[])jComboBox1.getItemAt(index);
-            String my_status = _obj[ 2 ].toString();
+                Object[] _obj = (Object[])jComboBox1.getItemAt(index);
+                String my_status = _obj[ 2 ].toString();
 
-            //update the selected item.
-            this.certificateCSRInfos[ index ].update( this.PASSPHRASE );
+                //update the selected item.
+                this.certificateCSRInfos[ index ].update( this.PASSPHRASE );
 
 
-            if( ! my_status.equals(this.certificateCSRInfos[ index ].getStatus())){
-                jComboBox1.removeAllItems();
-                fillComboBox();
-                jComboBox1.setSelectedIndex(index);
+                if( ! my_status.equals(this.certificateCSRInfos[ index ].getStatus())){
+                    jComboBox1.removeAllItems();
+                    fillComboBox();
+                    jComboBox1.setSelectedIndex(index);
+                }
+
             }
+
+            //rest of the code to alter the details when an item in the combo box has been selected,
+            //based on the information stored in certificateCSRInfos variable
+
             //if the request is deleted by server, then the item will be removed from cakeystore.pkcs12 and from this gui.
             if( this.certificateCSRInfos[ index ].getStatus().equals("DELETED") ){
                 String _publickeyString = this.certificateCSRInfos[ index ].getPublickey();
@@ -799,7 +819,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             setupObservable();
         } else {
 
-            int index = jComboBox1.getSelectedIndex();
+            //int indexOffline = jComboBox1.getSelectedIndex();
             this.DN.setText(offLineCertInfo.getDN(index));
             this.vFrom.setText(offLineCertInfo.getFormatStartDate(index));
             this.vTo.setText(offLineCertInfo.getFormatEndDate(index));
@@ -839,27 +859,34 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                     lblCertificateGenerated.setVisible(false);
                 }
             }
+
         }
     }//GEN-LAST:event_jComboBox1ActionPerformed
 
+
     private void btnNewCertificateRequestActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNewCertificateRequestActionPerformed
         // TODO add your handling code here:
+        WaitDialog.showDialog();
         if( SystemStatus.ISONLINE ){
             if( !isPing() ){
                 JOptionPane.showMessageDialog(this, "There is a problem to connect with server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
+                WaitDialog.hideDialog();
             }else{
                 new Apply(this, PASSPHRASE).setVisible(true);
             }
         }else{
             new Apply(this, PASSPHRASE).setVisible(true);
         }
+        WaitDialog.hideDialog();
     }//GEN-LAST:event_btnNewCertificateRequestActionPerformed
 
     private void btnImportCertificateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnImportCertificateActionPerformed
         // TODO add your handling code here:
+        WaitDialog.showDialog();
         if( SystemStatus.ISONLINE ){
             if( !isPing() ){
                 JOptionPane.showMessageDialog(this, "There is a problem to connect with server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
+                WaitDialog.hideDialog();
                 return;
             }
         }
@@ -871,19 +898,23 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             File importFile = importCert.getSelectedFile();
             new ImportFilePassword(this, PASSPHRASE, importFile).setVisible(true);
         }
+        WaitDialog.hideDialog();
     }//GEN-LAST:event_btnImportCertificateActionPerformed
 
     private void btnExportActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExportActionPerformed
         // TODO add your handling code here:
+        WaitDialog.showDialog();
         int index = jComboBox1.getSelectedIndex();
         X509Certificate cert = null;
         PrivateKey privateKey = null;
         ClientKeyStore keyStore = new ClientKeyStore(PASSPHRASE);
+        
         if (SystemStatus.ISONLINE) {
-
+            
             //check if connection is fine.
             if( !isPing() ){
                 JOptionPane.showMessageDialog(this, "There is a problem to connect with server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
+                WaitDialog.hideDialog();
                 return;
             }
 
@@ -898,15 +929,18 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             privateKey = keyStore.getPrivateKey(publicKey);
         }
         new ExportCertificate(cert, privateKey).setVisible(true);
+        WaitDialog.hideDialog();
     }//GEN-LAST:event_btnExportActionPerformed
 
     private void btnRenewActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRenewActionPerformed
         // TODO add your handling code here:
+        WaitDialog.showDialog();
         if (SystemStatus.ISONLINE) {
-
+            
             //check if connection is fine.
             if( !isPing() ){
                 JOptionPane.showMessageDialog(this, "There is a problem to connect with server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
+                WaitDialog.hideDialog();
                 return;
             }
 
@@ -927,15 +961,17 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 JOptionPane.showMessageDialog(this, "You haven't selected any certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
             }
         }
+        WaitDialog.hideDialog();
     }//GEN-LAST:event_btnRenewActionPerformed
 
     private void btnRevokeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRevokeActionPerformed
         // TODO add your handling code here:
         if (SystemStatus.ISONLINE) {
-
+            WaitDialog.showDialog();
             //check if connection is fine.
             if( !isPing() ){
                 JOptionPane.showMessageDialog(this, "There is a problem to connect with server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
+                WaitDialog.hideDialog();
                 return;
             }
 
@@ -948,18 +984,21 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                     JOptionPane.showMessageDialog(this, "You haven't selected any certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
                 }
             }
+            WaitDialog.hideDialog();
         } else {
             JOptionPane.showMessageDialog(this, "The certificate can not be revoked by offline. Please do it online.", "No offline certificate revocation", JOptionPane.INFORMATION_MESSAGE);
         }
+        
     }//GEN-LAST:event_btnRevokeActionPerformed
 
     private void btnDeleteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDeleteActionPerformed
         // TODO add your handling code here:
         if (SystemStatus.ISONLINE) {
-
+            WaitDialog.showDialog();
             //check if connection is fine.
             if( !isPing() ){
                 JOptionPane.showMessageDialog(this, "There is a problem to connect with server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
+                WaitDialog.hideDialog();
                 return;
             }
             
@@ -968,6 +1007,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             } else {
                 JOptionPane.showMessageDialog(this, "You haven't selected any certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
             }
+            WaitDialog.hideDialog();
         } else {
             if (this.jComboBox1.getSelectedIndex() != -1) {
                 new OffLineConfirmation(this, "Remove", "Are you sure you want to remove the certificate with the following details?", this.jComboBox1.getSelectedIndex(), offLineCertInfo).setVisible(true);
@@ -975,7 +1015,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 JOptionPane.showMessageDialog(this, "You haven't selected any certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
             }
         }
-
+        
     }//GEN-LAST:event_btnDeleteActionPerformed
 
     private void btnNewCertificateRequestMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnNewCertificateRequestMouseEntered
@@ -1032,6 +1072,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     private void btnInstallActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnInstallActionPerformed
         // TODO add your handling code here:
+        WaitDialog.showDialog();
         CoGProperties props = CoGProperties.getDefault();
         String certPemFile = props.getUserCertFile();
         String keyPemFile = props.getUserKeyFile();
@@ -1048,6 +1089,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             //check if connection is fine.
             if( !isPing() ){
                 JOptionPane.showMessageDialog(this, "There is a problem to connect with server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
+                WaitDialog.hideDialog();
                 return;
             }
 
@@ -1062,17 +1104,17 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 JOptionPane.showMessageDialog(this, "You haven't selected one valid certificate!", "No suitable certificate selected", JOptionPane.INFORMATION_MESSAGE);
             } else {
                 if (this.jComboBox1.getSelectedIndex() != -1) {
-boolean isSuccess = isSuccessPemFiles( cert, privateKey );
-if( isSuccess ){
-    String _message = "<html>Your certificate and private key were successfully installed to:<br>Private key: " + keyPemFile + "<br>Certificate: " + certPemFile;
-    JOptionPane.showMessageDialog(this, _message, "Successful Install", JOptionPane.INFORMATION_MESSAGE);
-String _passphrase = new String(PASSPHRASE);
-        String _property = SysProperty.getValue("uk.ngs.ca.immegration.password.property");
-        System.setProperty(_property, _passphrase);
-}else{
-    String _message = "<html>Your certificate and private key failed to install on:<br>Private key: " + keyPemFile + "Certificate: " + certPemFile;
-    JOptionPane.showMessageDialog(this, _message, "Failed Install", JOptionPane.INFORMATION_MESSAGE);
-}
+                    boolean isSuccess = isSuccessPemFiles( cert, privateKey );
+                    if( isSuccess ){
+                        String _message = "<html>Your certificate and private key were successfully installed to:<br>Private key: " + keyPemFile + "<br>Certificate: " + certPemFile;
+                        JOptionPane.showMessageDialog(this, _message, "Successful Install", JOptionPane.INFORMATION_MESSAGE);
+                        String _passphrase = new String(PASSPHRASE);
+                        String _property = SysProperty.getValue("uk.ngs.ca.immegration.password.property");
+                        System.setProperty(_property, _passphrase);
+                    }else{
+                        String _message = "<html>Your certificate and private key failed to install on:<br>Private key: " + keyPemFile + "Certificate: " + certPemFile;
+                        JOptionPane.showMessageDialog(this, _message, "Failed Install", JOptionPane.INFORMATION_MESSAGE);
+                    }
                 } else {
                     JOptionPane.showMessageDialog(this, "You haven't selected any certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
                 }
@@ -1084,22 +1126,24 @@ String _passphrase = new String(PASSPHRASE);
             privateKey = keyStore.getPrivateKey(publicKey);
 
             if (this.jComboBox1.getSelectedIndex() != -1) {
-boolean isSuccess = isSuccessPemFiles( cert, privateKey );
-if( isSuccess ){
-    String _message = "<html>Your certificate and private key were successfully installed to:<br>Private key: " + keyPemFile + "<br>Certificate: " + certPemFile;
-    JOptionPane.showMessageDialog(this, _message, "Successful Install", JOptionPane.INFORMATION_MESSAGE);
-String _passphrase = new String(PASSPHRASE);
-        String _property = SysProperty.getValue("uk.ngs.ca.immegration.password.property");
-        System.setProperty(_property, _passphrase);
+                boolean isSuccess = isSuccessPemFiles( cert, privateKey );
+                if( isSuccess ){
+                    String _message = "<html>Your certificate and private key were successfully installed to:<br>Private key: " + keyPemFile + "<br>Certificate: " + certPemFile;
+                    JOptionPane.showMessageDialog(this, _message, "Successful Install", JOptionPane.INFORMATION_MESSAGE);
+                    String _passphrase = new String(PASSPHRASE);
+                    String _property = SysProperty.getValue("uk.ngs.ca.immegration.password.property");
+                    System.setProperty(_property, _passphrase);
 
-}else{
-    String _message = "<html>Your certificate and private key failed to install on:<br>Private key: " + keyPemFile + "Certificate: " + certPemFile;
-    JOptionPane.showMessageDialog(this, _message, "Failed Install", JOptionPane.INFORMATION_MESSAGE);
-}
+                }else{
+                    String _message = "<html>Your certificate and private key failed to install on:<br>Private key: " + keyPemFile + "Certificate: " + certPemFile;
+                    JOptionPane.showMessageDialog(this, _message, "Failed Install", JOptionPane.INFORMATION_MESSAGE);
+                }
             } else {
                 JOptionPane.showMessageDialog(this, "You haven't selected any certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
             }
         }
+
+        WaitDialog.hideDialog();
 
     }//GEN-LAST:event_btnInstallActionPerformed
 

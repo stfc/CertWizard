@@ -64,7 +64,9 @@ public class CSRRequest {
                 ep.printStackTrace();
             }
         }else{
-            MESSAGE = "Unknown problem happened.";
+           MESSAGE = "A temporary problem occured during the submission process. Please try again later.\n"
+                    + "If the problem persists, please contact the helpdesk support at \n"
+                    + "support@grid-support.ac.uk";
             isCSRRequestSuccess = false;
         }
     }
