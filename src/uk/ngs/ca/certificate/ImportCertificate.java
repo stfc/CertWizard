@@ -161,6 +161,8 @@ public class ImportCertificate extends Observable {
                     JOptionPane.showMessageDialog(frame, "You didn't select a imported entry.", "Certificate File Extraction", JOptionPane.ERROR_MESSAGE);
                     return false;
                 }
+
+
                 String selectedAlias = storeKeyCertAliases_CertDN.get(selected);
                 _cert = this.importKeyStore.getCertificate(selectedAlias);
                 _key = this.importKeyStore.getKey(selectedAlias, this.fileProtectionPassphrase);                
@@ -182,10 +184,20 @@ public class ImportCertificate extends Observable {
 
                 int _index = _dn.indexOf(_value);
 
-                if (_index == -1) {
+                                  //find out if the e-mail extension exists, and hence prevent host cert from getting imported
+                    String dn = x509_cert.getSubjectDN().getName();
+                    System.out.println("====================VALUE IS HERE ========" + dn + "=======================");
+
+
+                    ///ADDED: CHECK FOR HOST CERTIFICATES AS WELL AS NON E-SCIENCE CERTIFICATES
+
+                if ((_index == -1) || dn.contains(".")) {
                             //this message will display the certificate issued by UK e-Science CA cannot be supported.
                     String _message = SysProperty.getValue("ngsca.cert.limit");
-                    _message = _message + "\n Your certificate DN is " + _dn + ", so please select a proper certificate to import.";
+                    _message = _message + "\nYou may have tried to import a certificate which is not issued by e-Science CA, or \n"
+                            + "you may have tried to import a host certificate, which is not yet supported by this \n"
+                            + "version of Certificate Wizard Management." + "\nYour certificate DN is " + _dn + "\nPlease select a UK e-Science "
+                            + "personal certificate to import.";
                     this.Message = _message;
                     JOptionPane.showMessageDialog(frame, _message, "Certificate File Extraction", JOptionPane.ERROR_MESSAGE);
                     isSuccess = false;
@@ -197,6 +209,7 @@ public class ImportCertificate extends Observable {
                         JOptionPane.showMessageDialog(frame, this.Message, "Certificate File Extraction", JOptionPane.ERROR_MESSAGE);
                         isSuccess = false;
                     }
+                    
                     if (clientKeyStore.addNewKey(priv_key, x509_cert)) {
                         this.Alias = clientKeyStore.getAlias(x509_cert);
 

@@ -82,6 +82,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             setMOD(MotD);
         } else {
             offLineInit();
+
             MotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
             setRedMOD( MotD );
         }
@@ -122,12 +123,16 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     private void offLineInit() {
         offLineCertInfo = new OffLineCertificateInfo(PASSPHRASE);
+
+        this.btnNewCertificateRequest.setEnabled(false); //TEMPORARY ADDITION
+        
         if ((offLineCertInfo.getAllDNs() == null) || (offLineCertInfo.getAllDNs().length == 0)) {
             this.btnExport.setEnabled(false);
             this.btnRevoke.setEnabled(false);
             this.btnRenew.setEnabled(false);
             this.btnDelete.setEnabled(false);
             this.btnInstall.setEnabled(false);
+            
         }
     }
 
@@ -683,7 +688,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                         + "\nplease report to helpdesk or work under offline by restarting "
                         + "CertWizard and select offline.", "Server Connection Fault",
                         JOptionPane.INFORMATION_MESSAGE);
-                
+                WaitDialog.hideDialog();
                 //return;
             } else {
                 //update the selected item. This update will only be done if the ping check succeeds
@@ -874,8 +879,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             }else{
                 new Apply(this, PASSPHRASE).setVisible(true);
             }
-        }else{
+        }else{ 
             new Apply(this, PASSPHRASE).setVisible(true);
+            
         }
         WaitDialog.hideDialog();
     }//GEN-LAST:event_btnNewCertificateRequestActionPerformed
