@@ -160,7 +160,7 @@ public class RevokeRequest {
             } else if (response.getStatus().equals(Status.SUCCESS_ACCEPTED)) {
                 //202
                 try {
-                    this.MESSAGE = "Server sends back error message. Please check it out.";
+                    this.MESSAGE = "Error message received from the Server. Please contact the helpdesk";
                 } catch (Exception ep) {
                     ep.printStackTrace();
                 } finally {
@@ -180,12 +180,18 @@ public class RevokeRequest {
                 this.MESSAGE = "Server does not support POST.";
                 return false;
             } else {
-                this.MESSAGE = "undefined error.";
+                this.MESSAGE = "There appears to be a problem with submitting the revocation request.\n"
+                        + "This could be either due to networking problems you are having or \n"
+                        + "problem in the e-Science CA Server. If your connection is already up but still \n"
+                        + "unable to complete the revocation submission, please contact the helpdesk.";
                 return false;
             }
 
         } else {
-            this.MESSAGE = "some undefined errors happen.";
+            this.MESSAGE = "There appears to be a problem with submitting the revocation request.\n"
+                    + "This could be either due to networking problems you are having or \n"
+                    + "problem in the e-Science CA Server. If your connection is already up but still \n"
+                    + "unable to complete the revocation submission, please contact the helpdesk.";
             return false;
         }
     }

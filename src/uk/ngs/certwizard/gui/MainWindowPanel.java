@@ -654,7 +654,8 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private void jComboBox1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBox1ActionPerformed
         // TODO add your handling code here:
 //System.out.println("------------------------------------------------------------------------");
-
+        //WaitDialog.showDialog();
+        
         if (jComboBox1.getItemCount() == 0) {
             this.DN.setText("");
             this.vFrom.setText("");
@@ -683,12 +684,14 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
 
         if (SystemStatus.ISONLINE) {
+           
            if( !isPing() ){
+               
                 JOptionPane.showMessageDialog(this, "There is a problem to connect with server, "
                         + "\nplease report to helpdesk or work under offline by restarting "
                         + "CertWizard and select offline.", "Server Connection Fault",
                         JOptionPane.INFORMATION_MESSAGE);
-                WaitDialog.hideDialog();
+                //WaitDialog.hideDialog();
                 //return;
             } else {
                 //update the selected item. This update will only be done if the ping check succeeds
@@ -866,6 +869,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             }
 
         }
+        //WaitDialog.hideDialog();
     }//GEN-LAST:event_jComboBox1ActionPerformed
 
 

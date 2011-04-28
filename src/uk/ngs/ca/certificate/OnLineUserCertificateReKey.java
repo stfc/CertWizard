@@ -309,11 +309,17 @@ public class OnLineUserCertificateReKey {
                     return false;
                 }
             } else {
-                this.ERRORMESSAGE = "undefined error.";
+                this.ERRORMESSAGE = "There appears to be a problem with submitting the renewal request.\n"
+                    + "This could be either due to networking problems you are having or \n"
+                    + "problem in the e-Science CA Server. If your connection is already up but still \n"
+                    + "unable to complete the renewal submission, please contact the helpdesk.";
                 return false;
             }
         } else {
-            this.ERRORMESSAGE = "some undefined errors happen.";
+            this.ERRORMESSAGE = "There appears to be a problem with submitting the renewal request.\n"
+                    + "This could be either due to networking problems you are having or \n"
+                    + "problem in the e-Science CA Server. If your connection is already up but still \n"
+                    + "unable to complete the renewal submission, please contact the helpdesk.";
             return false;
         }
     }

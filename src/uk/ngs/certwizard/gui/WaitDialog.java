@@ -26,6 +26,7 @@ import java.awt.Rectangle;
 import javax.swing.ImageIcon;
 
 import java.awt.Font;
+import java.awt.Image;
 import java.net.URL;
 import java.awt.SystemColor;
 import java.awt.Toolkit;
@@ -41,7 +42,7 @@ import java.awt.Toolkit;
  * @version 1.0
  */
 public class WaitDialog extends JFrame  {
-  private JLabel jLabel1 = new JLabel();
+//  private JLabel jLabel1;
   private JLabel jLabel2 = new JLabel();
   Rectangle bounds;
 
@@ -80,12 +81,21 @@ public class WaitDialog extends JFrame  {
         this.setIconImage(Toolkit.getDefaultToolkit().getImage(iconURL));
     }
 
+//    URL iconURL2 = Apply.class.getResource("/uk/ngs/ca/images/ngs_radars.gif");
+//    if (iconURL2 != null) {
+//        Image image = Toolkit.getDefaultToolkit().getImage(iconURL);
+//        jLabel1 = new JLabel();
+//
+//    }
+
     jLabel2.setText("Please wait, while the system is processing...");
+
     jLabel2.setForeground(SystemColor.textText);
     jLabel2.setBounds(new Rectangle(60, 30, 300, 65));
     jLabel2.setFont(new Font("Dialog", 1, 13));
     this.getContentPane().add(jLabel2, null);
 
+    
   }
 
   /**
@@ -96,6 +106,7 @@ public class WaitDialog extends JFrame  {
     dlg.setLocation( (int)dlg.bounds.getWidth() / 2 - 200, (int)dlg.bounds.getHeight()/2 - 75);
     dlg.show();
     dlg.paint(dlg.getGraphics());
+    dlg.toFront();
   }
 
   /**

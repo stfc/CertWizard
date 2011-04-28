@@ -178,26 +178,32 @@ public class RAContact {
                 return true;
             }else if (response.getStatus().equals(Status.SUCCESS_ACCEPTED)) {
                 //202
-                this.MESSAGE = "Server failes to send out email.";
+                this.MESSAGE = "Server failed to send the email. Please contact the helpdesk";
                 return false;
             } else if (response.getStatus().equals(Status.CLIENT_ERROR_NOT_FOUND)) {
                 //404
-                this.MESSAGE = "there is no such service. Please check system configure file.";
+                this.MESSAGE = "there is no such service. Please contact the helpdesk";
                 return false;
             } else if (response.getStatus().equals(Status.CLIENT_ERROR_FORBIDDEN)) {
                 //403
-                this.MESSAGE = "failed authentication. Please check out PPPK";
+                this.MESSAGE = "failed authentication. Please contact the helpdesk";
                 return false;
             } else if (response.getStatus().equals(Status.CLIENT_ERROR_METHOD_NOT_ALLOWED)) {
                 //405
-                this.MESSAGE = "Server does not support POST.";
+                this.MESSAGE = "Server does not support POST. ";
                 return false;
             } else {
-                this.MESSAGE = "undefined error.";
+                this.MESSAGE = "There appears to be a problem with sending out the email.\n"
+                        + "This could be either due to networking problems you are having or \n"
+                        + "problem in the e-Science CA Server. If your connection is already up but still \n"
+                        + "unable to send the email to the user, please contact the helpdesk.";
                 return false;
             }
         } else {
-            this.MESSAGE = "some undefined errors happen.";
+            this.MESSAGE = "There appears to be a problem with sending out the email.\n"
+                    + "This could be either due to networking problems you are having or \n"
+                    + "problem in the e-Science CA Server. If your connection is already up but still \n"
+                    + "unable to send the email to the user, please contact the helpdesk.";
             return false;
         }
     }
