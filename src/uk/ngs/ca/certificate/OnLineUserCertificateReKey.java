@@ -268,7 +268,7 @@ public class OnLineUserCertificateReKey {
                 try {
                     this.DETAILERRORMESSAGE = response.getEntityAsDom().getText();
                     this.DOCUMENT = response.getEntityAsDom().getDocument();
-                    this.ERRORMESSAGE = "Server sends back error message. Please check it out.";
+                    this.ERRORMESSAGE = "Error message received from the Server. Please contact the helpdesk.";
                 } catch (Exception ep) {
                     ep.printStackTrace();
                 } finally {
@@ -288,7 +288,7 @@ public class OnLineUserCertificateReKey {
                 }
             } else if (response.getStatus().equals(Status.CLIENT_ERROR_FORBIDDEN)) {
                 //403
-                this.ERRORMESSAGE = "failed authentication. Please check out PPPK";
+                this.ERRORMESSAGE = "failed authentication. Please contact the helpdesk";
                 try {
                     this.DETAILERRORMESSAGE = response.getEntityAsDom().getText();
                     this.DOCUMENT = response.getEntityAsDom().getDocument();
@@ -390,7 +390,10 @@ public class OnLineUserCertificateReKey {
                 return false;
             }
         } else {
-            ERRORMESSAGE = "undefined error.";
+            ERRORMESSAGE = "There appears to be a problem with processing the Certficate request.\n"
+                    + "This could be either due to networking problems you are having or \n"
+                    + "problem in the e-Science CA Server. If your connection is already up but still \n"
+                    + "unable to complete the revocation submission, please contact the helpdesk.";
             return false;
         }
 
