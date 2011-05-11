@@ -84,16 +84,17 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             //CHECK FOR NEW VERSION HERE! CSRREQUEST HAS THE METHOD
 
             String certWizardVersion = SysProperty.getValue("ngsca.certwizard.versionNumber");
-            Float certWizardVersionFloat = new Float(certWizardVersion);
+//            Float certWizardVersionFloat = new Float(certWizardVersion);
 //            float certWizardVersionInt = Integer.parseInt(certWizardVersion);
 
             //Now fetch the latest version from the server. Required info is in DBCAInfo, ultimately
             //handled by the CAResource class.
             String latestVersion = motd.getLatestVersion();
-            Float latestVersionFloat = new Float(latestVersion);
 
-            if (latestVersionFloat > certWizardVersionFloat) {
-                JOptionPane.showMessageDialog(this, "A new version "+latestVersion+" of the Certificate Wizard is available!\n"
+//            Float latestVersionFloat = new Float(latestVersion);
+
+            if (!(certWizardVersion.equals(latestVersion))) {
+                JOptionPane.showMessageDialog(this, "A new version of the Certificate Wizard is available!\n"
                         + "Please go to www.ngs.ac.uk in order to obtain the latest version",
                         "New Version of Certificate Wizard", JOptionPane.INFORMATION_MESSAGE);
             }
