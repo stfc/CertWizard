@@ -64,8 +64,9 @@ public class CSRRequest {
                 ep.printStackTrace();
             }
         }else{
-           MESSAGE = "A temporary problem occured during the submission process. Please try again later.\n"
-                    + "If the problem persists, please contact the helpdesk support at \n"
+
+           MESSAGE = "A problem occurred during the submission process. This could be due to a Server side problem.\n"
+                    + "Please try again later. If the problem persists, please contact the helpdesk support at \n"
                     + "support@grid-support.ac.uk";
             isCSRRequestSuccess = false;
         }

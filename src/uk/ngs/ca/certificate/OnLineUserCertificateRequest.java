@@ -188,7 +188,8 @@ public class OnLineUserCertificateRequest extends Observable{
 
     private boolean isValidEmail() {
         //Set the email pattern string
-        Pattern p = Pattern.compile(".+@.+\\.[a-z]+");
+//        Pattern p = Pattern.compile(".+@.+\\.[a-z]+");
+        Pattern p = Pattern.compile("[-\\.a-zA-Z0-9_]+@[-a-zA-Z0-9\\.]+\\.[a-z]+");
         //Match the given string with the pattern
         Matcher m = p.matcher(this.Email);
         //check whether match is found

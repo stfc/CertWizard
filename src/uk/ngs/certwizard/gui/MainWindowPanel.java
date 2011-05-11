@@ -49,7 +49,7 @@ import uk.ngs.ca.tools.property.SysProperty;
  */
 public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
-    String MotD = "Message of the Day: \n\n\nThe CA is Awesome";
+    String MotD = "Message of the Day: \n\n\nWelcome to the new Certificate Wizard!";
     ArrayList<Certificate> array;
     private char[] PASSPHRASE;
     private OffLineCertificateInfo offLineCertInfo;
@@ -80,6 +80,26 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             CAMotd motd = new CAMotd();
             MotD = motd.getText();
             setMOD(MotD);
+
+            //CHECK FOR NEW VERSION HERE! CSRREQUEST HAS THE METHOD
+
+            String certWizardVersion = SysProperty.getValue("ngsca.certwizard.versionNumber");
+            Float certWizardVersionFloat = new Float(certWizardVersion);
+//            float certWizardVersionInt = Integer.parseInt(certWizardVersion);
+
+            //Now fetch the latest version from the server. Required info is in DBCAInfo, ultimately
+            //handled by the CAResource class.
+            String latestVersion = motd.getLatestVersion();
+            Float latestVersionFloat = new Float(latestVersion);
+
+            if (latestVersionFloat > certWizardVersionFloat) {
+                JOptionPane.showMessageDialog(this, "A new version "+latestVersion+" of the Certificate Wizard is available!\n"
+                        + "Please go to www.ngs.ac.uk in order to obtain the latest version",
+                        "New Version of Certificate Wizard", JOptionPane.INFORMATION_MESSAGE);
+            }
+//            System.out.println("THE CERTIFICATE VERSION IS: "+ certWizardVersionFloat);
+//            System.out.println("THE LATEST VERSION IS: "+ latestVersion);
+
         } else {
             offLineInit();
 

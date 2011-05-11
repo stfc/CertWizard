@@ -282,6 +282,13 @@ public class OnLineConfirmation extends javax.swing.JFrame {
             return;
         }
         
+        String reason = this.txtRevocationReason.getText();
+        if (reason.contains("'") || reason.contains(";")) {
+            JOptionPane.showMessageDialog(this, "Please do not use characters ' and ; when writing the revocation request.", "Input Error", JOptionPane.INFORMATION_MESSAGE);
+            WaitDialog.hideDialog();
+            return;
+        }
+
         if (this.action.equals("Renew")) {
             String _id = this.certCSRInfo.getId();
             CertificateDownload certDownload = new CertificateDownload(_id);
@@ -312,7 +319,6 @@ public class OnLineConfirmation extends javax.swing.JFrame {
             String encodedPublicKey = this.certCSRInfo.getPublickey();
             PublicKey _publicKey = EncryptUtil.getPublicKey(encodedPublicKey);
 
-            String reason = this.txtRevocationReason.getText();
             ClientKeyStore clientKeyStore = this.onLineCertInfo.getClientKeyStore();
             PrivateKey _privateKey = clientKeyStore.getPrivateKey(_publicKey);
 
@@ -324,7 +330,7 @@ public class OnLineConfirmation extends javax.swing.JFrame {
                 this.onLineCertInfo.notifyObserver( _notifyMessage );
             } else {
                 String message = revokeRequest.getMessage();
-                JOptionPane.showMessageDialog(this, message, "Certificate revok failed", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, message, "Certificate revocation failed", JOptionPane.INFORMATION_MESSAGE);
             }
             this.dispose();
         }

@@ -352,12 +352,15 @@ public class Apply extends javax.swing.JFrame {
                 onLineCertRequest.setRA((String) this.cmbSelectRA.getSelectedItem());
 
                 String messageTitle;
-                if( ! isValidCN( this.txtName.getText() ) ){
-                    messageTitle = "Unproper Input";
-                    JOptionPane.showMessageDialog(this, "Your name input should be \"Firstname Lastname\", Please try again.", messageTitle, JOptionPane.INFORMATION_MESSAGE);
-                }else if( ! isValidEmail( this.txtEmail.getText() ) ){
-                    messageTitle = "Unproper Input";
-                    JOptionPane.showMessageDialog(this, "Your email input is not correct. Please try again.", messageTitle, JOptionPane.INFORMATION_MESSAGE);
+                if( ! isValidCN( this.txtName.getText() )){
+                    messageTitle = "Input problem";
+                    JOptionPane.showMessageDialog(this, "Your name input should be \"Firstname Lastname\", please try again.", messageTitle, JOptionPane.INFORMATION_MESSAGE);
+                }else if( ! isValidEmail( this.txtEmail.getText() )){
+                    messageTitle = "Input problem";
+                    JOptionPane.showMessageDialog(this, "Your email input is not valid. "
+                            + "\nIt should not contain special characters ' and ;"
+                            + "\nPlease also ensure that it is in the form of name.surname@example.com or similar"
+                            + "\nPlease try again.", messageTitle, JOptionPane.INFORMATION_MESSAGE);
                 }else{
                     boolean isSuccess = onLineCertRequest.doOnLineCSR();
                     if (isSuccess) {
@@ -368,6 +371,9 @@ public class Apply extends javax.swing.JFrame {
                         this.dispose();
                     } else {
                         messageTitle = "Request UnSuccessful";
+                        System.out.println(onLineCertRequest.getMessage());
+//                        String theTitle =
+//                        String theMessage =
                         JOptionPane.showMessageDialog(this, onLineCertRequest.getMessage(), messageTitle, JOptionPane.INFORMATION_MESSAGE);
                     }
                 }
@@ -381,12 +387,15 @@ public class Apply extends javax.swing.JFrame {
                 offLineCertRequest.setRA((String) this.cmbSelectRA.getSelectedItem());
 
                 String messageTitle;
-                if( ! isValidCN( this.txtName.getText() ) ){
-                    messageTitle = "Unproper Input";
-                    JOptionPane.showMessageDialog(this, "Your name input should be \"Firstname Lastname\", Please try again.", messageTitle, JOptionPane.INFORMATION_MESSAGE);
-                }else if( ! isValidEmail( this.txtEmail.getText() ) ){
-                    messageTitle = "Unproper Input";
-                    JOptionPane.showMessageDialog(this, "Your email input is not correct. Please try again.", messageTitle, JOptionPane.INFORMATION_MESSAGE);
+                if( (! isValidCN( this.txtName.getText() ))){
+                    messageTitle = "Input problem";
+                    JOptionPane.showMessageDialog(this, "Your name input should be \"Firstname Lastname\", please try again.", messageTitle, JOptionPane.INFORMATION_MESSAGE);
+                }else if( (! isValidEmail( this.txtEmail.getText()) || this.txtEmail.getText().contains("'") || this.txtEmail.getText().contains(";"))){
+                    messageTitle = "Input problem";
+                    JOptionPane.showMessageDialog(this, "Your email input is not valid. "
+                            + "\nIt should not contain special characters ' and ;"
+                            + "\nPlease also ensure that it is in the form of name.surname@example.com or similar"
+                            + "\nPlease try again.", messageTitle, JOptionPane.INFORMATION_MESSAGE);
                 }else{
                     boolean isSuccess = offLineCertRequest.doOffLineCSR();
                     if (isSuccess) {
@@ -411,7 +420,9 @@ public class Apply extends javax.swing.JFrame {
 
     private boolean isValidEmail(String email) {
 
-        Pattern p = Pattern.compile(".+@.+\\.[a-z]+");
+//        Pattern p = Pattern.compile(".+@.+\\.[a-z]+");
+        Pattern p = Pattern.compile("[-\\.a-zA-Z0-9_]+@[-a-zA-Z0-9\\.]+\\.[a-z]+");
+//        Pattern p = Pattern.compile("[a-zA-Z0-9_]+@[-a-zA-Z0-9\\.]+\\.[a-z]+");
 
         //Match the given string with the pattern
         Matcher m = p.matcher(email);
