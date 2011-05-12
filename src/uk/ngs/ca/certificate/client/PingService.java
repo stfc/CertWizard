@@ -20,7 +20,6 @@ import org.restlet.data.Request;
 import org.restlet.data.Method;
 
 import org.restlet.data.Status;
-import org.restlet.resource.Representation;
 import uk.ngs.ca.common.ClientHostName;
 import uk.ngs.ca.tools.property.SysProperty;
 

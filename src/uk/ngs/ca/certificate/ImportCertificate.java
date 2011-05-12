@@ -186,7 +186,6 @@ public class ImportCertificate extends Observable {
 
                                   //find out if the e-mail extension exists, and hence prevent host cert from getting imported
                     String dn = x509_cert.getSubjectDN().getName();
-                    System.out.println("====================VALUE IS HERE ========" + dn + "=======================");
 
 
                     ///ADDED: CHECK FOR HOST CERTIFICATES AS WELL AS NON E-SCIENCE CERTIFICATES
@@ -202,13 +201,17 @@ public class ImportCertificate extends Observable {
                     JOptionPane.showMessageDialog(frame, _message, "Certificate File Extraction", JOptionPane.ERROR_MESSAGE);
                     isSuccess = false;
                 } else {
-                    PublicKey publicKey = x509_cert.getPublicKey();
-                    ResourcesPublicKey resourcesPublicKey = new ResourcesPublicKey( publicKey );
-                    if( ! resourcesPublicKey.isExist() ){
-                        this.Message = "Your imported certificate looks valid, but there is no any record in the service database. Please contact with Helpdesk";
-                        JOptionPane.showMessageDialog(frame, this.Message, "Certificate File Extraction", JOptionPane.ERROR_MESSAGE);
-                        isSuccess = false;
-                    }
+
+                      //AO - Removed as there is no need to do a check on the public key when importing a certificate into the keystore.
+                      //The certificate already been issued by CA already has the public key in the database!
+                        
+//                    PublicKey publicKey = x509_cert.getPublicKey();
+//                    ResourcesPublicKey resourcesPublicKey = new ResourcesPublicKey( publicKey );
+//                    if( ! resourcesPublicKey.isExist() ){
+//                        this.Message = "Your imported certificate looks valid, but there is no any record in the service database. Please contact with Helpdesk";
+//                        JOptionPane.showMessageDialog(frame, this.Message, "Certificate File Extraction", JOptionPane.ERROR_MESSAGE);
+//                        isSuccess = false;
+//                    }
                     
                     if (clientKeyStore.addNewKey(priv_key, x509_cert)) {
                         this.Alias = clientKeyStore.getAlias(x509_cert);

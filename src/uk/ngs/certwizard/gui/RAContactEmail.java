@@ -13,7 +13,6 @@ package uk.ngs.certwizard.gui;
 import java.awt.Toolkit;
 import java.net.URL;
 import javax.swing.JOptionPane;
-import uk.ngs.ca.certificate.management.CertificateCSRInfo;
 
 /**
  *

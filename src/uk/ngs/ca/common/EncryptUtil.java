@@ -4,8 +4,6 @@
  */
 package uk.ngs.ca.common;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 import org.apache.log4j.Logger;
 
 import java.security.PrivateKey;

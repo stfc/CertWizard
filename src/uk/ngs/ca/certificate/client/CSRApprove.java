@@ -7,9 +7,6 @@ package uk.ngs.ca.certificate.client;
 
 import java.math.BigInteger;
 import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPublicKey;
 import java.util.Date;
 
 import org.restlet.data.Reference;

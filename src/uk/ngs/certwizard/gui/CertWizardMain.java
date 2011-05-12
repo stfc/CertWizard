@@ -19,7 +19,6 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.WindowConstants;
 import org.globus.common.CoGProperties;
-import uk.ngs.ca.certificate.client.CertificateDownload;
 import uk.ngs.ca.certificate.management.CertificateCSRInfo;
 import uk.ngs.ca.tools.property.SysProperty;
 

@@ -7,8 +7,6 @@ package uk.ngs.ca.certificate.client;
 
 import java.math.BigInteger;
 import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.cert.X509Certificate;
 import java.util.Date;
 import org.w3c.dom.Document;
 
@@ -25,7 +23,6 @@ import org.restlet.data.Response;
 import org.restlet.data.Request;
 import org.restlet.data.Method;
 
-import org.bouncycastle.util.encoders.Base64;
 
 import org.restlet.data.Parameter;
 import org.restlet.data.Status;

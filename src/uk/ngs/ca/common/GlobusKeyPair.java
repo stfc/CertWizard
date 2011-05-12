@@ -16,70 +16,19 @@ import org.globus.gsi.bc.BouncyCastleOpenSSLKey;
 
 
 
-import java.io.FileNotFoundException;
-import java.io.ByteArrayOutputStream;
-import java.io.OutputStream;
 import java.io.FileOutputStream;
-import java.io.PrintStream;
 import java.io.File;
 
-import java.math.BigInteger;
 
 import java.security.KeyPair;
-import java.security.Key;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
-import java.security.Provider;
 import java.security.PublicKey;
-import java.security.Security;
 
 import java.security.cert.X509Certificate;
 
-import java.security.AlgorithmParameters;
 
-import java.security.spec.PKCS8EncodedKeySpec;
 
-import javax.security.auth.x500.X500Principal;
-
-import java.util.Date;
-import java.util.Vector;
-
-import javax.crypto.spec.PBEParameterSpec;
-import javax.crypto.spec.PBEKeySpec;
-
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.Cipher;
-
-import javax.crypto.EncryptedPrivateKeyInfo;
-
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-
-import org.bouncycastle.jce.PKCS10CertificationRequest;
-
-import org.bouncycastle.x509.X509V3CertificateGenerator;
-import org.bouncycastle.x509.X509V1CertificateGenerator;
-
-import org.bouncycastle.x509.extension.SubjectKeyIdentifierStructure;
-import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
-
-import org.bouncycastle.asn1.DERSet;
-
-import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
-import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
-
-import org.bouncycastle.asn1.x509.Attribute;
-import org.bouncycastle.asn1.x509.X509Extension;
-import org.bouncycastle.asn1.x509.X509Extensions;
-import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.GeneralNames;
-
-import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.DEREncodable;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.ASN1Sequence;
-
-import org.bouncycastle.util.encoders.Base64;
 
 /**
  * A special keypair class for this application. It holds a private key which is

@@ -77,8 +77,6 @@ import java.util.Properties;
 import java.util.Observable;
 
 import org.bouncycastle.jce.provider.unlimited.PKCS12KeyStoreUnlimited;
-import uk.ngs.ca.common.ClientHostName;
-import uk.ngs.ca.common.EncryptUtil;
 import uk.ngs.ca.certificate.client.CertificateDownload;
 import uk.ngs.ca.certificate.client.CertificateOwner;
 import uk.ngs.ca.certificate.client.CertificateEndDate;

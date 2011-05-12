@@ -11,6 +11,8 @@
 package uk.ngs.certwizard.gui;
 
 import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Toolkit;
 import java.io.File;
 import java.util.ArrayList;
 import javax.swing.*;
@@ -80,8 +82,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             CAMotd motd = new CAMotd();
             MotD = motd.getText();
             setMOD(MotD);
-
-            //CHECK FOR NEW VERSION HERE! CSRREQUEST HAS THE METHOD
 
             String certWizardVersion = SysProperty.getValue("ngsca.certwizard.versionNumber");
 //            Float certWizardVersionFloat = new Float(certWizardVersion);
@@ -913,11 +913,11 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     private void btnImportCertificateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnImportCertificateActionPerformed
         // TODO add your handling code here:
-        WaitDialog.showDialog();
+//        WaitDialog.showDialog();
         if( SystemStatus.ISONLINE ){
             if( !isPing() ){
                 JOptionPane.showMessageDialog(this, "There is a problem to connect with server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
-                WaitDialog.hideDialog();
+//                WaitDialog.hideDialog();
                 return;
             }
         }
@@ -927,9 +927,17 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         importCert.setMultiSelectionEnabled(false);
         if (importCert.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             File importFile = importCert.getSelectedFile();
-            new ImportFilePassword(this, PASSPHRASE, importFile).setVisible(true);
+            ImportFilePassword importFilePassword = new ImportFilePassword(this, PASSPHRASE, importFile);
+
+            Dimension dimension = Toolkit.getDefaultToolkit().getScreenSize();
+            int x = (int) ((dimension.getWidth() - importFilePassword.getWidth()) / 2);
+            int y = (int) ((dimension.getHeight() - importFilePassword.getHeight()) / 2);
+            importFilePassword.setLocation(x, y);
+            importFilePassword.setVisible(true);
+
+//            new ImportFilePassword(this, PASSPHRASE, importFile).setVisible(true);
         }
-        WaitDialog.hideDialog();
+//        WaitDialog.hideDialog();
     }//GEN-LAST:event_btnImportCertificateActionPerformed
 
     private void btnExportActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExportActionPerformed

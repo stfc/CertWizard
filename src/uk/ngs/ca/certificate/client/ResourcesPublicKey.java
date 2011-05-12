@@ -8,10 +8,6 @@ package uk.ngs.ca.certificate.client;
 import java.security.PublicKey;
 import org.w3c.dom.Document;
 
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathFactory;
-import javax.xml.xpath.XPathExpression;
-import javax.xml.xpath.XPathConstants;
 
 import org.restlet.Client;
 import org.restlet.data.Protocol;

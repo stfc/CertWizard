@@ -6,7 +6,6 @@
 package uk.ngs.ca.certificate.client;
 
 
-import java.util.Date;
 import org.w3c.dom.Document;
 
 import javax.xml.xpath.XPath;

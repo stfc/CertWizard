@@ -23,9 +23,7 @@ import java.io.FileOutputStream;
 
 import java.util.Observer;
 import java.util.Observable;
-import java.util.Timer;
 
-import java.util.Vector;
 import org.globus.common.CoGProperties;
 import org.globus.util.PEMUtils;
 import org.globus.util.Base64;
@@ -49,7 +47,6 @@ import uk.ngs.ca.certificate.client.RAContact;
 import uk.ngs.ca.certificate.management.CertificateCSRInfo;
 import uk.ngs.ca.certificate.management.RequestPendingInfo;
 import uk.ngs.ca.common.EncryptUtil;
-import uk.ngs.ca.info.CAInfo;
 import uk.ngs.ca.tools.property.SysProperty;
 
 /**

@@ -33,7 +33,6 @@ import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Element;
 
 import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.security.KeyPair;
 
 import java.security.KeyStore;
@@ -46,12 +45,9 @@ import org.bouncycastle.openssl.PEMReader;
 
 import org.apache.log4j.Logger;
 
-import org.bouncycastle.openssl.PasswordFinder;
-import org.bouncycastle.jce.provider.unlimited.PKCS12KeyStoreUnlimited;
 
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
-import uk.ngs.ca.common.CAKeyPair;
 
 /**
  * This class manages the attributes which recorede in the property file.
