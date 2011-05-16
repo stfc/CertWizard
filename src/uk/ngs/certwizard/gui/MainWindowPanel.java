@@ -75,7 +75,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
         if (SystemStatus.ISONLINE) {
             //setup timer for 30 minutes
-            long timeinmin = 1000*60*30;
+            long timeinmin = 1000*60*10;
             Timer timer = new Timer();
             timer.schedule(new RefreshOnLine( this ), timeinmin, timeinmin);
             onLineInit();
@@ -93,6 +93,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
 //            Float latestVersionFloat = new Float(latestVersion);
 
+            WaitDialog.hideDialog();
             if (!(certWizardVersion.equals(latestVersion))) {
                 JOptionPane.showMessageDialog(this, "A new version of the Certificate Wizard is available!\n"
                         + "Please go to www.ngs.ac.uk in order to obtain the latest version",
@@ -100,6 +101,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             }
 //            System.out.println("THE CERTIFICATE VERSION IS: "+ certWizardVersionFloat);
 //            System.out.println("THE LATEST VERSION IS: "+ latestVersion);
+
 
         } else {
             offLineInit();
@@ -127,18 +129,29 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     }
     
     private void onLineInit() {
-        onLineCertInfo = new OnLineCertificateInfo(PASSPHRASE);
+       if( !isPing() ){ 
 
-        this.certificateCSRInfos = onLineCertInfo.getCertCSRInfos();
+            JOptionPane.showMessageDialog(this, "There is a problem to connect with server, "
+                    + "\nplease report to helpdesk or work under offline by restarting "
+                    + "CertWizard and select offline.", "Server Connection Fault",
+                    JOptionPane.INFORMATION_MESSAGE);
+            //WaitDialog.hideDialog();
+            //return;
+        } else {
+            onLineCertInfo = new OnLineCertificateInfo(PASSPHRASE);
+
+            this.certificateCSRInfos = onLineCertInfo.getCertCSRInfos();
 
 
 
-        if ((this.certificateCSRInfos == null) || (this.certificateCSRInfos.length == 0)) {
-            this.btnExport.setEnabled(false);
-            this.btnRevoke.setEnabled(false);
-            this.btnRenew.setEnabled(false);
-            this.btnDelete.setEnabled(false);
-            this.btnInstall.setEnabled(false);
+            if ((this.certificateCSRInfos == null) || (this.certificateCSRInfos.length == 0)) {
+                this.btnExport.setEnabled(false);
+                this.btnRevoke.setEnabled(false);
+                this.btnRenew.setEnabled(false);
+                this.btnDelete.setEnabled(false);
+                this.btnInstall.setEnabled(false);
+            }
+            
         }
     }
 
@@ -158,9 +171,19 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     }
 
     public void refreshOnLine(){
-        onLineInit();
-        jComboBox1.removeAllItems();
-        fillComboBox();
+        if( !isPing() ){
+
+            JOptionPane.showMessageDialog(this, "There is a problem to connect with server, "
+                    + "\nplease report to helpdesk or work under offline by restarting "
+                    + "CertWizard and select offline.", "Server Connection Fault",
+                    JOptionPane.INFORMATION_MESSAGE);
+            //WaitDialog.hideDialog();
+            //return;
+        } else {
+            onLineInit();
+            jComboBox1.removeAllItems();
+            fillComboBox();
+        }
     }
 
     public void update(Observable observable, Object obj) {

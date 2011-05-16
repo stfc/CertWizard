@@ -125,7 +125,7 @@ public class ImportFilePassword extends javax.swing.JFrame {
         importCertificate.addFileProtectionPassphrase(protectionPassphrase);
         boolean isSuccess = importCertificate.importToKeyStore(this);
         if( isSuccess ){
-            JOptionPane.showMessageDialog(this, "You have import selected certificate in your local certificate keystore.", "Import Certificate Success", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "You have successfully imported the selected certificate in your local certificate keystore.", "Import Certificate Success", JOptionPane.INFORMATION_MESSAGE);
             importCertificate.notifyObserver();
                 this.dispose();
         }else{

@@ -154,6 +154,7 @@ public class PasswordPanel extends javax.swing.JPanel {
 
     private void btnSubmitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSubmitActionPerformed
         // TODO add your handling code here:
+
         if( this.isExistKeyStore ){
             doAction();
         }else{
@@ -166,10 +167,12 @@ public class PasswordPanel extends javax.swing.JPanel {
                 JOptionPane.showMessageDialog(this, errorMessage, "Wrong Password", JOptionPane.ERROR_MESSAGE);
             }
         }
+        
 
     }//GEN-LAST:event_btnSubmitActionPerformed
 
     private void doAction() {
+        WaitDialog.showDialog();
         char[] passphrase = txtPassword.getPassword();
         boolean isValid = this.sysStatus.isValidPassphrase(passphrase);
 
