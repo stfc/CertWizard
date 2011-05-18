@@ -38,14 +38,22 @@ public class ContactServerPanel extends javax.swing.JPanel {
         this._certWizardMain = _certWizardMain;
         this.getCertPanel = this._certWizardMain.getCertificatePanel();
         jButton2.setVisible(false);
+        pingService = new PingService();
 
         _init();
     }
 
+    /**
+     * We need the timer task in order to give the user time to press "Work Offline"
+     * in case the user wants to work offline even if there is a connection
+     * to the Internet.
+     */
     private void _init(){
+
         timer = new Timer();
-        TimerTask task = new updateProgressBar(jProgressBar1);
-        timer.scheduleAtFixedRate(task, 500, 500);
+        jProgressBar1.setIndeterminate(true);
+//        TimerTask task = new updateProgressBar(jProgressBar1);
+//        timer.scheduleAtFixedRate(task, 500, 500);
         timer.schedule(new loadMainWindow(this), 5000);
 
     }
@@ -148,6 +156,13 @@ public class ContactServerPanel extends javax.swing.JPanel {
         }
 
         public void run() {
+
+
+            if( pingService != null ){
+                System.out.println("EXECUTING PING CHECK STATEMENT");
+                isReachableServer = pingService.isPingService();
+            }
+
             if (isReachableServer) {
                 SystemStatus.ISONLINE = true;
 
@@ -157,7 +172,9 @@ public class ContactServerPanel extends javax.swing.JPanel {
                 getCertPanel.remove(cPanel);
             } else {
                 SystemStatus.ISONLINE = false;
-                jLabel2.setText("<html>Fail to connect CA server, but you can do offline by clicking 'Work Offline' button or repeat connection by clicking 'Try Again'.");
+                jLabel2.setText("<html>Failed to connect to the CA server. "
+                        + "You can switch to offline mode by clicking 'Work Offline' button, "
+                        + "or retry connecting by clicking 'Try Again'.");
                 //new MainWindow().setVisible(true);
                 jButton2.setVisible(true);
                 timer.cancel();
@@ -167,25 +184,26 @@ public class ContactServerPanel extends javax.swing.JPanel {
         }
     }
 
-    class updateProgressBar extends TimerTask {
-
-        javax.swing.JProgressBar bar;
-        int value;
-
-        public updateProgressBar(javax.swing.JProgressBar bar) {
-            this.bar = bar;
-            value = bar.getValue();
-        }
-
-        public void run() {
-            bar.setIndeterminate(true);
-            bar.setValue(value + 1);
-            
-            if( pingService == null ){
-                pingService = new PingService();
-                isReachableServer = pingService.isPingService();
-            }
-            
-        }
-    }
+//    class updateProgressBar extends TimerTask {
+//
+//        javax.swing.JProgressBar bar;
+//        int value;
+//
+//        public updateProgressBar(javax.swing.JProgressBar bar) {
+//            this.bar = bar;
+//            value = bar.getValue();
+//        }
+//
+//        public void run() {
+//            bar.setIndeterminate(true);
+//            bar.setValue(value + 1);
+//
+//            if( pingService == null ){
+//                pingService = new PingService();
+//                System.out.println("EXECUTING PING CHECK STATEMENT");
+//                isReachableServer = pingService.isPingService();
+//            }
+//
+//        }
+//    }
 }

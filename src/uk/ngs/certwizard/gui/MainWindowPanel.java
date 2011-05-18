@@ -74,10 +74,11 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         initComponents();
 
         if (SystemStatus.ISONLINE) {
-            //setup timer for 30 minutes
-            long timeinmin = 1000*60*10;
-            Timer timer = new Timer();
-            timer.schedule(new RefreshOnLine( this ), timeinmin, timeinmin);
+            //setup timer for 10 minutes --ADDED REFRESH BUTTON INSTEAD
+//            long timeinmin = 1000*60*1;
+//            Timer timer = new Timer();
+//            RefreshOnLine refreshOnline = new RefreshOnLine(this) ;
+//            timer.schedule(refreshOnline, timeinmin, timeinmin);
             onLineInit();
             CAMotd motd = new CAMotd();
             MotD = motd.getText();
@@ -105,6 +106,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
         } else {
             offLineInit();
+            WaitDialog.hideDialog();
 
             MotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
             setRedMOD( MotD );
@@ -131,7 +133,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private void onLineInit() {
        if( !isPing() ){ 
 
-            JOptionPane.showMessageDialog(this, "There is a problem to connect with server, "
+            JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, "
                     + "\nplease report to helpdesk or work under offline by restarting "
                     + "CertWizard and select offline.", "Server Connection Fault",
                     JOptionPane.INFORMATION_MESSAGE);
@@ -159,6 +161,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         offLineCertInfo = new OffLineCertificateInfo(PASSPHRASE);
 
         this.btnNewCertificateRequest.setEnabled(false); //TEMPORARY ADDITION
+        this.btnRefresh.setEnabled(false);
         
         if ((offLineCertInfo.getAllDNs() == null) || (offLineCertInfo.getAllDNs().length == 0)) {
             this.btnExport.setEnabled(false);
@@ -167,13 +170,15 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             this.btnDelete.setEnabled(false);
             this.btnInstall.setEnabled(false);
             
+
+            
         }
     }
 
     public void refreshOnLine(){
         if( !isPing() ){
 
-            JOptionPane.showMessageDialog(this, "There is a problem to connect with server, "
+            JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, "
                     + "\nplease report to helpdesk or work under offline by restarting "
                     + "CertWizard and select offline.", "Server Connection Fault",
                     JOptionPane.INFORMATION_MESSAGE);
@@ -278,6 +283,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         btnExport = new javax.swing.JButton();
         btnRenew = new javax.swing.JButton();
         btnInstall = new javax.swing.JButton();
+        btnRefresh = new javax.swing.JButton();
         jPanel3 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         TextMOD = new javax.swing.JTextArea();
@@ -391,7 +397,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
                     .add(email)
                     .add(DN, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 384, Short.MAX_VALUE))
-                .addContainerGap(55, Short.MAX_VALUE))
+                .addContainerGap(69, Short.MAX_VALUE))
         );
         pnlAllDetailsLayout.setVerticalGroup(
             pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -425,9 +431,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel5Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(jPanel5Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, lblCertificateGenerated, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 458, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, lblRequestApproved, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 458, Short.MAX_VALUE)
-                    .add(lblRequestReceived, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 458, Short.MAX_VALUE))
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, lblCertificateGenerated, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 472, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, lblRequestApproved, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 472, Short.MAX_VALUE)
+                    .add(lblRequestReceived, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 472, Short.MAX_VALUE))
                 .addContainerGap())
         );
         jPanel5Layout.setVerticalGroup(
@@ -594,6 +600,13 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             }
         });
 
+        btnRefresh.setText("Refresh");
+        btnRefresh.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnRefreshActionPerformed(evt);
+            }
+        });
+
         org.jdesktop.layout.GroupLayout jPanel2Layout = new org.jdesktop.layout.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(
@@ -602,7 +615,8 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 .addContainerGap()
                 .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel2Layout.createSequentialGroup()
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 138, Short.MAX_VALUE)
+                        .add(btnRefresh)
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 59, Short.MAX_VALUE)
                         .add(btnInstall)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(btnRenew)
@@ -612,7 +626,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                         .add(btnRevoke)
                         .add(4, 4, 4)
                         .add(btnDelete))
-                    .add(jComboBox1, 0, 522, Short.MAX_VALUE)
+                    .add(jComboBox1, 0, 532, Short.MAX_VALUE)
                     .add(pnlAllDetails, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .add(jPanel4, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .add(12, 12, 12))
@@ -631,8 +645,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                     .add(btnExport)
                     .add(btnRenew)
                     .add(btnInstall)
-                    .add(btnDelete))
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .add(btnDelete)
+                    .add(btnRefresh))
+                .addContainerGap(20, Short.MAX_VALUE))
         );
 
         jPanel3.setBorder(javax.swing.BorderFactory.createTitledBorder("Information"));
@@ -648,13 +663,13 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel3Layout.createSequentialGroup()
                 .addContainerGap()
-                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 141, Short.MAX_VALUE)
+                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 145, Short.MAX_VALUE)
                 .addContainerGap())
         );
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel3Layout.createSequentialGroup()
-                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 242, Short.MAX_VALUE)
+                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 250, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -679,7 +694,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel2, 0, 432, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel2, 0, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .add(layout.createSequentialGroup()
                         .add(jLabel7, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 47, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
@@ -731,7 +746,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
            
            if( !isPing() ){
                
-                JOptionPane.showMessageDialog(this, "There is a problem to connect with server, "
+                JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, "
                         + "\nplease report to helpdesk or work under offline by restarting "
                         + "CertWizard and select offline.", "Server Connection Fault",
                         JOptionPane.INFORMATION_MESSAGE);
@@ -808,20 +823,21 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 this.jPanel5.setVisible(true);
 
             } else if (_status.equals("VALID")) {
-                    this.btnInstall.setForeground(Color.BLUE);
-                    String _lifedays = this.certificateCSRInfos[ index ].getLifeDays();
-                    int int_lifedays = new Integer( _lifedays ).intValue();
-                    if( int_lifedays < 0 ){
-                        this.jPanel4.setBorder(new TitledBorder("Certificate Status: EXPIRED"));
-                        if( int_lifedays >= -30 ){
-                            this.jComboBox1.setForeground(new ExpiredCertColor());
-                        }else{
-                            this.jComboBox1.setForeground(new ExpiredForeverCertColor());
-                        }
+                this.btnInstall.setEnabled(true);
+                this.btnInstall.setForeground(Color.BLUE);
+                String _lifedays = this.certificateCSRInfos[ index ].getLifeDays();
+                int int_lifedays = new Integer( _lifedays ).intValue();
+                if( int_lifedays < 0 ){
+                    this.jPanel4.setBorder(new TitledBorder("Certificate Status: EXPIRED"));
+                    if( int_lifedays >= -30 ){
+                        this.jComboBox1.setForeground(new ExpiredCertColor());
                     }else{
-                        this.jPanel4.setBorder(new TitledBorder("Certificate Status: " + _status));
-                        this.jComboBox1.setForeground(new ValidCertColor());
+                        this.jComboBox1.setForeground(new ExpiredForeverCertColor());
                     }
+                }else{
+                    this.jPanel4.setBorder(new TitledBorder("Certificate Status: " + _status));
+                    this.jComboBox1.setForeground(new ValidCertColor());
+                }
 
             } else if (_status.equals("RENEW")) {
                 this.jComboBox1.setForeground(new RenewalDueColor());
@@ -922,7 +938,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         WaitDialog.showDialog();
         if( SystemStatus.ISONLINE ){
             if( !isPing() ){
-                JOptionPane.showMessageDialog(this, "There is a problem to connect with server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
                 WaitDialog.hideDialog();
             }else{
                 new Apply(this, PASSPHRASE).setVisible(true);
@@ -939,7 +955,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 //        WaitDialog.showDialog();
         if( SystemStatus.ISONLINE ){
             if( !isPing() ){
-                JOptionPane.showMessageDialog(this, "There is a problem to connect with server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
 //                WaitDialog.hideDialog();
                 return;
             }
@@ -975,7 +991,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             
             //check if connection is fine.
             if( !isPing() ){
-                JOptionPane.showMessageDialog(this, "There is a problem to connect with server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
                 WaitDialog.hideDialog();
                 return;
             }
@@ -1001,7 +1017,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             
             //check if connection is fine.
             if( !isPing() ){
-                JOptionPane.showMessageDialog(this, "There is a problem to connect with server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
                 WaitDialog.hideDialog();
                 return;
             }
@@ -1032,7 +1048,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             WaitDialog.showDialog();
             //check if connection is fine.
             if( !isPing() ){
-                JOptionPane.showMessageDialog(this, "There is a problem to connect with server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
                 WaitDialog.hideDialog();
                 return;
             }
@@ -1059,7 +1075,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             WaitDialog.showDialog();
             //check if connection is fine.
             if( !isPing() ){
-                JOptionPane.showMessageDialog(this, "There is a problem to connect with server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
                 WaitDialog.hideDialog();
                 return;
             }
@@ -1150,7 +1166,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         if (SystemStatus.ISONLINE) {
             //check if connection is fine.
             if( !isPing() ){
-                JOptionPane.showMessageDialog(this, "There is a problem to connect with server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
                 WaitDialog.hideDialog();
                 return;
             }
@@ -1174,7 +1190,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                         String _property = SysProperty.getValue("uk.ngs.ca.immegration.password.property");
                         System.setProperty(_property, _passphrase);
                     }else{
-                        String _message = "<html>Your certificate and private key failed to install on:<br>Private key: " + keyPemFile + "Certificate: " + certPemFile;
+                        String _message = "<html>Your certificate and private key failed to install on:<br>Private key: " + keyPemFile + "\nCertificate: " + certPemFile;
                         JOptionPane.showMessageDialog(this, _message, "Failed Install", JOptionPane.INFORMATION_MESSAGE);
                     }
                 } else {
@@ -1280,6 +1296,11 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private void jComboBox1ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_jComboBox1ItemStateChanged
         // TODO add your handling code here:
     }//GEN-LAST:event_jComboBox1ItemStateChanged
+
+    private void btnRefreshActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRefreshActionPerformed
+        // TODO add your handling code here:
+        this.refreshOnLine();
+    }//GEN-LAST:event_btnRefreshActionPerformed
 
     private boolean isSuccessPemFiles(X509Certificate certificate, PrivateKey privateKey){
         CoGProperties props = CoGProperties.getDefault();
@@ -1519,6 +1540,7 @@ _obj = (Object[])jComboBox1.getItemAt(_index);
     private javax.swing.JButton btnImportCertificate;
     private javax.swing.JButton btnInstall;
     private javax.swing.JButton btnNewCertificateRequest;
+    private javax.swing.JButton btnRefresh;
     private javax.swing.JButton btnRenew;
     private javax.swing.JButton btnRevoke;
     private javax.swing.JTextField dRemaining;

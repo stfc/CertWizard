@@ -23,6 +23,8 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.stream.StreamResult;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import uk.ngs.ca.common.ClientHostName;
 import uk.ngs.ca.tools.property.SysProperty;
@@ -73,24 +75,46 @@ public class CSRRequest {
     }
 
     private String _getFormattedMessage(Response response) {
+        String message = "";
 
         try {
             Document document = response.getEntityAsDom().getDocument();
-            // transform the Document into a String
-            DOMSource domSource = new DOMSource(document);
-            TransformerFactory tf = TransformerFactory.newInstance();
-            Transformer transformer = tf.newTransformer();
-            //transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-            transformer.setOutputProperty(OutputKeys.METHOD, "xml");
-            transformer.setOutputProperty(OutputKeys.ENCODING, "ISO-8859-1");
-            transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
-            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-            java.io.StringWriter sw = new java.io.StringWriter();
-            StreamResult sr = new StreamResult(sw);
-            transformer.transform(domSource, sr);
-            String xml = sw.toString();
+//            // transform the Document into a String
+//            DOMSource domSource = new DOMSource(document);
+//            TransformerFactory tf = TransformerFactory.newInstance();
+//            Transformer transformer = tf.newTransformer();
+//            //transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+//            transformer.setOutputProperty(OutputKeys.METHOD, "xml");
+//            transformer.setOutputProperty(OutputKeys.ENCODING, "ISO-8859-1");
+//            transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+//            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+//            java.io.StringWriter sw = new java.io.StringWriter();
+//            StreamResult sr = new StreamResult(sw);
+//            transformer.transform(domSource, sr);
+//            String xml = sw.toString();
+            document.getDocumentElement().normalize();
+            NodeList nodeLst = document.getElementsByTagName("minor");
 
-            return xml;
+            for (int s = 0; s < nodeLst.getLength(); s++) {
+
+                Node fstNode = nodeLst.item(s);
+
+                if (fstNode.getNodeType() == Node.ELEMENT_NODE) {
+
+                      Element fstElmnt = (Element) fstNode;
+                      NodeList fstNmElmntLst = fstElmnt.getElementsByTagName("text");
+                      
+                      
+                      Element fstNmElmnt = (Element) fstNmElmntLst.item(0);
+                      NodeList fstNm = fstNmElmnt.getChildNodes();
+                      
+                      message = (((Node) fstNm.item(0)).getNodeValue());
+//                      System.out.println("SERVER VERSION NO === : "  + ((Node) fstNm.item(0)).getNodeValue());
+                      //img = ((Node) fstNm.item(0)).getNodeValue();
+                }
+            }
+
+            return message;
         } catch (Exception ep) {
             ep.printStackTrace();
             return null;

@@ -341,7 +341,7 @@ public class Apply extends javax.swing.JFrame {
             if (SystemStatus.ISONLINE) {
                 //The following checks if the CA Database as well as the CA Server is up or not.
                 if( !isPing() ){
-                    JOptionPane.showMessageDialog(this, "There is a problem to connect with server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
                     WaitDialog.hideDialog();
                     return;
                 }

@@ -70,7 +70,7 @@ public class OnLineUserCertificateRequest extends Observable{
             this.MESSAGE = csrRequest.getMessage();
             return csrRequest.isCSRREquestSuccess();
         } else {
-            this.MESSAGE = "Some thing wrong in your input. \nPlease check you input parameters.";
+            this.MESSAGE = "Please check you input parameters.";
             return false;
         }
     }
