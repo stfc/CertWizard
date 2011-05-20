@@ -1306,9 +1306,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private void btnRefreshActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRefreshActionPerformed
         // TODO add your handling code here:
         WaitDialog.showDialog("Refresh");
-        int index = jComboBox1.getSelectedIndex();
+//        int index = jComboBox1.getSelectedIndex();
         this.refreshOnLine();
-        jComboBox1.setSelectedIndex(index);
+//        jComboBox1.setSelectedIndex(index);
         WaitDialog.hideDialog();
 
     }//GEN-LAST:event_btnRefreshActionPerformed
