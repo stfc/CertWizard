@@ -1126,32 +1126,33 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     private void btnImportCertificateMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnImportCertificateMouseEntered
         // TODO add your handling code here:
-        setMOD("Import an existing certificate into the certificate wizard");
+        setMOD("Import an existing certificate file into the certificate wizard.");
     }//GEN-LAST:event_btnImportCertificateMouseEntered
 
     private void jComboBox1MouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jComboBox1MouseEntered
         // TODO add your handling code here:
-        setMOD("List of certificates in the Certificate Tool");
+        setMOD("Your current certificates and certificate requests.");
     }//GEN-LAST:event_jComboBox1MouseEntered
 
     private void btnRenewMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnRenewMouseEntered
         // TODO add your handling code here:
-        setMOD("Renew a valid certificate from 30 days before it expires");
+        setMOD("Renew the selected certificate 30 days before it expires (the certificate must be valid).");
     }//GEN-LAST:event_btnRenewMouseEntered
 
     private void btnExportMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnExportMouseEntered
         // TODO add your handling code here:
-        setMOD("Export your certificate to a file, for backing up, or for use in other tools");
+        setMOD("Export the selected certificate to a file for back up, or for use in other tools (exports a .p12 file).");
     }//GEN-LAST:event_btnExportMouseEntered
 
     private void btnRevokeMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnRevokeMouseEntered
         // TODO add your handling code here:
-        setMOD("Revoke your certificate if it is compromised or invalid");
+        setMOD("Revoke your certificate if it is compromised or invalid.");
     }//GEN-LAST:event_btnRevokeMouseEntered
 
     private void btnDeleteMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnDeleteMouseEntered
         // TODO add your handling code here:
-        setMOD("Remove your certificate from the tool. This will not delete any other copies of the certificate from your computer. \n\nPlease note, you will lose the certificate once you click the Remove button, unless you backup the configuration files and overwrite later.");
+        setMOD("Remove your certificate from the tool. "
+                + "This will not delete any other copies of the certificate from your computer.");
     }//GEN-LAST:event_btnDeleteMouseEntered
 
     private void btnInstallActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnInstallActionPerformed
@@ -1233,7 +1234,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     private void btnInstallMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnInstallMouseEntered
         // TODO add your handling code here:
-        setMOD("Install your certificate to PEM files.");
+        setMOD("Install the selected certificate to local PEM files: \n\n"
+                + "'$HOME/.globus/usercert.pem' \n"
+                + "'$HOME/.globus/usercert.pem' ");
     }//GEN-LAST:event_btnInstallMouseEntered
 
     private void btnInstallMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnInstallMouseExited

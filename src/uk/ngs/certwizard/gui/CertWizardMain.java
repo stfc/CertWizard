@@ -149,9 +149,9 @@ public class CertWizardMain implements Observer{
 
 
     private void initComponents() {
-        jp.addTab("Appy/Manage Your Certificate", getCertificatePanel);
-        jp.addTab("Use Your Certificate", useCertificatePanel);
-        jp.addTab("Settings", settingsPanel);
+        jp.addTab("Apply For/Manage Your Certificate", getCertificatePanel);
+        jp.addTab("Use Your Installed Certificate", useCertificatePanel);
+        jp.addTab("Setup", settingsPanel);
 
 
         // First, create the settings/setup panel and the doActions panel.
