@@ -300,7 +300,7 @@ public class Apply extends javax.swing.JFrame {
 
     private void btnApplyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnApplyActionPerformed
 
-        WaitDialog.showDialog();
+        WaitDialog.showDialog("Apply");
         boolean complete = true;
         String text = "";
         String myCN = "";

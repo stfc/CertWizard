@@ -823,7 +823,7 @@ this.btnFullRequest.setEnabled(true);
 
     private void btnRefreshActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRefreshActionPerformed
         // TODO add your handling code here:
-        WaitDialog.showDialog();
+        WaitDialog.showDialog("Refresh");
         String id = this.certificateCSRInfo.getId();
         long long_id = new Long( id ).longValue();
         CARARequestsPending _reqPending = new CARARequestsPending( this.privateKey, long_id );

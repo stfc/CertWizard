@@ -43,7 +43,7 @@ import java.awt.Toolkit;
  */
 public class WaitDialog extends JFrame  {
 //  private JLabel jLabel1;
-  private JLabel jLabel2 = new JLabel();
+  private static JLabel jLabel2 = new JLabel();
   Rectangle bounds;
 
 
@@ -88,7 +88,7 @@ public class WaitDialog extends JFrame  {
 //
 //    }
 
-    jLabel2.setText("Please wait, while the system is processing...");
+//    jLabel2.setText("Please wait while the system is processing...");
 
     jLabel2.setForeground(SystemColor.textText);
     jLabel2.setBounds(new Rectangle(60, 30, 300, 65));
@@ -102,7 +102,23 @@ public class WaitDialog extends JFrame  {
    * This static method uses pre-created dialog, positions it in the center
    * and displays it to the user.
    */
-  public static void showDialog() {
+  public static void showDialog(String type) {
+
+    if (type.equals("Apply"))
+        jLabel2.setText("Submitting your certificate request...");
+
+    if (type.equals("Renew"))
+        jLabel2.setText("Submitting your certificate renewal request...");
+
+    if (type.equals("Revoke"))
+        jLabel2.setText("Submitting your revocation request...");
+
+   if (type.equals("Refresh"))
+        jLabel2.setText("Your certificate list is being updated...");
+
+   if (type.equals("General"))
+        jLabel2.setText("Please wait...");
+
     dlg.setLocation( (int)dlg.bounds.getWidth() / 2 - 200, (int)dlg.bounds.getHeight()/2 - 75);
     dlg.show();
     dlg.paint(dlg.getGraphics());

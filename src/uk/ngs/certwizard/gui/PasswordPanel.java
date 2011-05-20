@@ -35,7 +35,15 @@ public class PasswordPanel extends javax.swing.JPanel {
 
     /** Creates new form Password */
     public PasswordPanel(CertWizardMain _certWizardMain) {
+
         initComponents();
+
+//        this.setFocusable(true);
+//
+//
+//
+//        txtPassword.requestFocusInWindow();
+        
         this._certWizardMain = _certWizardMain;
         getCertPanel = this._certWizardMain.getCertificatePanel();
 
@@ -154,10 +162,12 @@ public class PasswordPanel extends javax.swing.JPanel {
 
     private void btnSubmitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSubmitActionPerformed
 
-
+//        messageLabel.setText("<html>Please Wait..</html>");
         if( this.isExistKeyStore ){
+            
             doAction();
         }else{
+
             String password = new String( txtPassword.getPassword() );
             String confirm = new String( txtConfirmPassword.getPassword() );
             if( password.equals(confirm) ){
@@ -172,7 +182,7 @@ public class PasswordPanel extends javax.swing.JPanel {
     }//GEN-LAST:event_btnSubmitActionPerformed
 
     private void doAction() {
-        WaitDialog.showDialog();
+        
         char[] passphrase = txtPassword.getPassword();
         boolean isValid = this.sysStatus.isValidPassphrase(passphrase);
 
@@ -190,9 +200,11 @@ public class PasswordPanel extends javax.swing.JPanel {
             getCertPanel.remove(this);
 
         } else {
+            
             String errorMessage = sysStatus.getErrorMessage();
             JOptionPane.showMessageDialog(this, errorMessage, "Wrong Password", JOptionPane.ERROR_MESSAGE);
             txtPassword.setText("");
+
         }
     }
 

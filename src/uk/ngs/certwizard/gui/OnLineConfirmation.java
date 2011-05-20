@@ -275,19 +275,26 @@ public class OnLineConfirmation extends javax.swing.JFrame {
     private void btnAcceptActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAcceptActionPerformed
         // TODO add your handling code here:
             //check if connection is fine.
-        WaitDialog.showDialog();
-        if( !isPing() ){
-            JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
-            WaitDialog.hideDialog();
-            return;
-        }
-        
+
         String reason = this.txtRevocationReason.getText();
         if (reason.contains("'") || reason.contains(";")) {
             JOptionPane.showMessageDialog(this, "Please do not use characters ' and ; when writing the revocation request.", "Input Error", JOptionPane.INFORMATION_MESSAGE);
             WaitDialog.hideDialog();
             return;
         }
+
+        if (this.action.equals("Renew"))
+            WaitDialog.showDialog("Renew");
+
+        if (this.action.equals("Revoke"))
+            WaitDialog.showDialog("Revoke");
+
+        if( !isPing() ){
+            JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
+            WaitDialog.hideDialog();
+            return;
+        }
+        
 
         if (this.action.equals("Renew")) {
             String _id = this.certCSRInfo.getId();
@@ -333,6 +340,7 @@ public class OnLineConfirmation extends javax.swing.JFrame {
                 JOptionPane.showMessageDialog(this, message, "Certificate revocation failed", JOptionPane.INFORMATION_MESSAGE);
             }
             this.dispose();
+
         }
         if (this.action.equals("Remove")) {
             if( this.onLineCertInfo.remove(this.INDEX) ){

@@ -54,7 +54,7 @@ public class ContactServerPanel extends javax.swing.JPanel {
         jProgressBar1.setIndeterminate(true);
 //        TimerTask task = new updateProgressBar(jProgressBar1);
 //        timer.scheduleAtFixedRate(task, 500, 500);
-        timer.schedule(new loadMainWindow(this), 5000);
+        timer.schedule(new loadMainWindow(this), 2000);
 
     }
 

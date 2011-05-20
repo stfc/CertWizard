@@ -480,7 +480,7 @@ public class RAUtilityPanel extends javax.swing.JPanel {
         // TODO add your handling code here:
         if( SystemStatus.ISONLINE ){
 
-            WaitDialog.showDialog();
+            WaitDialog.showDialog("General");
 
             String _name = this.searchName.getText();
             String _email = this.searchEmail.getText();
@@ -557,7 +557,7 @@ public class RAUtilityPanel extends javax.swing.JPanel {
             String _name = this.contactName.getText();
             String _ra = this.contactRA.getSelectedItem().toString();
 
-            WaitDialog.showDialog();
+            WaitDialog.showDialog("General");
             DefaultTableModel tModel = new DefaultTableModel(
                     new Object [][] {
                         {null, null, null, null, null, null, null} },

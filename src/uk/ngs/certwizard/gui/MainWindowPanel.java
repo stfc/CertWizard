@@ -74,6 +74,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         initComponents();
 
         if (SystemStatus.ISONLINE) {
+            WaitDialog.showDialog("Refresh");
             //setup timer for 10 minutes --ADDED REFRESH BUTTON INSTEAD
 //            long timeinmin = 1000*60*1;
 //            Timer timer = new Timer();
@@ -601,6 +602,11 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         });
 
         btnRefresh.setText("Refresh");
+        btnRefresh.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnRefreshMouseEntered(evt);
+            }
+        });
         btnRefresh.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnRefreshActionPerformed(evt);
@@ -653,6 +659,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         jPanel3.setBorder(javax.swing.BorderFactory.createTitledBorder("Information"));
 
         TextMOD.setColumns(20);
+        TextMOD.setWrapStyleWord(true);
         TextMOD.setLineWrap(true);
         TextMOD.setRows(5);
         jScrollPane1.setViewportView(TextMOD);
@@ -935,11 +942,10 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     private void btnNewCertificateRequestActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNewCertificateRequestActionPerformed
         // TODO add your handling code here:
-        WaitDialog.showDialog();
         if( SystemStatus.ISONLINE ){
             if( !isPing() ){
                 JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
-                WaitDialog.hideDialog();
+
             }else{
                 new Apply(this, PASSPHRASE).setVisible(true);
             }
@@ -947,7 +953,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             new Apply(this, PASSPHRASE).setVisible(true);
             
         }
-        WaitDialog.hideDialog();
     }//GEN-LAST:event_btnNewCertificateRequestActionPerformed
 
     private void btnImportCertificateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnImportCertificateActionPerformed
@@ -981,7 +986,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     private void btnExportActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExportActionPerformed
         // TODO add your handling code here:
-        WaitDialog.showDialog();
+
         int index = jComboBox1.getSelectedIndex();
         X509Certificate cert = null;
         PrivateKey privateKey = null;
@@ -992,12 +997,13 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             //check if connection is fine.
             if( !isPing() ){
                 JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
-                WaitDialog.hideDialog();
+
                 return;
             }
 
             String _id = this.certificateCSRInfos[ this.jComboBox1.getSelectedIndex() ].getId();
             CertificateDownload certDownload = new CertificateDownload( _id );
+
             cert = certDownload.getCertificate();
             PublicKey publicKey = cert.getPublicKey();
             privateKey = keyStore.getPrivateKey(publicKey);
@@ -1007,18 +1013,18 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             privateKey = keyStore.getPrivateKey(publicKey);
         }
         new ExportCertificate(cert, privateKey).setVisible(true);
-        WaitDialog.hideDialog();
+
     }//GEN-LAST:event_btnExportActionPerformed
 
     private void btnRenewActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRenewActionPerformed
         // TODO add your handling code here:
-        WaitDialog.showDialog();
+
         if (SystemStatus.ISONLINE) {
             
             //check if connection is fine.
             if( !isPing() ){
                 JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
-                WaitDialog.hideDialog();
+
                 return;
             }
 
@@ -1039,17 +1045,17 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 JOptionPane.showMessageDialog(this, "You haven't selected any certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
             }
         }
-        WaitDialog.hideDialog();
+
     }//GEN-LAST:event_btnRenewActionPerformed
 
     private void btnRevokeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRevokeActionPerformed
         // TODO add your handling code here:
         if (SystemStatus.ISONLINE) {
-            WaitDialog.showDialog();
+
             //check if connection is fine.
             if( !isPing() ){
                 JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
-                WaitDialog.hideDialog();
+
                 return;
             }
 
@@ -1062,7 +1068,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                     JOptionPane.showMessageDialog(this, "You haven't selected any certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
                 }
             }
-            WaitDialog.hideDialog();
+
         } else {
             JOptionPane.showMessageDialog(this, "The certificate can not be revoked by offline. Please do it online.", "No offline certificate revocation", JOptionPane.INFORMATION_MESSAGE);
         }
@@ -1072,11 +1078,11 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private void btnDeleteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDeleteActionPerformed
         // TODO add your handling code here:
         if (SystemStatus.ISONLINE) {
-            WaitDialog.showDialog();
+
             //check if connection is fine.
             if( !isPing() ){
                 JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
-                WaitDialog.hideDialog();
+
                 return;
             }
             
@@ -1085,7 +1091,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             } else {
                 JOptionPane.showMessageDialog(this, "You haven't selected any certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
             }
-            WaitDialog.hideDialog();
+
         } else {
             if (this.jComboBox1.getSelectedIndex() != -1) {
                 new OffLineConfirmation(this, "Remove", "Are you sure you want to remove the certificate with the following details?", this.jComboBox1.getSelectedIndex(), offLineCertInfo).setVisible(true);
@@ -1150,7 +1156,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     private void btnInstallActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnInstallActionPerformed
         // TODO add your handling code here:
-        WaitDialog.showDialog();
+
         CoGProperties props = CoGProperties.getDefault();
         String certPemFile = props.getUserCertFile();
         String keyPemFile = props.getUserKeyFile();
@@ -1167,7 +1173,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             //check if connection is fine.
             if( !isPing() ){
                 JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
-                WaitDialog.hideDialog();
+
                 return;
             }
 
@@ -1221,7 +1227,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             }
         }
 
-        WaitDialog.hideDialog();
+
 
     }//GEN-LAST:event_btnInstallActionPerformed
 
@@ -1299,8 +1305,18 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     private void btnRefreshActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRefreshActionPerformed
         // TODO add your handling code here:
+        WaitDialog.showDialog("Refresh");
+        int index = jComboBox1.getSelectedIndex();
         this.refreshOnLine();
+        jComboBox1.setSelectedIndex(index);
+        WaitDialog.hideDialog();
+
     }//GEN-LAST:event_btnRefreshActionPerformed
+
+    private void btnRefreshMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnRefreshMouseEntered
+        // TODO add your handling code here:
+         setMOD("Retrieve certificate information from the CA Server and update the status of the certificates stored in the Certificate Wizard");
+    }//GEN-LAST:event_btnRefreshMouseEntered
 
     private boolean isSuccessPemFiles(X509Certificate certificate, PrivateKey privateKey){
         CoGProperties props = CoGProperties.getDefault();
