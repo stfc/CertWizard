@@ -11,6 +11,7 @@
 
 package uk.ngs.certwizard.gui;
 
+import java.awt.Dimension;
 import java.net.URL;
 import java.awt.Toolkit;
 import java.io.File;
@@ -37,6 +38,11 @@ public class ExportCertificate extends javax.swing.JFrame {
     /** Creates new form ExportCertificate */
     public ExportCertificate( X509Certificate certificate, PrivateKey privateKey ) {
         initComponents();
+        Dimension dimension = Toolkit.getDefaultToolkit().getScreenSize();
+        int x = (int) ((dimension.getWidth() - this.getWidth()) / 2);
+        int y = (int) ((dimension.getHeight() - this.getHeight()) / 2);
+        this.setLocation(x, y);
+        
 
         this.privateKey = privateKey;
         this.certificate = certificate;
