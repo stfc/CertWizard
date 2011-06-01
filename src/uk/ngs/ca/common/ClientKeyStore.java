@@ -38,7 +38,7 @@ import uk.ngs.ca.tools.property.SysProperty;
  *
  * @author xw75
  */
-public class ClientKeyStore {
+public final class ClientKeyStore {
 
     // keyStore represents shared mutable state and so must by synchronized.
     private KeyStore keyStore;

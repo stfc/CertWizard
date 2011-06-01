@@ -39,28 +39,32 @@ import uk.ngs.ca.tools.property.SysProperty;
  *
  * @author xw75
  */
-public class ClientCertKeyStore {
+public final class ClientCertKeyStore {
 
     private char[] PASSPHRASE = null;
     private static final Logger myLogger = Logger.getLogger(ClientCertKeyStore.class);
+    // certKeyStore represents shared mutable state, so its access must be thread safe.
     private KeyStore certKeyStore = null;
     private static final String PROP_FILE = "/uk/ngs/ca/tools/property/configure.properties";
     private Properties properties = new Properties();
     private final String FILEPATH = ".ca";
-    private String keyStoreFile = null;
+    private String keyStoreFileAbsPath = null;
     private String errorMessage = null;
 
     private static ClientCertKeyStore clientCertKeyStore = null;
 
     public static synchronized ClientCertKeyStore getClientCertKeyStore(char[] passphrase) {
         // Static factory method allows us to choose whether we return the same instance
-        // check if class clientcertkeystore has already been created succesfully,
+        // or create a new instance (easy to remove the if check below so that
+        // each invocation of this method will create/return a new certKeyStore
+        // which replicates the previous public constructor.
+        //
         // (a composite action, i.e. check if null then act, but this is ok
         // provided this method is synchronized). Lets create the keystore only
         // if it has not been created yet or if the password has changed.
-        //if (clientCertKeyStore == null || (passphrase != null & !Arrays.equals(passphrase,clientCertKeyStore.PASSPHRASE))) {
+        if (clientCertKeyStore == null || (passphrase != null && !Arrays.equals(passphrase,clientCertKeyStore.PASSPHRASE))) {
             clientCertKeyStore = new ClientCertKeyStore(passphrase);
-        //}
+        }
         return clientCertKeyStore;
     }
 
@@ -76,9 +80,9 @@ public class ClientCertKeyStore {
         setupCertKeyStoreFile(passphrase);
     }*/
 
-    public KeyStore getCertKeyStore() {
+    /*public KeyStore getCertKeyStore() {
         return certKeyStore;
-    }
+    }*/
 
     private void init() {
         myLogger.debug("[ClientKeyStore] init...");
@@ -122,42 +126,35 @@ public class ClientCertKeyStore {
             new File(homePath).mkdir();
         }
         homePath = homePath + System.getProperty("file.separator") + value;
-        keyStoreFile = homePath;
+        this.keyStoreFileAbsPath = homePath;
         FileInputStream fis = null;
         FileOutputStream fos = null;
         try {
-            if (new File(homePath).exists()) {
-                fis = new FileInputStream(homePath);
+            // if certkeystore already exists, load it
+            if (new File(this.keyStoreFileAbsPath).exists()) {
+                fis = new FileInputStream(this.keyStoreFileAbsPath);
                 certKeyStore.load(fis, passphrase);
             } else {
+                // otherwise create an empty keystore protected by passphrase
                 certKeyStore.load(null, null);
-                File f = new File(homePath);
+                File f = new File(this.keyStoreFileAbsPath);
                 fos = new FileOutputStream(f);
                 certKeyStore.store(fos, PASSPHRASE);
-
             }
         } catch (Exception ep) {
             ep.printStackTrace();
             errorMessage = ep.getMessage();
         } finally {
-            try {
-                if(fis !=null)fis.close();
-            } catch (IOException ex) {
-                java.util.logging.Logger.getLogger(ClientCertKeyStore.class.getName()).log(Level.SEVERE, null, ex);
-            }
-             try {
-                if(fos !=null)fos.close();
-            } catch (IOException ex) {
-                java.util.logging.Logger.getLogger(ClientCertKeyStore.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            try {if(fis !=null)fis.close();} catch (IOException ex) {}
+            try {if(fos !=null)fos.close();} catch (IOException ex) {}
         }
     }
 
-    public String getErrorMessage(){
+    public synchronized String getErrorMessage(){
         return errorMessage;
     }
 
-    public String getAlias( PublicKey publicKey ){
+    public synchronized String getAlias( PublicKey publicKey ){
         String alias = null;
         try {
             Enumeration aliases = certKeyStore.aliases();
@@ -179,7 +176,7 @@ public class ClientCertKeyStore {
 
     }
 
-    public boolean removeEntry( String alias ){
+    public synchronized boolean removeEntry( String alias ){
         try{
         certKeyStore.deleteEntry(alias);
         reStore();
@@ -190,7 +187,7 @@ public class ClientCertKeyStore {
         }
     }
 
-    public boolean addNewKey(PrivateKey privateKey, X509Certificate cert) {
+    public synchronized boolean addNewKey(PrivateKey privateKey, X509Certificate cert) {
         if (!isExistKey(privateKey, cert)) {
             X509Certificate[] chain = new X509Certificate[1];
             chain[ 0] = cert;
@@ -209,10 +206,10 @@ public class ClientCertKeyStore {
         }
     }
 
-    private boolean reStore() {
+    private synchronized boolean reStore() {
         FileOutputStream fos = null;
         try {
-            File f = new File(keyStoreFile);
+            File f = new File(keyStoreFileAbsPath);
             fos = new FileOutputStream(f);
             certKeyStore.store(fos, PASSPHRASE);
             return true;
@@ -237,16 +234,12 @@ public class ClientCertKeyStore {
             myLogger.error("[ClientCertKeyStore] certificate error: " + ce.getMessage());
             return false;
         } finally {
-            if(fos != null) try {
-                fos.close();
-            } catch (IOException ex) {
-                java.util.logging.Logger.getLogger(ClientCertKeyStore.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            if(fos != null) try {fos.close();} catch (IOException ex) {}
         }
 
     }
 
-    private boolean isExistKey(PrivateKey privateKey, X509Certificate cert) {
+    private synchronized boolean isExistKey(PrivateKey privateKey, X509Certificate cert) {
         boolean isExist = false;
         try {
             Enumeration aliases = certKeyStore.aliases();

@@ -82,7 +82,7 @@ public class SysProperty {
      */
     public static String getLocalCertXMLFilePath(String key, char[] passphrase) {
         myLogger.debug("[SysProperty] getLocalXMLFilePath ...");
-        File myFile;
+        //File myFile;
         if (!SysProperty.isInitialized) {
             SysProperty.init();
         }
@@ -99,7 +99,7 @@ public class SysProperty {
             String _homePath = homePath + System.getProperty("file.separator") + value;
             try {
                 new File(_homePath).createNewFile();
-                boolean result = SysProperty.createTemplateFile(_homePath, passphrase);
+                //boolean result = SysProperty.createTemplateFile(_homePath, passphrase);
             } catch (IOException ioe) {
                 ioe.printStackTrace();
                 myLogger.error("[SysProperty] failed to create file ");
