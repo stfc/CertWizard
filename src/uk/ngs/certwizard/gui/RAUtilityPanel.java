@@ -75,7 +75,7 @@ public class RAUtilityPanel extends javax.swing.JPanel {
 
             String _pswdProperty = SysProperty.getValue("uk.ngs.ca.passphrase.property");
             String _pswd = System.getProperty(_pswdProperty);
-            ClientKeyStore clientKeyStore = new ClientKeyStore( _pswd.toCharArray() );
+            ClientKeyStore clientKeyStore = ClientKeyStore.getClientkeyStore( _pswd.toCharArray() );
             CertificateDownload certDownload = new CertificateDownload( id );
             X509Certificate _cert = certDownload.getCertificate();
             PublicKey _publicKey = _cert.getPublicKey();
@@ -472,8 +472,9 @@ public class RAUtilityPanel extends javax.swing.JPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private boolean isPing(){
-        PingService pingService = new PingService();
-        return pingService.isPingService();
+        //PingService pingService = new PingService();
+        //return pingService.isPingService();
+        return PingService.getPingService().isPingService();
     }
 
     private void btnCertSearchActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCertSearchActionPerformed

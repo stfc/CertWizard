@@ -13,11 +13,12 @@ import org.restlet.Client;
 import org.restlet.data.Protocol;
 import org.restlet.data.Reference;
 import org.restlet.data.Form;
-import org.restlet.data.Response;
-import org.restlet.data.Request;
+import org.restlet.Response;
+import org.restlet.Request;
 import org.restlet.data.Method;
 
 import org.restlet.data.Status;
+import org.restlet.ext.xml.DomRepresentation;
 import uk.ngs.ca.common.ClientHostName;
 import uk.ngs.ca.common.EncryptUtil;
 import uk.ngs.ca.tools.property.SysProperty;
@@ -58,7 +59,7 @@ public class ResourcesPublicKey {
 
             Response response = c.handle(request);
             if( response.getStatus().equals(Status.SUCCESS_OK)){
-                _document = response.getEntityAsDom().getDocument();
+                _document = new DomRepresentation(response.getEntity()).getDocument(); //response.getEntityAsDom().getDocument();
                 this.document = _document;
                 isExist = true;
             }else{

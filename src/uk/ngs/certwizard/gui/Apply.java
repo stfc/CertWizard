@@ -294,8 +294,9 @@ public class Apply extends javax.swing.JFrame {
     }//GEN-LAST:event_btnCancelActionPerformed
 
     private boolean isPing(){
-        PingService pingService = new PingService();
-        return pingService.isPingService();
+        //PingService pingService = new PingService();
+        //return pingService.isPingService();
+        return PingService.getPingService().isPingService();
     }
 
     private void btnApplyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnApplyActionPerformed

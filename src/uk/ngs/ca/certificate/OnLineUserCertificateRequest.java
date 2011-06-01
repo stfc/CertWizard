@@ -48,7 +48,7 @@ public class OnLineUserCertificateRequest extends Observable{
      */
     public boolean doOnLineCSR() {
         if (getError().equals("")) {
-            ClientKeyStore clientKeyStore = new ClientKeyStore(this.PASSPHRASE);
+            ClientKeyStore clientKeyStore = ClientKeyStore.getClientkeyStore(this.PASSPHRASE);
             String alias = clientKeyStore.createNewKeyPair();
             this.Alias = alias;
             PublicKey publicKey = clientKeyStore.getPublicKey(alias);

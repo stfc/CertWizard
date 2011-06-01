@@ -178,7 +178,8 @@ public class ImportCertificate extends Observable {
                 X509Certificate x509_cert = (X509Certificate)_cert;
                 PrivateKey priv_key = (PrivateKey)_key;
 
-                ClientKeyStore clientKeyStore = new ClientKeyStore(this.keyStorePassphrase);
+                //ClientKeyStore clientKeyStore = new ClientKeyStore(this.keyStorePassphrase);
+                ClientKeyStore clientKeyStore = ClientKeyStore.getClientkeyStore(this.keyStorePassphrase);
                 String _dn = x509_cert.getSubjectDN().getName();
                 String _value = SysProperty.getValue("ngsca.cert.o");
 
@@ -216,7 +217,7 @@ public class ImportCertificate extends Observable {
                     if (clientKeyStore.addNewKey(priv_key, x509_cert)) {
                         this.Alias = clientKeyStore.getAlias(x509_cert);
 
-                        ClientCertKeyStore clientCertKeyStore = new ClientCertKeyStore(keyStorePassphrase);
+                        ClientCertKeyStore clientCertKeyStore = ClientCertKeyStore.getClientCertKeyStore(keyStorePassphrase);
                         if (clientCertKeyStore.addNewKey(priv_key, x509_cert)) {
                             this.Message = "The keys have been added up in local keyStore and cert KeyStore files.";
                             isSuccess = true;

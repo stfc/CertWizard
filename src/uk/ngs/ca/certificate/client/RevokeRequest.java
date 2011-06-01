@@ -12,13 +12,12 @@ import org.restlet.data.Protocol;
 import org.restlet.data.Reference;
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
-import org.restlet.data.Response;
-import org.restlet.data.Request;
+import org.restlet.Response;
+import org.restlet.Request;
 import org.restlet.data.Method;
 import org.restlet.data.Status;
 import org.restlet.data.Parameter;
-import org.restlet.resource.DomRepresentation;
-import org.restlet.resource.Representation;
+
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.stream.StreamResult;
@@ -30,6 +29,8 @@ import java.security.PrivateKey;
 import java.math.BigInteger;
 
 import java.util.Date;
+import org.restlet.ext.xml.DomRepresentation;
+import org.restlet.representation.Representation;
 
 import uk.ngs.ca.common.ClientHostName;
 import uk.ngs.ca.tools.property.SysProperty;
@@ -199,7 +200,7 @@ public class RevokeRequest {
     private String _getFormattedMessage(Response response) {
 
         try {
-            Document _document = response.getEntityAsDom().getDocument();
+            Document _document = new DomRepresentation(response.getEntity()).getDocument(); //response.getEntityAsDom().getDocument();
             // transform the Document into a String
             DOMSource domSource = new DOMSource(_document);
             TransformerFactory tf = TransformerFactory.newInstance();

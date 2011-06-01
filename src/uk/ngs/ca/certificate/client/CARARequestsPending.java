@@ -8,8 +8,8 @@ import org.restlet.Client;
 import org.restlet.data.Protocol;
 import org.restlet.data.Reference;
 import org.restlet.data.Form;
-import org.restlet.data.Response;
-import org.restlet.data.Request;
+import org.restlet.Response;
+import org.restlet.Request;
 import org.restlet.data.Method;
 import org.restlet.data.Status;
 import org.restlet.data.Parameter;
@@ -27,6 +27,7 @@ import java.security.PrivateKey;
 import java.math.BigInteger;
 
 import java.util.Date;
+import org.restlet.ext.xml.DomRepresentation;
 
 import uk.ngs.ca.certificate.management.RequestPendingInfo;
 import uk.ngs.ca.common.ClientHostName;
@@ -279,7 +280,7 @@ public class CARARequestsPending {
             if (response.getStatus().equals(Status.SUCCESS_OK)) {
                 //200
                 try {
-                    document = response.getEntityAsDom().getDocument();
+                    document = new DomRepresentation(response.getEntity()).getDocument(); //response.getEntityAsDom().getDocument();
                 } catch (Exception ep) {
                     ep.printStackTrace();
                     return false;

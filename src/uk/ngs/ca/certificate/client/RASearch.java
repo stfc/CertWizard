@@ -19,13 +19,14 @@ import org.restlet.Client;
 import org.restlet.data.Protocol;
 import org.restlet.data.Reference;
 import org.restlet.data.Form;
-import org.restlet.data.Response;
-import org.restlet.data.Request;
+import org.restlet.Response;
+import org.restlet.Request;
 import org.restlet.data.Method;
 
 
 import org.restlet.data.Parameter;
 import org.restlet.data.Status;
+import org.restlet.ext.xml.DomRepresentation;
 import org.w3c.dom.NodeList;
 import uk.ngs.ca.certificate.management.RASearchInfo;
 import uk.ngs.ca.common.ClientHostName;
@@ -160,7 +161,7 @@ public class RASearch {
             if (response.getStatus().equals(Status.SUCCESS_OK)) {
                 //200
                 try {
-                    this.document = response.getEntityAsDom().getDocument();
+                    this.document = new DomRepresentation(response.getEntity()).getDocument(); //response.getEntityAsDom().getDocument();
                 } catch (Exception ep) {
                     ep.printStackTrace();
                     return false;

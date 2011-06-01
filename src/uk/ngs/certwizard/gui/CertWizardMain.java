@@ -19,7 +19,6 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.WindowConstants;
 import org.globus.common.CoGProperties;
-import uk.ngs.ca.certificate.management.CertificateCSRInfo;
 import uk.ngs.ca.tools.property.SysProperty;
 
 /**
@@ -28,17 +27,17 @@ import uk.ngs.ca.tools.property.SysProperty;
  */
 public class CertWizardMain implements Observer{
 
-    private CardLayout cardLayout;
+    //private CardLayout cardLayout;
     private JFrame frame;
     private JTabbedPane jp;
     private JPanel getCertificatePanel;
-    private JPanel settingsPanel;
-    private JPanel useCertificatePanel;
+    //private JPanel settingsPanel;
+    //private JPanel useCertificatePanel;
 
-    private ComponentSettingsPanel settingsComponentPanel;
+    //private ComponentSettingsPanel settingsComponentPanel;
 
-    private RAOperationPanel raopPanel = null;
-    private RAUtilityPanel rautilPanel = null;
+    //private RAOperationPanel raopPanel = null;
+    //private RAUtilityPanel rautilPanel = null;
 
 
     public CertWizardMain() {
@@ -54,8 +53,13 @@ public class CertWizardMain implements Observer{
             System.exit(0);
         }
 
-        String message = SysProperty.setupTrustStore();
-        if (message == null) {
+        // TODO - determine how the Apache http/https connector (org.apache.httpclient.jar)
+        // determines the proxy settings to use. 
+        //System.out.println("http.proxyHost "+System.getProperty("http.proxyHost"));
+        //System.out.println("http.proxyPort "+System.getProperty("http.proxyPort"));
+
+        try{
+            SysProperty.setupTrustStore(); // throws IllegalStateException if prob
             String trustStoreFile = SysProperty.getValue("ngsca.truststore.file");
             String trustStorePath = System.getProperty("user.home");
             trustStorePath = trustStorePath + System.getProperty("file.separator") + ".ca";
@@ -64,8 +68,15 @@ public class CertWizardMain implements Observer{
             String password = SysProperty.getValue("ngsca.cert.truststore.password");
             System.setProperty("javax.net.ssl.trustStore", trustStorePath);
             System.setProperty("javax.net.ssl.trustStorePassword", password);
-        } else {
-            JOptionPane.showMessageDialog(null,message,"Error", JOptionPane.ERROR_MESSAGE);
+
+            // check files exist and are readable
+            File truststore = new File(trustStorePath);
+            if(!truststore.exists() || !truststore.canRead()){
+                throw new IllegalStateException("Trustore cannot be read"); 
+            }
+
+        } catch(Exception ex) {
+            JOptionPane.showMessageDialog(null,ex.getMessage(),"Error", JOptionPane.ERROR_MESSAGE);
             System.exit(0);
         }
 
@@ -80,11 +91,10 @@ public class CertWizardMain implements Observer{
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
         jp = new JTabbedPane();
-        getCertificatePanel = new JPanel();
-        settingsPanel = new JPanel();
-        useCertificatePanel = new JPanel();
-
-        cardLayout = new CardLayout();
+        //getCertificatePanel = new JPanel();
+        //settingsPanel = new JPanel();
+        //useCertificatePanel = new JPanel();
+        //cardLayout = new CardLayout();
 
         initComponents();
 
@@ -149,6 +159,10 @@ public class CertWizardMain implements Observer{
 
 
     private void initComponents() {
+
+        getCertificatePanel = new JPanel();
+        JPanel settingsPanel = new JPanel();
+        JPanel useCertificatePanel = new JPanel();
         jp.addTab("Apply For/Manage Your Certificate", getCertificatePanel);
         jp.addTab("Use Your Installed Certificate", useCertificatePanel);
         jp.addTab("Setup", settingsPanel);
@@ -161,16 +175,15 @@ public class CertWizardMain implements Observer{
         useCertificatePanel.add(doActions);
 
      
-        getCertificatePanel.setLayout(cardLayout);
-       
-        getCertificatePanel.addComponentListener(new ComponentAdapter() {
-
-            public void componentShown(ComponentEvent evt) {
-                getCertPanelComponentShown(evt);
-            }
-        });
+        getCertificatePanel.setLayout(new CardLayout());
+        getCertificatePanel.add(new ContactServerPanel(this), "ContactServer");
+        //SystemStatus.ISONLINE = uk.ngs.ca.certificate.client.PingService.getPingService().isPingService();
 
         if (isExistPemFiles()) {
+            jp.setSelectedComponent(useCertificatePanel);
+        }
+
+        /*if (isExistPemFiles()) {
             jp.setSelectedComponent(useCertificatePanel);
         } else {
             String _property = SysProperty.getValue("uk.ngs.ca.immegration.password.property");
@@ -180,8 +193,18 @@ public class CertWizardMain implements Observer{
             } else {
                 cardLayout.show(getCertificatePanel, "MainWindowPanel");
             }
-        }
+        }*/
 
+
+       
+        /*getCertificatePanel.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentShown(ComponentEvent evt) {
+                getCertPanelComponentShown(evt);
+            }
+        });*/
+
+        
         
         // Second, add componentListeners so that the panel's can be refreshed
         // when the appropriate tab is shown.
@@ -212,33 +235,37 @@ public class CertWizardMain implements Observer{
         return this.getCertificatePanel;
     }
 
-    //test only
     public void update( Observable o, Object obj ){
-/*  */
+
+    }
+
+    
+    //test only
+    /*public void update( Observable o, Object obj ){
 //comment it temperately for real ca server test.
         String _className = o.getClass().getSimpleName();
         if( _className.equals("CertWizardObservable") ){
             CertificateCSRInfo _info = (CertificateCSRInfo)obj;
             String _role = _info.getRole();
             
-            if( _role.equals("RA Operator") || _role.equals("CA Operator")){
-/*
-                WaitDialog.showDialog();
-                if( jp.getTabCount() != 5 ){
-                    String _id = _info.getId();
-                    CertificateDownload certDownload = new CertificateDownload(_id);
-                    if( ! certDownload.isCertificateExpired() ){
-                        jp.addTab("RA Operation", new RAOperationPanel( _info ));
-
-                        jp.addTab("RA Utilities", new RAUtilityPanel( _info ));
-                    }                    
-                }else{
-                    jp.remove( 4 );
-                    jp.remove(3);
-                }
-
-                WaitDialog.hideDialog();
- */
+//            if( _role.equals("RA Operator") || _role.equals("CA Operator")){
+//
+//                WaitDialog.showDialog();
+//                if( jp.getTabCount() != 5 ){
+//                    String _id = _info.getId();
+//                    CertificateDownload certDownload = new CertificateDownload(_id);
+//                    if( ! certDownload.isCertificateExpired() ){
+//                        jp.addTab("RA Operation", new RAOperationPanel( _info ));
+//
+//                        jp.addTab("RA Utilities", new RAUtilityPanel( _info ));
+//                    }
+//                }else{
+//                    jp.remove( 4 );
+//                    jp.remove(3);
+//                }
+//
+//                WaitDialog.hideDialog();
+//
 //================///commented out as RA Utils tab is currently not supported!
 
 //                WaitDialog.showDialog();
@@ -269,10 +296,9 @@ public class CertWizardMain implements Observer{
                 }
             }
         }
-/*   */
-    }
+    }*/
 
-    private void getCertPanelComponentShown(ComponentEvent evt) {
+    /*private void getCertPanelComponentShown(ComponentEvent evt) {
         String _property = SysProperty.getValue("uk.ngs.ca.immegration.password.property");
         String _passphrase = System.getProperty(_property);
 
@@ -286,7 +312,7 @@ public class CertWizardMain implements Observer{
         } else {
             cardLayout.show(getCertificatePanel, "MainWindowPanel");
         }
-    }
+    }*/
 
     private boolean isExistPemFiles() {
         CoGProperties props = CoGProperties.getDefault();

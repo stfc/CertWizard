@@ -9,11 +9,9 @@ import org.restlet.data.Protocol;
 import org.restlet.data.Reference;
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
-import org.restlet.data.Response;
-import org.restlet.data.Request;
+import org.restlet.Response;
+import org.restlet.Request;
 import org.restlet.data.Method;
-import org.restlet.resource.DomRepresentation;
-import org.restlet.resource.Representation;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -22,6 +20,8 @@ import java.io.IOException;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import org.restlet.ext.xml.DomRepresentation;
+import org.restlet.representation.Representation;
 
 import uk.ngs.ca.tools.property.SysProperty;
 import uk.ngs.ca.certificate.management.CertificateRequestManager;
@@ -59,7 +59,7 @@ public class UserCertificateRequest {
 
         certRequestManager = new CertificateRequestManager(PASSPHRASE);
 
-        ClientKeyStore my_keyStore = new ClientKeyStore(passphrase);
+        ClientKeyStore my_keyStore = ClientKeyStore.getClientkeyStore(passphrase);
         String a = my_keyStore.createNewKeyPair();
         privateKey = my_keyStore.getPrivateKey(a);
         publicKey = my_keyStore.getPublicKey(a);
@@ -141,7 +141,7 @@ public class UserCertificateRequest {
 
         }else if(_response.getStatus().equals(_response.getStatus().SUCCESS_ACCEPTED)){
             try{
-                ERRORMESSAGE = _response.getEntityAsDom().getText();
+                ERRORMESSAGE = _response.getEntityAsText();
                 return false;
             }catch(Exception ep){
                 ep.printStackTrace();

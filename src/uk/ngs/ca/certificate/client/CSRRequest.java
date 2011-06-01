@@ -8,21 +8,22 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Document;
 
 import org.restlet.Client;
-import org.restlet.resource.DomRepresentation;
-import org.restlet.resource.Representation;
 import org.restlet.data.Protocol;
 import org.restlet.data.Reference;
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
-import org.restlet.data.Response;
-import org.restlet.data.Request;
+import org.restlet.Response;
+import org.restlet.Request;
 import org.restlet.data.Method;
 
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.stream.StreamResult;
+//import javax.xml.transform.dom.DOMSource;
+//import javax.xml.transform.Transformer;
+//import javax.xml.transform.TransformerFactory;
+//import javax.xml.transform.OutputKeys;
+//import javax.xml.transform.stream.StreamResult;
+
+import org.restlet.ext.xml.DomRepresentation;
+import org.restlet.representation.Representation;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
@@ -78,7 +79,7 @@ public class CSRRequest {
         String message = "";
 
         try {
-            Document document = response.getEntityAsDom().getDocument();
+            Document document = new DomRepresentation(response.getEntity()).getDocument(); //response.getEntityAsDom().getDocument();
 //            // transform the Document into a String
 //            DOMSource domSource = new DOMSource(document);
 //            TransformerFactory tf = TransformerFactory.newInstance();

@@ -124,15 +124,15 @@
                                   <Component id="searchEmail" max="32767" attributes="1"/>
                                   <Component id="searchName" alignment="0" pref="221" max="32767" attributes="1"/>
                               </Group>
-                              <EmptySpace pref="21" max="32767" attributes="0"/>
+                              <EmptySpace pref="27" max="32767" attributes="0"/>
                               <Group type="103" groupAlignment="0" attributes="0">
                                   <Component id="jLabel3" min="-2" max="-2" attributes="0"/>
                                   <Component id="jLabel4" min="-2" max="-2" attributes="0"/>
                               </Group>
                               <EmptySpace min="-2" pref="17" max="-2" attributes="0"/>
                               <Group type="103" groupAlignment="0" attributes="0">
-                                  <Component id="searchRA" pref="262" max="32767" attributes="1"/>
-                                  <Component id="searchStatus" alignment="0" pref="262" max="32767" attributes="1"/>
+                                  <Component id="searchRA" pref="267" max="32767" attributes="1"/>
+                                  <Component id="searchStatus" alignment="0" pref="267" max="32767" attributes="1"/>
                               </Group>
                           </Group>
                           <Component id="btnCertSearch" alignment="1" min="-2" max="-2" attributes="0"/>
@@ -320,7 +320,7 @@
                               <EmptySpace type="separate" max="-2" attributes="0"/>
                               <Component id="jLabel6" min="-2" max="-2" attributes="0"/>
                               <EmptySpace min="-2" pref="34" max="-2" attributes="0"/>
-                              <Component id="contactRA" pref="264" max="32767" attributes="0"/>
+                              <Component id="contactRA" pref="272" max="32767" attributes="0"/>
                           </Group>
                           <Component id="btnRASearch" alignment="1" min="-2" max="-2" attributes="0"/>
                       </Group>

@@ -93,7 +93,7 @@ public class RAOperationPanel extends javax.swing.JPanel implements Observer {
             String _pswdProperty = SysProperty.getValue("uk.ngs.ca.passphrase.property");
             String _pswd = System.getProperty(_pswdProperty);
             this.PASSPHRASE = _pswd.toCharArray();
-            ClientKeyStore clientKeyStore = new ClientKeyStore( _pswd.toCharArray() );
+            ClientKeyStore clientKeyStore = ClientKeyStore.getClientkeyStore( _pswd.toCharArray() );
             CertificateDownload certDownload = new CertificateDownload( id );
             X509Certificate _cert = certDownload.getCertificate();
             PublicKey _publicKey = _cert.getPublicKey();
@@ -167,7 +167,7 @@ public class RAOperationPanel extends javax.swing.JPanel implements Observer {
             if( observable.getClass().getSimpleName().equals("OnLineUserCertificateRequest")
                     || observable.getClass().getSimpleName().equals("ImportCertificate") ){
                 String alias = (String)obj;
-                ClientKeyStore clientKeyStore = new ClientKeyStore( this.PASSPHRASE );
+                ClientKeyStore clientKeyStore = ClientKeyStore.getClientkeyStore( this.PASSPHRASE );
                 PublicKey _publicKey = clientKeyStore.getPublicKey(alias);
                 CertificateCSRInfo _certCSRInfo = new CertificateCSRInfo( _publicKey );
                 this.onLineCertInfo.addCertificateCSRInfo(_certCSRInfo);
@@ -177,7 +177,7 @@ public class RAOperationPanel extends javax.swing.JPanel implements Observer {
                 int _index = _message.indexOf("Renew:");
                 if( _index != -1 ){
                     String _alias = _message.substring( 6 );
-                    ClientKeyStore clientKeyStore = new ClientKeyStore( this.PASSPHRASE );
+                    ClientKeyStore clientKeyStore = ClientKeyStore.getClientkeyStore( this.PASSPHRASE );
                     PublicKey _publicKey = clientKeyStore.getPublicKey(_alias);
                     CertificateCSRInfo _certCSRInfo = new CertificateCSRInfo( _publicKey );
                     this.onLineCertInfo.addCertificateCSRInfo(_certCSRInfo);
@@ -550,8 +550,9 @@ public class RAOperationPanel extends javax.swing.JPanel implements Observer {
     }// </editor-fold>//GEN-END:initComponents
 
     private boolean isPing(){
-        PingService pingService = new PingService();
-        return pingService.isPingService();
+        //PingService pingService = new PingService();
+        //return pingService.isPingService();
+        return PingService.getPingService().isPingService();
     }
 
     private void jComboBox1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBox1ActionPerformed

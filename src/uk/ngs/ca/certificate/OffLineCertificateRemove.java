@@ -28,7 +28,7 @@ public class OffLineCertificateRemove {
      * @return true if successful, otherwise false.
      */
     public boolean removeCertificate(){
-        ClientCertKeyStore certKeyStore = new ClientCertKeyStore( PASSPHRASE );
+        ClientCertKeyStore certKeyStore = ClientCertKeyStore.getClientCertKeyStore( PASSPHRASE );
         if( publicKey != null ){
             String alias = certKeyStore.getAlias(publicKey);
             return certKeyStore.removeEntry(alias);

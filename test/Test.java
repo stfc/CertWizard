@@ -20,8 +20,8 @@ public class Test {
     public static void main(String[] args ){
         java.security.Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 
-        String message = SysProperty.setupTrustStore();
-        if (message == null) {
+        try {
+            SysProperty.setupTrustStore(); // throws IllegalStateException if problem.
             String trustStoreFile = SysProperty.getValue("ngsca.truststore.file");
             String trustStorePath = System.getProperty("user.home");
             trustStorePath = trustStorePath + System.getProperty("file.separator") + ".ca";
@@ -30,9 +30,9 @@ public class Test {
             String password = SysProperty.getValue("ngsca.cert.truststore.password");
             System.setProperty("javax.net.ssl.trustStore", trustStorePath);
             System.setProperty("javax.net.ssl.trustStorePassword", password);
-//            System.setProperty("javax.net.ssl.trustStoreType", "PKCS12");
-        } else {
-            javax.swing.JOptionPane.showMessageDialog(null,message,"Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+            // System.setProperty("javax.net.ssl.trustStoreType", "PKCS12");
+        } catch(Exception ex) {
+            javax.swing.JOptionPane.showMessageDialog(null,ex.getMessage(),"Error", javax.swing.JOptionPane.ERROR_MESSAGE);
             System.exit(0);
         }
 
@@ -43,17 +43,17 @@ public class Test {
             Object obj = pemReader.readObject();
             PKCS10CertificationRequest request = (PKCS10CertificationRequest) obj;
             pemReader.close();
-//System.out.println("request = " + request);
+            //System.out.println("request = " + request);
             String keyalg = (((RSAPublicKey)request.getPublicKey()).getAlgorithm());
             String sigalg = (request.getSignatureAlgorithm().toString());
-String a = request.getPublicKey().getAlgorithm();
-a = "DSA".equals(a) ? "SHA1withDSA" : "MD5withRSA";
+            String a = request.getPublicKey().getAlgorithm();
+            a = "DSA".equals(a) ? "SHA1withDSA" : "MD5withRSA";
 
-            System.out.println("public key alg = " + keyalg);
-            System.out.println("signature alg = " + sigalg);
-            System.out.println("a = " + a);
-//            System.out.println(((RSAPublicKey)request.getPublicKey()).toString());
-//            this.modulus.setText(((RSAPublicKey)request.getPublicKey()).getModulus().bitLength());
+            //System.out.println("public key alg = " + keyalg);
+            //System.out.println("signature alg = " + sigalg);
+            //System.out.println("a = " + a);
+            //  System.out.println(((RSAPublicKey)request.getPublicKey()).toString());
+            //  this.modulus.setText(((RSAPublicKey)request.getPublicKey()).getModulus().bitLength());
         } catch (Exception ep) {
             ep.printStackTrace();
         }

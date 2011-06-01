@@ -91,8 +91,9 @@ public class OnLineConfirmation extends javax.swing.JFrame {
     }
 
     private boolean isPing(){
-        PingService pingService = new PingService();
-        return pingService.isPingService();
+        //PingService pingService = new PingService();
+        //return pingService.isPingService();
+        return PingService.getPingService().isPingService();
     }
 
     /** This method is called from within the constructor to

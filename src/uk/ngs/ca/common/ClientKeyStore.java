@@ -12,9 +12,10 @@ import java.security.NoSuchProviderException;
 import java.security.cert.X509Certificate;
 import java.security.KeyPair;
 import java.security.KeyStoreException;
+import java.util.Arrays;
 
 import java.util.Enumeration;
-import java.util.Vector;
+//import java.util.Vector;
 import java.util.Date;
 
 import java.io.InputStream;
@@ -22,6 +23,9 @@ import java.io.IOException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.util.ArrayList;
+import java.util.List;
+//import java.util.logging.Level;
 
 import org.apache.log4j.Logger;
 
@@ -36,39 +40,68 @@ import uk.ngs.ca.tools.property.SysProperty;
  */
 public class ClientKeyStore {
 
-    KeyStore keyStore;
-    static final Logger myLogger = Logger.getLogger(ClientKeyStore.class);
-    static final String PROP_FILE = "/uk/ngs/ca/tools/property/configure.properties";
+    // keyStore represents shared mutable state and so must by synchronized.
+    private KeyStore keyStore;
+    private static final Logger myLogger = Logger.getLogger(ClientKeyStore.class);
+    private static final String PROP_FILE = "/uk/ngs/ca/tools/property/configure.properties";
     private Properties properties = new Properties();
     private final String FILEPATH = ".ca";
     private String keyStoreFile = null;
-    char[] PASSPHRASE;
-    private String Alias = "Client Certificate";
+    private char[] PASSPHRASE;
+    //private String Alias = "Client Certificate";
     private String errorMessage = null;
 
-    public ClientKeyStore(char[] passphrase) {
+   
+    private static ClientKeyStore clientKeyStore = null;
+
+    public static synchronized ClientKeyStore getClientkeyStore(char[] passphrase) {
+        // Static factory method allows us to choose whether we return the same instance
+        // or create a new instance (easy to remove the if check below so that
+        // each invocation of this method will create/return a new keyStore
+        // which replicates the previous public constructor.
+        //
+        // check if class keyStore has already been created succesfully,
+        // (a composite action, i.e. check if null then act, but this is ok
+        // provided this method is synchronized). Lets create the keystore only
+        // if it has not been created yet or if the password has changed.
+        if (clientKeyStore == null || (passphrase != null && !Arrays.equals(passphrase,clientKeyStore.PASSPHRASE))) {
+            clientKeyStore = new ClientKeyStore(passphrase);
+        }
+        return clientKeyStore;
+    }
+
+    // force non-instantiability with private constructor
+    private ClientKeyStore(char[] passphrase)  {
         PASSPHRASE = passphrase;
         init();
         setupKeyStoreFile(passphrase);
     }
+    
 
-    public KeyStore getKeyStore() {
-        return keyStore;
+    /*public ClientKeyStore(char[] passphrase)  {
+        PASSPHRASE = passphrase;
+        init();
+        setupKeyStoreFile(passphrase);
+    }*/
+
+    public String getErrorMessage(){
+        return this.errorMessage;
     }
 
-    public boolean isExistPublicKey(PublicKey publicKey) {
+    public synchronized boolean isExistPublicKey(PublicKey publicKey) {
         boolean isExist = false;
         try {
-            Enumeration aliases = keyStore.aliases();
-            Vector vector = new Vector();
+            Enumeration aliases = this.keyStore.aliases();
+            List vector = new ArrayList(0);
+            //Vector vector = new Vector();
             while (aliases.hasMoreElements()) {
                 String alias = (String) aliases.nextElement();
-                if (keyStore.isKeyEntry(alias)) {
-                    vector.addElement(keyStore.getCertificate(alias));
+                if (this.keyStore.isKeyEntry(alias)) {
+                    vector.add(this.keyStore.getCertificate(alias));
                 }
             }
             for (int i = 0; i < vector.size(); i++) {
-                X509Certificate cert = (X509Certificate) vector.elementAt(i);
+                X509Certificate cert = (X509Certificate) vector.get(i); //vector.elementAt(i);
                 PublicKey _publicKey = cert.getPublicKey();
                 if (publicKey.equals(_publicKey)) {
                     isExist = true;
@@ -81,19 +114,19 @@ public class ClientKeyStore {
         }
     }
 
-    public boolean isExistPrivateKey(PrivateKey privateKey) {
+    public synchronized boolean isExistPrivateKey(PrivateKey privateKey) {
         boolean isExist = false;
         try {
-            Enumeration aliases = keyStore.aliases();
-            Vector vector = new Vector();
+            Enumeration aliases = this.keyStore.aliases();
+            List vector = new ArrayList(0);
             while (aliases.hasMoreElements()) {
                 String alias = (String) aliases.nextElement();
-                if (keyStore.isKeyEntry(alias)) {
-                    vector.addElement((PrivateKey) keyStore.getKey(alias, PASSPHRASE));
+                if (this.keyStore.isKeyEntry(alias)) {
+                    vector.add((PrivateKey) this.keyStore.getKey(alias, PASSPHRASE));
                 }
             }
             for (int i = 0; i < vector.size(); i++) {
-                PrivateKey _privateKey = (PrivateKey) vector.elementAt(i);
+                PrivateKey _privateKey = (PrivateKey) vector.get(i);
                 if (_privateKey.equals(privateKey)) {
                     isExist = true;
                 }
@@ -105,23 +138,23 @@ public class ClientKeyStore {
         }
     }
 
-    public PrivateKey getPrivateKey(PublicKey publicKey) {
+    public synchronized PrivateKey getPrivateKey(PublicKey publicKey) {
         PrivateKey privateKey = null;
         try {
-            Enumeration aliases = keyStore.aliases();
-            Vector vector = new Vector();
+            Enumeration aliases = this.keyStore.aliases();
+            List vector = new ArrayList(0);
             while (aliases.hasMoreElements()) {
                 String alias = (String) aliases.nextElement();
-                if (keyStore.isKeyEntry(alias)) {
-                    vector.addElement(keyStore.getCertificate(alias));
+                if (this.keyStore.isKeyEntry(alias)) {
+                    vector.add(this.keyStore.getCertificate(alias));
                 }
             }
             for (int i = 0; i < vector.size(); i++) {
-                X509Certificate cert = (X509Certificate) vector.elementAt(i);
+                X509Certificate cert = (X509Certificate) vector.get(i);
                 PublicKey _publicKey = cert.getPublicKey();
                 if (publicKey.equals(_publicKey)) {
-                    String _alias = keyStore.getCertificateAlias(cert);
-                    privateKey = (PrivateKey) keyStore.getKey(_alias, PASSPHRASE);
+                    String _alias = this.keyStore.getCertificateAlias(cert);
+                    privateKey = (PrivateKey) this.keyStore.getKey(_alias, PASSPHRASE);
                 }
             }
         } catch (KeyStoreException ke) {
@@ -131,64 +164,62 @@ public class ClientKeyStore {
         }
     }
 
-    public PrivateKey getLatestPrivateKey() {
+    public synchronized PrivateKey getLatestPrivateKey() {
         PrivateKey privateKey = null;
         try {
-            Enumeration aliases = keyStore.aliases();
-            Vector vector = new Vector();
+            Enumeration aliases = this.keyStore.aliases();
+            List vector = new ArrayList(0);
             while (aliases.hasMoreElements()) {
                 String alias = (String) aliases.nextElement();
-                if (keyStore.isKeyEntry(alias)) {
-                    vector.addElement(alias);
+                if (this.keyStore.isKeyEntry(alias)) {
+                    vector.add(alias);
                 }
             }
-            String _alias = (String) vector.elementAt(0);
+            String _alias = (String) vector.get(0);
             long initialValue = new Long(_alias).longValue();
             for (int i = 0; i < vector.size(); i++) {
-                String my_alias = (String) vector.elementAt(i);
+                String my_alias = (String) vector.get(i);
                 long tempValue = new Long(my_alias).longValue();
                 if (initialValue <= tempValue) {
                     initialValue = tempValue;
                 }
             }
-            privateKey = (PrivateKey) keyStore.getKey(new Long(initialValue).toString(), PASSPHRASE);
+            privateKey = (PrivateKey) this.keyStore.getKey(new Long(initialValue).toString(), PASSPHRASE);
 
         } catch (KeyStoreException ke) {
             ke.printStackTrace();
         } finally {
             return privateKey;
         }
-
     }
 
-    public PublicKey getLatestPublicKey() {
+    public synchronized PublicKey getLatestPublicKey() {
         PublicKey publicKey = null;
         try {
-            Enumeration aliases = keyStore.aliases();
-            Vector vector = new Vector();
+            Enumeration aliases = this.keyStore.aliases();
+            List vector = new ArrayList(0);
             while (aliases.hasMoreElements()) {
                 String alias = (String) aliases.nextElement();
-                if (keyStore.isKeyEntry(alias)) {
-                    vector.addElement(alias);
+                if (this.keyStore.isKeyEntry(alias)) {
+                    vector.add(alias);
                 }
             }
-            String _alias = (String) vector.elementAt(0);
+            String _alias = (String) vector.get(0);
             long initialValue = new Long(_alias).longValue();
             for (int i = 0; i < vector.size(); i++) {
-                String my_alias = (String) vector.elementAt(i);
+                String my_alias = (String) vector.get(i);
                 long tempValue = new Long(my_alias).longValue();
                 if (initialValue <= tempValue) {
                     initialValue = tempValue;
                 }
             }
-            X509Certificate cert = (X509Certificate) keyStore.getCertificate(new Long(initialValue).toString());
+            X509Certificate cert = (X509Certificate) this.keyStore.getCertificate(new Long(initialValue).toString());
             publicKey = cert.getPublicKey();
         } catch (KeyStoreException ke) {
             ke.printStackTrace();
         } finally {
             return publicKey;
         }
-
     }
 
     /**
@@ -196,7 +227,7 @@ public class ClientKeyStore {
      *
      * @return alias
      */
-    public String createNewKeyPair() {
+    public synchronized String createNewKeyPair() {
         try {
             KeyPair keyPair = CAKeyPair.getKeyPair();
             PrivateKey privKey = keyPair.getPrivate();
@@ -204,7 +235,7 @@ public class ClientKeyStore {
             X509Certificate[] certs = new X509Certificate[1];
             certs[ 0] = cert;
             String _alias = new Long(new Date().getTime()).toString();
-            keyStore.setKeyEntry(_alias, privKey, PASSPHRASE, certs);
+            this.keyStore.setKeyEntry(_alias, privKey, PASSPHRASE, certs);
             reStore();
             return _alias;
         } catch (Exception ep) {
@@ -213,7 +244,7 @@ public class ClientKeyStore {
         }
     }
 
-    public String getAlias( X509Certificate cert ){
+    public synchronized String getAlias( X509Certificate cert ){
         try{
             return this.keyStore.getCertificateAlias(cert);
         }catch( Exception ep ){
@@ -223,7 +254,7 @@ public class ClientKeyStore {
     }
 
 
-    public boolean addNewKey(PrivateKey privateKey, X509Certificate cert) {
+    public synchronized boolean addNewKey(PrivateKey privateKey, X509Certificate cert) {
         if ((privateKey == null) || (cert == null)) {
             return false;
         }
@@ -236,7 +267,7 @@ public class ClientKeyStore {
         long _alias = new Date().getTime();
         String my_alias = new Long(_alias).toString();
         try {
-            keyStore.setKeyEntry(my_alias, privateKey, PASSPHRASE, chain);
+            this.keyStore.setKeyEntry(my_alias, privateKey, PASSPHRASE, chain);
             reStore();
             return true;
         } catch (Exception ep) {
@@ -245,9 +276,9 @@ public class ClientKeyStore {
         }
     }
 
-    public PublicKey getPublicKey(String alias) {
+    public synchronized PublicKey getPublicKey(String alias) {
         try {
-            X509Certificate cert = (X509Certificate) keyStore.getCertificate(alias);
+            X509Certificate cert = (X509Certificate) this.keyStore.getCertificate(alias);
             return cert.getPublicKey();
         } catch (Exception ep) {
             ep.printStackTrace();
@@ -255,30 +286,29 @@ public class ClientKeyStore {
         }
     }
 
-    public PrivateKey getPrivateKey(String alias) {
+    public synchronized PrivateKey getPrivateKey(String alias) {
         try {
-            return (PrivateKey) keyStore.getKey(alias, PASSPHRASE);
+            return (PrivateKey) this.keyStore.getKey(alias, PASSPHRASE);
         } catch (Exception ep) {
             ep.printStackTrace();
             return null;
         }
     }
 
-    public String getErrorMessage() {
-        return errorMessage;
-    }
+    //public String getErrorMessage() {
+    //    return errorMessage;
+    //}
 
-    public boolean removeKey(PrivateKey privateKey) {
-
+    public synchronized boolean removeKey(PrivateKey privateKey) {
         boolean isSuccess = true;
         try {
             if (isExistPrivateKey(privateKey)) {
-                Enumeration aliases = keyStore.aliases();
+                Enumeration aliases = this.keyStore.aliases();
                 while (aliases.hasMoreElements()) {
                     String alias = (String) aliases.nextElement();
-                    PrivateKey _privateKey = (PrivateKey) keyStore.getKey(alias, PASSPHRASE);
+                    PrivateKey _privateKey = (PrivateKey) this.keyStore.getKey(alias, PASSPHRASE);
                     if (privateKey.equals(_privateKey)) {
-                        keyStore.deleteEntry(alias);
+                       this.keyStore.deleteEntry(alias);
                     }
                 }
                 reStore();
@@ -291,32 +321,43 @@ public class ClientKeyStore {
         }
     }
 
-    private void init() {
+    private void init()  {
         myLogger.debug("[ClientKeyStore] init...");
+        InputStream input =null;
         try {
-            keyStore = PKCS12KeyStoreUnlimited.getInstance();
-            InputStream input = SysProperty.class.getResourceAsStream(PROP_FILE);
+            this.keyStore = PKCS12KeyStoreUnlimited.getInstance();
+            input = SysProperty.class.getResourceAsStream(PROP_FILE);
             properties.load(input);
-            input.close();
+            
         } catch (IOException ioe) {
             ioe.printStackTrace();
             myLogger.error("[ClientKeyStore] Property file is failed to load.");
             System.out.println("[ClientKeyStore]: ioexception = " + ioe.getMessage());
             errorMessage = ioe.getMessage();
+            //throw ioe;
         } catch (KeyStoreException ke) {
             ke.printStackTrace();
             myLogger.error("[ClientKeyStore] failed to create a keyStore: " + ke.getMessage());
             System.out.println("[ClientKeyStore]: keystoreexception = " + ke.getMessage());
-            errorMessage = ke.getMessage();
+            //errorMessage = ke.getMessage();
+            //throw ke;
+
         } catch (NoSuchProviderException ne) {
             ne.printStackTrace();
             myLogger.error("[ClientKeyStore] failed to create a keystore without suitable provider: " + ne.getMessage());
             System.out.println("[ClientKeyStore]: nosuchproviderexception = " + ne.getMessage());
             errorMessage = ne.getMessage();
+            //throw ne;
+        } finally {
+            try {
+               if(input !=null) input.close();
+            } catch (IOException ex) {
+                //java.util.logging.Logger.getLogger(ClientKeyStore.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
     }
 
-    private void setupKeyStoreFile(char[] passphrase) {
+    private void setupKeyStoreFile(char[] passphrase)  {
         myLogger.debug("[ClientKeyStore] get keystore ...");
         String key = "ngsca.key.keystore.file";
         String value = properties.getProperty(key);
@@ -330,12 +371,13 @@ public class ClientKeyStore {
         }
         homePath = homePath + System.getProperty("file.separator") + value;
         keyStoreFile = homePath;
+        FileInputStream fis = null;
         try {
             if (new File(keyStoreFile).exists()) {
-                FileInputStream fis = new FileInputStream(keyStoreFile);
-                keyStore.load(fis, passphrase);
-                fis.close();
-                if (keyStore.size() == 0) {
+                fis = new FileInputStream(keyStoreFile);
+                this.keyStore.load(fis, passphrase);
+                
+                if (this.keyStore.size() == 0) {
                     _createDefaultKeyStore();
                 }
             } else {
@@ -344,11 +386,12 @@ public class ClientKeyStore {
         } catch (Exception ep) {
             ep.printStackTrace();
             errorMessage = ep.getMessage();
-
+        } finally {
+            try {if(fis != null) fis.close();} catch (IOException ex) {}
         }
     }
 
-    public boolean removeCertKeyStore() {
+    public synchronized boolean removeCertKeyStore() {
         String fileName = SysProperty.getValue("ngsca.key.keystore.file");
         String homePath = System.getProperty("user.home");
         homePath = homePath + System.getProperty("file.separator") + ".ca";
@@ -363,7 +406,7 @@ public class ClientKeyStore {
 
     private boolean _createDefaultKeyStore() {
         try {
-            keyStore.load(null, null);
+            this.keyStore.load(null, null);
             reStore();
             return true;
         } catch (Exception ep) {
@@ -374,16 +417,25 @@ public class ClientKeyStore {
     }
 
     private boolean reStore() {
+        FileOutputStream fos = null;
         try {
             File f = new File(keyStoreFile);
-            FileOutputStream fos = new FileOutputStream(f);
-            keyStore.store(fos, PASSPHRASE);
-            fos.close();
+            fos = new FileOutputStream(f);
+            this.keyStore.store(fos, PASSPHRASE);
+            
             return true;
         } catch (Exception ep) {
             errorMessage = ep.getMessage();
             removeCertKeyStore();
             return false;
+        } finally {
+            try {
+                if(fos != null) fos.close();
+            } catch (IOException ex) {
+                //java.util.logging.Logger.getLogger(ClientKeyStore.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
     }
+
+
 }

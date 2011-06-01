@@ -16,9 +16,10 @@ import org.restlet.Client;
 import org.restlet.data.Protocol;
 import org.restlet.data.Reference;
 import org.restlet.data.Form;
-import org.restlet.data.Response;
-import org.restlet.data.Request;
+import org.restlet.Response;
+import org.restlet.Request;
 import org.restlet.data.Method;
+import org.restlet.ext.xml.DomRepresentation;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -50,7 +51,7 @@ public class CAMotd {
             request.setClientInfo(info);
 
             Response response = c.handle(request);
-            Document document = response.getEntityAsDom().getDocument();
+            Document document = new DomRepresentation(response.getEntity()).getDocument(); //response.getEntityAsDom().getDocument();
 
             XPath xpath = XPathFactory.newInstance().newXPath();
             XPathExpression expr = xpath.compile("/CA/Motd/text");
@@ -80,7 +81,7 @@ public class CAMotd {
 
             Response response = c.handle(request);
 
-            Document document = response.getEntityAsDom().getDocument();
+            Document document = new DomRepresentation(response.getEntity()).getDocument(); //response.getEntityAsDom().getDocument();
             // transform the Document into a String
             document.getDocumentElement().normalize();
             NodeList nodeLst = document.getElementsByTagName("certWizard");
@@ -127,7 +128,7 @@ public class CAMotd {
             request.setClientInfo(info);
 
             Response response = c.handle(request);
-            Document document = response.getEntityAsDom().getDocument();
+            Document document = new DomRepresentation(response.getEntity()).getDocument(); //response.getEntityAsDom().getDocument();
 
             XPath xpath = XPathFactory.newInstance().newXPath();
             XPathExpression expr = xpath.compile("/CA/Motd/img");

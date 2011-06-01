@@ -42,11 +42,12 @@ public class SystemStatus {
     }
 
     public boolean isValidPassphrase(char[] passphrase) {
-        uk.ngs.ca.common.ClientKeyStore keyStore = new uk.ngs.ca.common.ClientKeyStore(passphrase);
+        //uk.ngs.ca.common.ClientKeyStore keyStore = new uk.ngs.ca.common.ClientKeyStore(passphrase);
+        ClientKeyStore keyStore = ClientKeyStore.getClientkeyStore(passphrase);
         String _errorMessage = keyStore.getErrorMessage();
 
         if (_errorMessage == null) {
-            uk.ngs.ca.common.ClientCertKeyStore certStore = new uk.ngs.ca.common.ClientCertKeyStore(passphrase);
+            uk.ngs.ca.common.ClientCertKeyStore certStore = uk.ngs.ca.common.ClientCertKeyStore.getClientCertKeyStore(passphrase);
             String __errorMessage = certStore.getErrorMessage();
             if (__errorMessage == null) {
                 return true;

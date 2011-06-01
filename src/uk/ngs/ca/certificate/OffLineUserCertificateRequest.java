@@ -50,7 +50,8 @@ public class OffLineUserCertificateRequest extends Observable {
      */
     public boolean doOffLineCSR() {
         if (getError().equals("")) {
-            ClientKeyStore clientKeyStore = new ClientKeyStore(PASSPHRASE);
+            //ClientKeyStore clientKeyStore = new ClientKeyStore(PASSPHRASE);
+            ClientKeyStore clientKeyStore = ClientKeyStore.getClientkeyStore(PASSPHRASE);
             String alias = clientKeyStore.createNewKeyPair();
             PublicKey publicKey = clientKeyStore.getPublicKey(alias);
             PrivateKey privateKey = clientKeyStore.getPrivateKey(alias);

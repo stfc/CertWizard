@@ -18,7 +18,6 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Properties;
-import java.util.Date;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
@@ -31,9 +30,6 @@ import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.Document;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Element;
-
-import java.security.PrivateKey;
-import java.security.KeyPair;
 
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
@@ -50,7 +46,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 /**
- * This class manages the attributes which recorede in the property file.
+ * This class manages the attributes which recorded in the property file.
  * @author xw75
  */
 public class SysProperty {
@@ -169,50 +165,52 @@ public class SysProperty {
 
     }
 
-    public static String setupTrustStore() {
-        String message = null;
-        X509Certificate cert = null;
-        KeyPair keypair = null;
-        PrivateKey privateKey = null;
-
-        KeyStore keyStore = null;
-
-        final String password = SysProperty.getValue("ngsca.cert.truststore.password");
-
-        X509Certificate[] chain = null;
-
+    /**
+     * Create the truststore.jks file on disk (typically under
+     * '$USER_HOME/.ca/truststore.jks' unless otherwise specified in the
+     * configure.properties file). This KeyStore is used to establish SSL with the
+     * CA rest server.
+     *
+     * @throws IllegalStateException if any problem occurs creating and
+     * deploying the trustore.jks file.
+     */
+    public static void setupTrustStore() {
+          
+        // 1) read the hostcert.pem and write it to the hostCertString String
+        // ==================================================================
+        String hostCertString = null;
+        InputStream certInput = null;
+        Writer writer = null;
+        Reader reader = null;
         try {
-            /*
-             * we need to find out if Bouncycastle supports JKS format.
-             * if we adopt java keystore, the password is limited within 7 characters
-             * if no importing unlimited policy file.
-             */
-            keyStore = KeyStore.getInstance("JKS", "SUN");
-
-            keyStore.load(null, null);
-        } catch (Exception ep) {
-            ep.printStackTrace();
-            message = "error to create a trustStore.";
-        }
-
-        try {
-
-            InputStream certInput = SysProperty.class.getResourceAsStream("/uk/ngs/ca/tools/property/hostcert.pem");
-
-            Writer writer = new StringWriter();
+            certInput = SysProperty.class.getResourceAsStream("/uk/ngs/ca/tools/property/hostcert.pem");
+            writer = new StringWriter();
             char[] buffer = new char[1024];
-            Reader reader = new BufferedReader(new InputStreamReader(certInput, "UTF-8"));
+            reader = new BufferedReader(new InputStreamReader(certInput, "UTF-8"));
             int n;
             while ((n = reader.read(buffer)) != -1) {
                 writer.write(buffer, 0, n);
             }
-            certInput.close();
-            String hostCertString = writer.toString();
+            hostCertString = writer.toString();
+        }
+        catch(Exception ex){
+              throw new IllegalStateException("An error occurred reading into buffer /uk/ngs/ca/tools/property/hostcert.pem", ex);
+        } finally {
+            try{ certInput.close(); }catch(Exception ex){}
+            try{ reader.close(); }catch(Exception ex){}
+            try{ writer.close(); }catch(Exception ex){}
+        }
 
+        // 2) read all the certificates from hostCertString String into chain array
+        // ==================================================================
+        X509Certificate[] chain = null;
+        java.io.StringReader hostCertStringReader = null;
+        try {
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
             DocumentBuilder db = dbf.newDocumentBuilder();
             InputSource is = new InputSource();
-            is.setCharacterStream(new java.io.StringReader(hostCertString));
+            hostCertStringReader = new java.io.StringReader(hostCertString);
+            is.setCharacterStream(hostCertStringReader);
             Document document = db.parse(is);
 
             XPath xpath = XPathFactory.newInstance().newXPath();
@@ -221,62 +219,71 @@ public class SysProperty {
             NodeList nodes = (NodeList) result;
             chain = new X509Certificate[nodes.getLength()];
             for (int i = 0; i < nodes.getLength(); i++) {
-                String _hostCertString = nodes.item( i ).getNodeValue();
-                StringReader certStringReader = new StringReader( _hostCertString );
+                String _hostCertString = nodes.item(i).getNodeValue();
+                StringReader certStringReader = new StringReader(_hostCertString);
                 PEMReader certPemReader = new PEMReader(certStringReader);
-                cert = (X509Certificate) certPemReader.readObject();
-                chain[ i ] = cert;
+                X509Certificate cert = (X509Certificate) certPemReader.readObject();
+                chain[i] = cert;
+                certPemReader.close();
+                certStringReader.close();
+                //System.out.println("cert total: " + i);
             }
-
-
-        } catch (Exception ep) {
-            message = "There is wrong to read /uk/ngs/ca/tools/property/hostcert.pem.";
-            ep.printStackTrace();
+        }catch (Exception ep) {
+            throw new IllegalStateException("An error occurred parsing XML /uk/ngs/ca/tools/property/hostcert.pem.", ep);
+        } finally {
+           try{ hostCertStringReader.close(); }catch(Exception ex){}
         }
-        long _alias = new Date().getTime();
-        String my_alias = new Long(_alias).toString();
-        try {
 
+
+        // 3) create a keystore file used to hold the CA server's hostcert.
+        // and load with the certs using different aliases.
+        // ==================================================================
+        KeyStore keyStore = null;
+         try {
+             //we need to find out if Bouncycastle supports JKS format.
+             //if we adopt java keystore, the password is limited within 7 characters
+             //if no importing unlimited policy file.
+            keyStore = KeyStore.getInstance("JKS", "SUN");
+            keyStore.load(null, null);
             for( int i = 0; i < chain.length; i++ ){
-                long __alias = new Date().getTime();
-                String my__alias = new Long(__alias).toString();
-                //sleep 10mss to get different alias.
-                Thread.sleep(10);
-                keyStore.setCertificateEntry(my__alias, chain[ i ]);
+                keyStore.setCertificateEntry("alias_"+i, chain[ i ]);
             }
         } catch (Exception ep) {
-            ep.printStackTrace();
-            message = "error to restore keypair in the trustStore.";
+            throw new IllegalStateException("Error creating a trustStore.", ep);
         }
 
-        String key = "ngsca.truststore.file";
+        // 4) Always overwrite the file: ~/.ca/truststore.jks with the newly
+        // created keystore.
+        // ==================================================================
+        String key = "ngsca.truststore.file";   // 'truststore.jks'
         String value = SysProperty.getValue(key);
         if (value == null) {
-            message = "There is no trust store file name. Please check out config.properties.";
+            throw new IllegalStateException("There is no trust store file name. Please check out config.properties.");
         }
-
         String homePath = System.getProperty("user.home");
         homePath = homePath + System.getProperty("file.separator") + ".ca";
         homePath = homePath + System.getProperty("file.separator") + value;
 
-        String keyStoreFile = homePath;
-
+        String keyStoreFile = homePath; // ~/.ca/truststore.jks
+        FileOutputStream fos = null;
         try {
-
-            //create a new file.
                 File f = new File(keyStoreFile);
-                FileOutputStream fos = new FileOutputStream(f);
-                keyStore.store(fos, password.toCharArray());
-                fos.close();
+                if(f.exists()){
+                    if(!f.delete()) throw new IllegalStateException("Could not remove existing trustore file");
+                }
+                f = new File(keyStoreFile); // re-create the file.
+                fos = new FileOutputStream(f);
+                keyStore.store(fos, SysProperty.getValue("ngsca.cert.truststore.password").toCharArray());
         } catch (Exception ep) {
-            ep.printStackTrace();
-
-            message = "A wrong happens when create a trustStore on the USER_HOME/.ca/";
+            throw new IllegalStateException("A wrong happens when create a trustStore on the USER_HOME/.ca/", ep);
+        } finally {
+            try { fos.close(); } catch (IOException ex) { }
         }
-        return message;
     }
 
-    public static String removed_setupTrustStore() {
+
+
+    /*public static String removed_setupTrustStore() {
         String message = null;
         X509Certificate cert = null;
         KeyPair keypair = null;
@@ -287,11 +294,11 @@ public class SysProperty {
         final String password = SysProperty.getValue("ngsca.cert.truststore.password");
 
         try {
-            /*
-             * we need to find out if Bouncycastle supports JKS format.
-             * if we adopt java keystore, the password is limited within 7 characters
-             * if no importing unlimited policy file.
-             */
+            
+//             we need to find out if Bouncycastle supports JKS format.
+//             if we adopt java keystore, the password is limited within 7 characters
+//             if no importing unlimited policy file.
+//
             keyStore = KeyStore.getInstance("JKS", "SUN");
 
             keyStore.load(null, null);
@@ -317,9 +324,9 @@ public class SysProperty {
         long _alias = new Date().getTime();
         String my_alias = new Long(_alias).toString();
         try {
-            /*
-             * only publickey is restored in client ketstore.
-             */
+            
+             //only publickey is restored in client ketstore.
+            
             keyStore.setCertificateEntry(my_alias, cert);
         } catch (Exception ep) {
             ep.printStackTrace();
@@ -351,7 +358,7 @@ public class SysProperty {
             message = "A wrong happens when create a trustStore on the USER_HOME/.ca/";
         }
         return message;
-    }
+    }*/
 
     private static void init() {
         myLogger.debug("[SysProperty] init...");

@@ -29,11 +29,11 @@ import org.restlet.data.Protocol;
 import org.restlet.data.Reference;
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
-import org.restlet.data.Response;
-import org.restlet.data.Request;
+import org.restlet.Response;
+import org.restlet.Request;
 import org.restlet.data.Method;
-import org.restlet.resource.DomRepresentation;
-import org.restlet.resource.Representation;
+
+//import org.restlet.resource.Representation;
 
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -73,6 +73,8 @@ import java.util.Properties;
 import java.util.Observable;
 
 import org.bouncycastle.jce.provider.unlimited.PKCS12KeyStoreUnlimited;
+import org.restlet.ext.xml.DomRepresentation;
+import org.restlet.representation.Representation;
 import uk.ngs.ca.common.EncryptUtil;
 import uk.ngs.ca.certificate.client.CertificateDownload;
 import uk.ngs.ca.tools.property.SysProperty;
@@ -110,8 +112,8 @@ public class OnLineCertificateInfo extends Observable{
 
     public OnLineCertificateInfo(char[] passphrase) {
         PASSPHRASE = passphrase;
-        ClientKeyStore _keyStore = new ClientKeyStore(passphrase);
-        ClientCertKeyStore _certKeyStore = new ClientCertKeyStore(passphrase);
+        ClientKeyStore _keyStore = ClientKeyStore.getClientkeyStore(passphrase);
+        ClientCertKeyStore _certKeyStore = ClientCertKeyStore.getClientCertKeyStore(passphrase);
         init(passphrase);
         if (isExistKeyStore()) {
             if (!isExistKeyPair(passphrase)) {
@@ -139,7 +141,7 @@ public class OnLineCertificateInfo extends Observable{
     }
 
     public ClientKeyStore getClientKeyStore(){
-        return new ClientKeyStore( PASSPHRASE );
+        return ClientKeyStore.getClientkeyStore( PASSPHRASE );
     }
 /*
     public String[] getAllDNs() {
@@ -188,12 +190,12 @@ public class OnLineCertificateInfo extends Observable{
         String _status = _info.getStatus();
         String _encodedPublicKey = _info.getPublickey();
         PublicKey _publicKey = EncryptUtil.getPublicKey(_encodedPublicKey);
-        ClientKeyStore _keyStore = new ClientKeyStore(PASSPHRASE);
+        ClientKeyStore _keyStore = ClientKeyStore.getClientkeyStore(PASSPHRASE);
         PrivateKey _privateKey = _keyStore.getPrivateKey(_publicKey);
         boolean b1 = _keyStore.removeKey(_privateKey);
         boolean b2 = true;
         if( _status.equals("VALID")){
-            ClientCertKeyStore _certKeyStore = new ClientCertKeyStore(PASSPHRASE);
+            ClientCertKeyStore _certKeyStore = ClientCertKeyStore.getClientCertKeyStore(PASSPHRASE);
             String _alias = _certKeyStore.getAlias(_publicKey);
             b2 = _certKeyStore.removeEntry(_alias);
         }
@@ -690,10 +692,13 @@ public class OnLineCertificateInfo extends Observable{
                     if (response.getStatus().equals(response.getStatus().SUCCESS_CREATED)) {
                         updateCSRFile( csr, doc );
                     } else if (response.getStatus().equals(response.getStatus().SUCCESS_ACCEPTED)) {
-                        DOCUMENT = response.getEntityAsDom().getDocument();
+                        //DOCUMENT = response.getEntityAsDom().getDocument();
+                        DOCUMENT = new DomRepresentation(response.getEntity()).getDocument();
+
 //update csr xml file once there is any error from server.
                         updateCSRFile( csr, doc );
-                        ERRORMESSAGE = response.getEntityAsDom().getText();
+                        //ERRORMESSAGE = response.getEntityAsDom().getText();
+                        ERRORMESSAGE = response.getEntityAsText();
                     }
                 }
             }

@@ -200,7 +200,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             if( observable.getClass().getSimpleName().equals("OnLineUserCertificateRequest")
                     || observable.getClass().getSimpleName().equals("ImportCertificate") ){
                 String alias = (String)obj;
-                ClientKeyStore clientKeyStore = new ClientKeyStore( this.PASSPHRASE );
+                ClientKeyStore clientKeyStore = ClientKeyStore.getClientkeyStore( this.PASSPHRASE );
                 PublicKey _publicKey = clientKeyStore.getPublicKey(alias);
                 CertificateCSRInfo _certCSRInfo = new CertificateCSRInfo( _publicKey );
 
@@ -211,7 +211,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 int _index = _message.indexOf("Renew:");
                 if( _index != -1 ){
                     String _alias = _message.substring( 6 );
-                    ClientKeyStore clientKeyStore = new ClientKeyStore( this.PASSPHRASE );
+                    ClientKeyStore clientKeyStore = ClientKeyStore.getClientkeyStore( this.PASSPHRASE );
                     PublicKey _publicKey = clientKeyStore.getPublicKey(_alias);
                     CertificateCSRInfo _certCSRInfo = new CertificateCSRInfo( _publicKey );
                     this.onLineCertInfo.addCertificateCSRInfo(_certCSRInfo);
@@ -713,8 +713,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     }// </editor-fold>//GEN-END:initComponents
 
     private boolean isPing(){
-        PingService pingService = new PingService();
-        return pingService.isPingService();
+        //PingService pingService = new PingService();
+        //return pingService.isPingService();
+        return PingService.getPingService().isPingService();
     }
 
     private void jComboBox1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBox1ActionPerformed
@@ -784,7 +785,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             //if the request is deleted by server, then the item will be removed from cakeystore.pkcs12 and from this gui.
             if( this.certificateCSRInfos[ index ].getStatus().equals("DELETED") ){
                 String _publickeyString = this.certificateCSRInfos[ index ].getPublickey();
-                ClientKeyStore _clientKeyStore = new ClientKeyStore( this.PASSPHRASE );
+                ClientKeyStore _clientKeyStore = ClientKeyStore.getClientkeyStore( this.PASSPHRASE );
                 PublicKey _publickey = EncryptUtil.getPublicKey(_publickeyString);
                 PrivateKey _privatekey = _clientKeyStore.getPrivateKey(_publickey);
                 _clientKeyStore.removeKey(_privatekey);
@@ -990,7 +991,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         int index = jComboBox1.getSelectedIndex();
         X509Certificate cert = null;
         PrivateKey privateKey = null;
-        ClientKeyStore keyStore = new ClientKeyStore(PASSPHRASE);
+        ClientKeyStore keyStore = ClientKeyStore.getClientkeyStore(PASSPHRASE);
         
         if (SystemStatus.ISONLINE) {
             
@@ -1168,7 +1169,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         X509Certificate cert = null;
         PrivateKey privateKey = null;
         PublicKey publicKey = null;
-        ClientKeyStore keyStore = new ClientKeyStore(PASSPHRASE);
+        ClientKeyStore keyStore = ClientKeyStore.getClientkeyStore(PASSPHRASE);
 
         if (SystemStatus.ISONLINE) {
             //check if connection is fine.

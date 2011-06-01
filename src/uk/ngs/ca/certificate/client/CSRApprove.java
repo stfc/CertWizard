@@ -12,15 +12,16 @@ import java.util.Date;
 import org.restlet.data.Reference;
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
-import org.restlet.data.Response;
-import org.restlet.data.Request;
+import org.restlet.Response;
+import org.restlet.Request;
 import org.restlet.data.Method;
 import org.restlet.data.Status;
 import org.restlet.data.Parameter;
-import org.restlet.resource.DomRepresentation;
-import org.restlet.resource.Representation;
+
 import org.restlet.Client;
 import org.restlet.data.Protocol;
+import org.restlet.ext.xml.DomRepresentation;
+import org.restlet.representation.Representation;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 

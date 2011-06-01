@@ -38,8 +38,8 @@ public class ContactServerPanel extends javax.swing.JPanel {
         this._certWizardMain = _certWizardMain;
         this.getCertPanel = this._certWizardMain.getCertificatePanel();
         jButton2.setVisible(false);
-        pingService = new PingService();
-
+        //pingService = new PingService();
+        pingService = PingService.getPingService();
         _init();
     }
 

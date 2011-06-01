@@ -70,7 +70,7 @@
               <Group type="102" alignment="0" attributes="0">
                   <EmptySpace max="-2" attributes="0"/>
                   <Component id="btnNewCertificateRequest" min="-2" max="-2" attributes="0"/>
-                  <EmptySpace max="32767" attributes="0"/>
+                  <EmptySpace pref="21" max="32767" attributes="0"/>
                   <Component id="btnImportCertificate" min="-2" max="-2" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
               </Group>
@@ -129,7 +129,7 @@
                   <Group type="103" groupAlignment="0" attributes="0">
                       <Group type="102" alignment="1" attributes="0">
                           <Component id="btnRefresh" min="-2" max="-2" attributes="0"/>
-                          <EmptySpace pref="59" max="32767" attributes="0"/>
+                          <EmptySpace pref="108" max="32767" attributes="0"/>
                           <Component id="btnInstall" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
                           <Component id="btnRenew" min="-2" max="-2" attributes="0"/>
@@ -165,7 +165,7 @@
                       <Component id="btnDelete" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="btnRefresh" alignment="3" min="-2" max="-2" attributes="0"/>
                   </Group>
-                  <EmptySpace pref="20" max="32767" attributes="1"/>
+                  <EmptySpace pref="42" max="32767" attributes="1"/>
               </Group>
           </Group>
         </DimensionLayout>
@@ -207,7 +207,7 @@
                           <Component id="email" max="32767" attributes="1"/>
                           <Component id="DN" alignment="1" pref="384" max="32767" attributes="1"/>
                       </Group>
-                      <EmptySpace pref="69" max="32767" attributes="0"/>
+                      <EmptySpace pref="75" max="32767" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
@@ -294,9 +294,9 @@
                       <Group type="102" alignment="1" attributes="0">
                           <EmptySpace max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="1" attributes="0">
-                              <Component id="lblCertificateGenerated" alignment="0" pref="472" max="32767" attributes="1"/>
-                              <Component id="lblRequestApproved" alignment="0" pref="472" max="32767" attributes="1"/>
-                              <Component id="lblRequestReceived" alignment="1" pref="472" max="32767" attributes="1"/>
+                              <Component id="lblCertificateGenerated" alignment="0" pref="476" max="32767" attributes="1"/>
+                              <Component id="lblRequestApproved" alignment="0" pref="476" max="32767" attributes="1"/>
+                              <Component id="lblRequestReceived" alignment="1" pref="476" max="32767" attributes="1"/>
                           </Group>
                           <EmptySpace max="-2" attributes="0"/>
                       </Group>

@@ -75,7 +75,7 @@ public class OffLineCertificateInfo extends Observable {
 
     public OffLineCertificateInfo(char[] passphrase) {
         PASSPHRASE = passphrase;
-        clientKeyStore = new ClientKeyStore(passphrase);
+        clientKeyStore =  ClientKeyStore.getClientkeyStore(passphrase);
         init(passphrase);
         keyStore = getCertKeyStoreFile();
         ISEXISTKEYPAIR = isExistKeyPair();

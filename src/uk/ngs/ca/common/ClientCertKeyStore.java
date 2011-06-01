@@ -23,10 +23,12 @@ import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
 
 import java.security.KeyStoreException;
+import java.util.logging.Level;
 
 import org.apache.log4j.Logger;
 
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 
 import java.util.Properties;
 import org.bouncycastle.jce.provider.unlimited.PKCS12KeyStoreUnlimited;
@@ -40,20 +42,39 @@ import uk.ngs.ca.tools.property.SysProperty;
 public class ClientCertKeyStore {
 
     private char[] PASSPHRASE = null;
-    static final Logger myLogger = Logger.getLogger(ClientCertKeyStore.class);
+    private static final Logger myLogger = Logger.getLogger(ClientCertKeyStore.class);
     private KeyStore certKeyStore = null;
-    static final String PROP_FILE = "/uk/ngs/ca/tools/property/configure.properties";
+    private static final String PROP_FILE = "/uk/ngs/ca/tools/property/configure.properties";
     private Properties properties = new Properties();
     private final String FILEPATH = ".ca";
     private String keyStoreFile = null;
-
     private String errorMessage = null;
 
-    public ClientCertKeyStore(char[] passphrase) {
+    private static ClientCertKeyStore clientCertKeyStore = null;
+
+    public static synchronized ClientCertKeyStore getClientCertKeyStore(char[] passphrase) {
+        // Static factory method allows us to choose whether we return the same instance
+        // check if class clientcertkeystore has already been created succesfully,
+        // (a composite action, i.e. check if null then act, but this is ok
+        // provided this method is synchronized). Lets create the keystore only
+        // if it has not been created yet or if the password has changed.
+        //if (clientCertKeyStore == null || (passphrase != null & !Arrays.equals(passphrase,clientCertKeyStore.PASSPHRASE))) {
+            clientCertKeyStore = new ClientCertKeyStore(passphrase);
+        //}
+        return clientCertKeyStore;
+    }
+
+    private ClientCertKeyStore(char[] passphrase) {
         PASSPHRASE = passphrase;
         init();
         setupCertKeyStoreFile(passphrase);
     }
+
+    /*public ClientCertKeyStore(char[] passphrase) {
+        PASSPHRASE = passphrase;
+        init();
+        setupCertKeyStoreFile(passphrase);
+    }*/
 
     public KeyStore getCertKeyStore() {
         return certKeyStore;
@@ -61,11 +82,12 @@ public class ClientCertKeyStore {
 
     private void init() {
         myLogger.debug("[ClientKeyStore] init...");
+        InputStream input = null;
         try {
             certKeyStore = PKCS12KeyStoreUnlimited.getInstance();
-            InputStream input = SysProperty.class.getResourceAsStream(PROP_FILE);
+            input = SysProperty.class.getResourceAsStream(PROP_FILE);
             properties.load(input);
-            input.close();
+            
         } catch (IOException ioe) {
             ioe.printStackTrace();
             myLogger.error("[ClientKeyStore] Property file is failed to load.");
@@ -78,6 +100,12 @@ public class ClientCertKeyStore {
             ne.printStackTrace();
             myLogger.error("[ClientKeyStore] failed to create a keystore without suitable provider: " + ne.getMessage());
             errorMessage = ne.getMessage();
+        } finally {
+            try {
+                if(input !=null) input.close();
+            } catch (IOException ex) {
+                java.util.logging.Logger.getLogger(ClientCertKeyStore.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
     }
 
@@ -95,22 +123,33 @@ public class ClientCertKeyStore {
         }
         homePath = homePath + System.getProperty("file.separator") + value;
         keyStoreFile = homePath;
+        FileInputStream fis = null;
+        FileOutputStream fos = null;
         try {
             if (new File(homePath).exists()) {
-                FileInputStream fis = new FileInputStream(homePath);
+                fis = new FileInputStream(homePath);
                 certKeyStore.load(fis, passphrase);
-                fis.close();
             } else {
                 certKeyStore.load(null, null);
                 File f = new File(homePath);
-                FileOutputStream fos = new FileOutputStream(f);
+                fos = new FileOutputStream(f);
                 certKeyStore.store(fos, PASSPHRASE);
-                fos.close();
 
             }
         } catch (Exception ep) {
             ep.printStackTrace();
             errorMessage = ep.getMessage();
+        } finally {
+            try {
+                if(fis !=null)fis.close();
+            } catch (IOException ex) {
+                java.util.logging.Logger.getLogger(ClientCertKeyStore.class.getName()).log(Level.SEVERE, null, ex);
+            }
+             try {
+                if(fos !=null)fos.close();
+            } catch (IOException ex) {
+                java.util.logging.Logger.getLogger(ClientCertKeyStore.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
     }
 
@@ -171,11 +210,11 @@ public class ClientCertKeyStore {
     }
 
     private boolean reStore() {
+        FileOutputStream fos = null;
         try {
             File f = new File(keyStoreFile);
-            FileOutputStream fos = new FileOutputStream(f);
+            fos = new FileOutputStream(f);
             certKeyStore.store(fos, PASSPHRASE);
-            fos.close();
             return true;
         } catch (FileNotFoundException fe) {
             fe.printStackTrace();
@@ -197,6 +236,12 @@ public class ClientCertKeyStore {
             ce.printStackTrace();
             myLogger.error("[ClientCertKeyStore] certificate error: " + ce.getMessage());
             return false;
+        } finally {
+            if(fos != null) try {
+                fos.close();
+            } catch (IOException ex) {
+                java.util.logging.Logger.getLogger(ClientCertKeyStore.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
 
     }

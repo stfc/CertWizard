@@ -9,13 +9,12 @@ import org.restlet.data.Protocol;
 import org.restlet.data.Reference;
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
-import org.restlet.data.Response;
-import org.restlet.data.Request;
+import org.restlet.Response;
+import org.restlet.Request;
 import org.restlet.data.Method;
 import org.restlet.data.Status;
 import org.restlet.data.Parameter;
-import org.restlet.resource.DomRepresentation;
-import org.restlet.resource.Representation;
+
 
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.openssl.PEMWriter;
@@ -49,6 +48,8 @@ import uk.ngs.ca.tools.property.SysProperty;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
+import org.restlet.ext.xml.DomRepresentation;
+import org.restlet.representation.Representation;
 import uk.ngs.ca.common.HashUtil;
 import uk.ngs.ca.common.ClientKeyStore;
 import uk.ngs.ca.common.ClientHostName;
@@ -73,7 +74,7 @@ public class OnLineUserCertificateReKey {
     private String Alias = null;
 
     public OnLineUserCertificateReKey(char[] passphrase) {
-        this.clientKeyStore = new ClientKeyStore(passphrase);
+        this.clientKeyStore = ClientKeyStore.getClientkeyStore(passphrase);
         this.PASSPHRASE = passphrase;
     }
 
@@ -84,7 +85,7 @@ public class OnLineUserCertificateReKey {
     public OnLineUserCertificateReKey(X509Certificate certificate, char[] passphrase) {
         this.CERTIFICATE = certificate;
         this.PASSPHRASE = passphrase;
-        this.clientKeyStore = new ClientKeyStore(passphrase);
+        this.clientKeyStore = ClientKeyStore.getClientkeyStore(passphrase);
     }
 
     /**
@@ -266,8 +267,8 @@ public class OnLineUserCertificateReKey {
             } else if (response.getStatus().equals(Status.SUCCESS_ACCEPTED)) {
                 //202
                 try {
-                    this.DETAILERRORMESSAGE = response.getEntityAsDom().getText();
-                    this.DOCUMENT = response.getEntityAsDom().getDocument();
+                    this.DETAILERRORMESSAGE = response.getEntityAsText();
+                    this.DOCUMENT = new DomRepresentation(response.getEntity()).getDocument();
                     this.ERRORMESSAGE = "Error message received from the Server. Please contact the helpdesk.";
                 } catch (Exception ep) {
                     ep.printStackTrace();
@@ -279,8 +280,9 @@ public class OnLineUserCertificateReKey {
                 //404
                 this.ERRORMESSAGE = "there is no such service. Please check system configure file.";
                 try {
-                    this.DETAILERRORMESSAGE = response.getEntityAsDom().getText();
-                    this.DOCUMENT = response.getEntityAsDom().getDocument();
+                    this.DETAILERRORMESSAGE = response.getEntityAsText();
+                    this.DOCUMENT = new DomRepresentation(response.getEntity()).getDocument();
+                    //this.DOCUMENT = response.getEntityAsDom().getDocument();
                 } catch (Exception ep) {
                     ep.printStackTrace();
                 } finally {
@@ -290,8 +292,8 @@ public class OnLineUserCertificateReKey {
                 //403
                 this.ERRORMESSAGE = "failed authentication. Please contact the helpdesk";
                 try {
-                    this.DETAILERRORMESSAGE = response.getEntityAsDom().getText();
-                    this.DOCUMENT = response.getEntityAsDom().getDocument();
+                    this.DETAILERRORMESSAGE = response.getEntityAsText();
+                    this.DOCUMENT = new DomRepresentation(response.getEntity()).getDocument();//= response.getEntityAsDom().getDocument();
                 } catch (Exception ep) {
                     ep.printStackTrace();
                 } finally {
@@ -301,8 +303,8 @@ public class OnLineUserCertificateReKey {
                 //405
                 this.ERRORMESSAGE = "Server does not support POST.";
                 try {
-                    this.DETAILERRORMESSAGE = response.getEntityAsDom().getText();
-                    this.DOCUMENT = response.getEntityAsDom().getDocument();
+                    this.DETAILERRORMESSAGE = response.getEntityAsText();
+                    this.DOCUMENT = new DomRepresentation(response.getEntity()).getDocument();//response.getEntityAsDom().getDocument();
                 } catch (Exception ep) {
                     ep.printStackTrace();
                 } finally {
@@ -346,8 +348,8 @@ public class OnLineUserCertificateReKey {
         } else if (_response.getStatus().equals(_response.getStatus().SUCCESS_ACCEPTED)) {
             //202
             try {
-                DETAILERRORMESSAGE = _response.getEntityAsDom().getText();
-                DOCUMENT = _response.getEntityAsDom().getDocument();
+                DETAILERRORMESSAGE = _response.getEntityAsText();
+                DOCUMENT = new DomRepresentation(_response.getEntity()).getDocument();//_response.getEntityAsDom().getDocument();
                 ERRORMESSAGE = "Server sends back error message. Please check it out.";
             } catch (Exception ep) {
                 ep.printStackTrace();
@@ -360,8 +362,8 @@ public class OnLineUserCertificateReKey {
 
             ERRORMESSAGE = "there is no such service. Please check system configure file.";
             try {
-                DETAILERRORMESSAGE = _response.getEntityAsDom().getText();
-                DOCUMENT = _response.getEntityAsDom().getDocument();
+                DETAILERRORMESSAGE = _response.getEntityAsText();
+                DOCUMENT = new DomRepresentation(_response.getEntity()).getDocument();//_response.getEntityAsDom().getDocument();
             } catch (Exception ep) {
                 ep.printStackTrace();
             } finally {
@@ -371,8 +373,8 @@ public class OnLineUserCertificateReKey {
             //403
             ERRORMESSAGE = "failed authentication. Please check out PPPK";
             try {
-                DETAILERRORMESSAGE = _response.getEntityAsDom().getText();
-                DOCUMENT = _response.getEntityAsDom().getDocument();
+                DETAILERRORMESSAGE = _response.getEntityAsText();
+                DOCUMENT = new DomRepresentation(_response.getEntity()).getDocument();//_response.getEntityAsDom().getDocument();
             } catch (Exception ep) {
                 ep.printStackTrace();
             } finally {
@@ -382,8 +384,8 @@ public class OnLineUserCertificateReKey {
             //405
             ERRORMESSAGE = "Server does not support POST.";
             try {
-                DETAILERRORMESSAGE = _response.getEntityAsDom().getText();
-                DOCUMENT = _response.getEntityAsDom().getDocument();
+                DETAILERRORMESSAGE = _response.getEntityAsText();
+                DOCUMENT = new DomRepresentation(_response.getEntity()).getDocument();//_response.getEntityAsDom().getDocument();
             } catch (Exception ep) {
                 ep.printStackTrace();
             } finally {

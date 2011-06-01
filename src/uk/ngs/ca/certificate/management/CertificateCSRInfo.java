@@ -366,12 +366,12 @@ public class CertificateCSRInfo {
                         if (!(_status.equals(this.getStatus()))) {
                             if (_status.equals("VALID")) {
                                 //restore this certificate in cacertkeystore.pkcs12
-                                ClientKeyStore clientKeyStore = new ClientKeyStore(passphrase);
+                                ClientKeyStore clientKeyStore = ClientKeyStore.getClientkeyStore(passphrase);
                                 PublicKey publicKey = EncryptUtil.getPublicKey(this.getPublickey());
                                 PrivateKey privateKey = clientKeyStore.getPrivateKey(publicKey);
                                 CertificateDownload certDownload = new CertificateDownload(_id);
                                 X509Certificate cert = certDownload.getCertificate();
-                                ClientCertKeyStore clientCertKeyStore = new ClientCertKeyStore(passphrase);
+                                ClientCertKeyStore clientCertKeyStore = ClientCertKeyStore.getClientCertKeyStore(passphrase);
                                 clientCertKeyStore.addNewKey(privateKey, cert);
                             }
 
