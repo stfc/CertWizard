@@ -37,7 +37,8 @@ public class ContactServerPanel extends javax.swing.JPanel {
         this.add(jPanel1, java.awt.BorderLayout.CENTER);
         this._certWizardMain = _certWizardMain;
         this.getCertPanel = this._certWizardMain.getCertificatePanel();
-        jButton2.setVisible(false);
+        
+        
         //pingService = new PingService();
         pingService = PingService.getPingService();
         _init();
@@ -50,6 +51,9 @@ public class ContactServerPanel extends javax.swing.JPanel {
      */
     private void _init(){
 
+        jLabel2.setText("Attempting to connect to the CA Server...");
+        jButton2.setVisible(false);
+        jButton1.setVisible(false);
         timer = new Timer();
         jProgressBar1.setIndeterminate(true);
 //        TimerTask task = new updateProgressBar(jProgressBar1);
@@ -76,7 +80,7 @@ public class ContactServerPanel extends javax.swing.JPanel {
         setBorder(javax.swing.BorderFactory.createTitledBorder("Contact Server"));
         setLayout(new java.awt.BorderLayout());
 
-        jLabel2.setText("If you are not connected to the internet, you can work offline.");
+        jLabel2.setText("Connecting to the CA Server...");
 
         jProgressBar1.setMaximum(10);
 
@@ -107,7 +111,7 @@ public class ContactServerPanel extends javax.swing.JPanel {
                         .add(jButton2)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(jButton1))
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, jProgressBar1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 570, Short.MAX_VALUE))
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, jProgressBar1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 593, Short.MAX_VALUE))
                 .add(19, 19, 19))
         );
         jPanel1Layout.setVerticalGroup(
@@ -120,7 +124,7 @@ public class ContactServerPanel extends javax.swing.JPanel {
                     .add(jButton1)
                     .add(jLabel2)
                     .add(jButton2))
-                .addContainerGap(27, Short.MAX_VALUE))
+                .addContainerGap(30, Short.MAX_VALUE))
         );
 
         add(jPanel1, java.awt.BorderLayout.CENTER);
@@ -177,6 +181,7 @@ public class ContactServerPanel extends javax.swing.JPanel {
                         + "or retry connecting by clicking 'Try Again'.");
                 //new MainWindow().setVisible(true);
                 jButton2.setVisible(true);
+                jButton1.setVisible(true);
                 timer.cancel();
                 jProgressBar1.setIndeterminate(false);
             }
