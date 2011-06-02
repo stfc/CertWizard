@@ -35,6 +35,8 @@ import org.bouncycastle.jce.provider.unlimited.PKCS12KeyStoreUnlimited;
 import uk.ngs.ca.tools.property.SysProperty;
 
 /**
+ * Read or create file $HOME/.ca/cakeystore.pkcs12 (create if it does not
+ * already exist). This file is intended to hold.....what.
  *
  * @author xw75
  */
@@ -56,11 +58,11 @@ public final class ClientKeyStore {
 
     public static synchronized ClientKeyStore getClientkeyStore(char[] passphrase) {
         // Static factory method allows us to choose whether we return the same instance
-        // or create a new instance (easy to remove the if check below so that
+        // or create a new instance (easy to remove the if statement below so that
         // each invocation of this method will create/return a new keyStore
-        // which replicates the previous public constructor.
+        // which replicates the previous public constructor).
         //
-        // check if class keyStore has already been created succesfully,
+        // Check if keyStore has already been created succesfully,
         // (a composite action, i.e. check if null then act, but this is ok
         // provided this method is synchronized). Lets create the keystore only
         // if it has not been created yet or if the password has changed.
@@ -84,7 +86,7 @@ public final class ClientKeyStore {
         setupKeyStoreFile(passphrase);
     }*/
 
-    public String getErrorMessage(){
+    public synchronized String getErrorMessage(){
         return this.errorMessage;
     }
 
@@ -421,8 +423,7 @@ public final class ClientKeyStore {
         try {
             File f = new File(keyStoreFile);
             fos = new FileOutputStream(f);
-            this.keyStore.store(fos, PASSPHRASE);
-            
+            this.keyStore.store(fos, PASSPHRASE);            
             return true;
         } catch (Exception ep) {
             errorMessage = ep.getMessage();

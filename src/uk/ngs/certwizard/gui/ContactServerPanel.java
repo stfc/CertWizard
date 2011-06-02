@@ -12,6 +12,7 @@ package uk.ngs.certwizard.gui;
 
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.JPanel;
 
@@ -26,7 +27,7 @@ public class ContactServerPanel extends javax.swing.JPanel {
 
     private Timer timer;
     private JPanel getCertPanel;
-    private boolean isReachableServer = false;
+    private AtomicBoolean isReachableServer = new AtomicBoolean(false);
     PingService pingService = null;
 
     private CertWizardMain _certWizardMain = null;
@@ -133,7 +134,7 @@ public class ContactServerPanel extends javax.swing.JPanel {
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         // TODO add your handling code here:
         timer.cancel();
-        SystemStatus.ISONLINE = false;
+        SystemStatus.ISONLINE.set(false);
         getCertPanel.add(new PasswordPanel(this._certWizardMain), "PasswordPanel");
         getCertPanel.remove(this);
     }//GEN-LAST:event_jButton1ActionPerformed
@@ -164,18 +165,18 @@ public class ContactServerPanel extends javax.swing.JPanel {
 
             if( pingService != null ){
                 System.out.println("EXECUTING PING CHECK STATEMENT");
-                isReachableServer = pingService.isPingService();
+                isReachableServer.set( pingService.isPingService());
             }
 
-            if (isReachableServer) {
-                SystemStatus.ISONLINE = true;
+            if (isReachableServer.get()) {
+                SystemStatus.ISONLINE.set(true);
 
                 timer.cancel();
 
                 getCertPanel.add(new PasswordPanel(_certWizardMain), "PasswordPanel");
                 getCertPanel.remove(cPanel);
             } else {
-                SystemStatus.ISONLINE = false;
+                SystemStatus.ISONLINE.set(false);
                 jLabel2.setText("<html>Failed to connect to the CA server. "
                         + "You can switch to offline mode by clicking 'Work Offline' button, "
                         + "or retry connecting by clicking 'Try Again'.");

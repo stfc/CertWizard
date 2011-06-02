@@ -51,8 +51,8 @@ import org.xml.sax.InputSource;
  */
 public class SysProperty {
 
-    static final Logger myLogger = Logger.getLogger(SysProperty.class);
-    static final String PROP_FILE = "/uk/ngs/ca/tools/property/configure.properties";
+    private static final Logger myLogger = Logger.getLogger(SysProperty.class);
+    private static final String PROP_FILE = "/uk/ngs/ca/tools/property/configure.properties";
     private static boolean isInitialized = false;
     private static Properties properties = new Properties();
     private static final String FILEPATH = ".ca";

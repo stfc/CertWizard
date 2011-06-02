@@ -36,6 +36,8 @@ import org.bouncycastle.jce.provider.unlimited.PKCS12KeyStoreUnlimited;
 import uk.ngs.ca.tools.property.SysProperty;
 
 /**
+ * Read or create file $HOME/.ca/cacertkeystore.pkcs12 (create if it does not
+ * already exist). This file is intended to hold....what.
  *
  * @author xw75
  */
@@ -88,9 +90,9 @@ public final class ClientCertKeyStore {
         myLogger.debug("[ClientKeyStore] init...");
         InputStream input = null;
         try {
-            certKeyStore = PKCS12KeyStoreUnlimited.getInstance();
+            this.certKeyStore = PKCS12KeyStoreUnlimited.getInstance();
             input = SysProperty.class.getResourceAsStream(PROP_FILE);
-            properties.load(input);
+            this.properties.load(input);
             
         } catch (IOException ioe) {
             ioe.printStackTrace();
@@ -113,6 +115,12 @@ public final class ClientCertKeyStore {
         }
     }
 
+    /**
+     * If $HOME/.ca/cacertkeystore.pkcs12 already exists, load it otherwise
+     * create an empty pkcs12 file.
+     *
+     * @param passphrase
+     */
     private void setupCertKeyStoreFile(char[] passphrase) {
         myLogger.debug("[ClientCertKeyStore] get keystore ...");
         String key = "ngsca.cert.keystore.file";
@@ -133,13 +141,13 @@ public final class ClientCertKeyStore {
             // if certkeystore already exists, load it
             if (new File(this.keyStoreFileAbsPath).exists()) {
                 fis = new FileInputStream(this.keyStoreFileAbsPath);
-                certKeyStore.load(fis, passphrase);
+                this.certKeyStore.load(fis, passphrase);
             } else {
                 // otherwise create an empty keystore protected by passphrase
-                certKeyStore.load(null, null);
+                this.certKeyStore.load(null, null);
                 File f = new File(this.keyStoreFileAbsPath);
                 fos = new FileOutputStream(f);
-                certKeyStore.store(fos, PASSPHRASE);
+                this.certKeyStore.store(fos, PASSPHRASE);
             }
         } catch (Exception ep) {
             ep.printStackTrace();
@@ -157,11 +165,11 @@ public final class ClientCertKeyStore {
     public synchronized String getAlias( PublicKey publicKey ){
         String alias = null;
         try {
-            Enumeration aliases = certKeyStore.aliases();
+            Enumeration aliases = this.certKeyStore.aliases();
             while (aliases.hasMoreElements()) {
                 String _alias = (String) aliases.nextElement();
-                if (certKeyStore.isKeyEntry(_alias)) {
-                    X509Certificate cert = (X509Certificate)certKeyStore.getCertificate(_alias);
+                if (this.certKeyStore.isKeyEntry(_alias)) {
+                    X509Certificate cert = (X509Certificate)this.certKeyStore.getCertificate(_alias);
                     PublicKey _publicKey = cert.getPublicKey();
                     if( _publicKey.equals(publicKey)){
                         alias = _alias;
@@ -178,9 +186,9 @@ public final class ClientCertKeyStore {
 
     public synchronized boolean removeEntry( String alias ){
         try{
-        certKeyStore.deleteEntry(alias);
-        reStore();
-        return true;
+          certKeyStore.deleteEntry(alias);
+          reStore();
+          return true;
         }catch( KeyStoreException ke ){
             ke.printStackTrace();
             return false;

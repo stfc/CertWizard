@@ -81,7 +81,7 @@ public class RAOperationPanel extends javax.swing.JPanel implements Observer {
 
         initComponents();
 
-        if (SystemStatus.ISONLINE) {
+        if (SystemStatus.ISONLINE.get()) {
             String id = info.getId();
             long long_id = new Long( id ).longValue();
 
@@ -163,7 +163,7 @@ public class RAOperationPanel extends javax.swing.JPanel implements Observer {
     }
 
     public void update(Observable observable, Object obj) {
-        if (SystemStatus.ISONLINE) {
+        if (SystemStatus.ISONLINE.get()) {
             if( observable.getClass().getSimpleName().equals("OnLineUserCertificateRequest")
                     || observable.getClass().getSimpleName().equals("ImportCertificate") ){
                 String alias = (String)obj;
@@ -574,7 +574,7 @@ this.btnFullRequest.setEnabled(false);
             return;
         }
 
-        if( SystemStatus.ISONLINE ){
+        if( SystemStatus.ISONLINE.get() ){
             int index = this.jComboBox1.getSelectedIndex();
             this.serialNumber.setText(this.requestPendingInfos[ index ].getSerialNumber());
             this.commonName.setText(this.requestPendingInfos[ index ].getCN());
@@ -606,7 +606,7 @@ this.btnFullRequest.setEnabled(true);
         // TODO add your handling code here:
         int index = jComboBox1.getSelectedIndex();
 
-        if (SystemStatus.ISONLINE) {
+        if (SystemStatus.ISONLINE.get()) {
 
             //check if connection is fine.
             if( !isPing() ){
@@ -701,7 +701,7 @@ this.btnFullRequest.setEnabled(true);
 
     private void btnApproveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnApproveActionPerformed
         // TODO add your handling code here:
-        if (SystemStatus.ISONLINE) {
+        if (SystemStatus.ISONLINE.get()) {
 
             //check if connection is fine.
             if( !isPing() ){
@@ -736,7 +736,7 @@ this.btnFullRequest.setEnabled(true);
 
     private void btnFullRequestActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnFullRequestActionPerformed
         // TODO add your handling code here:
-        if( SystemStatus.ISONLINE ){
+        if( SystemStatus.ISONLINE.get() ){
             int index = this.jComboBox1.getSelectedIndex();
             new FullRequest( this.requestPendingInfos[ index ] ).setVisible( true );
         }
@@ -774,7 +774,7 @@ this.btnFullRequest.setEnabled(true);
 
     private void jComboBox1MouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jComboBox1MouseExited
         // TODO add your handling code here:
-        if (SystemStatus.ISONLINE) {
+        if (SystemStatus.ISONLINE.get()) {
             setMOD(MotD);
         }else{
             setRedMOD( MotD );
@@ -783,7 +783,7 @@ this.btnFullRequest.setEnabled(true);
 
     private void btnApproveMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnApproveMouseExited
         // TODO add your handling code here:
-        if (SystemStatus.ISONLINE) {
+        if (SystemStatus.ISONLINE.get()) {
             setMOD(MotD);
         }else{
             setRedMOD( MotD );
@@ -792,7 +792,7 @@ this.btnFullRequest.setEnabled(true);
 
     private void btnDeleteMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnDeleteMouseExited
         // TODO add your handling code here:
-        if (SystemStatus.ISONLINE) {
+        if (SystemStatus.ISONLINE.get()) {
             setMOD(MotD);
         }else{
             setRedMOD( MotD );
@@ -801,7 +801,7 @@ this.btnFullRequest.setEnabled(true);
 
     private void btnContactUserMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnContactUserMouseExited
         // TODO add your handling code here:
-        if (SystemStatus.ISONLINE) {
+        if (SystemStatus.ISONLINE.get()) {
             setMOD(MotD);
         }else{
             setRedMOD( MotD );
@@ -810,7 +810,7 @@ this.btnFullRequest.setEnabled(true);
 
     private void btnFullRequestMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnFullRequestMouseExited
         // TODO add your handling code here:
-        if (SystemStatus.ISONLINE) {
+        if (SystemStatus.ISONLINE.get()) {
             setMOD(MotD);
         }else{
             setRedMOD( MotD );
@@ -844,7 +844,7 @@ this.btnFullRequest.setEnabled(true);
 
     private void btnRefreshMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnRefreshMouseExited
         // TODO add your handling code here:
-        if (SystemStatus.ISONLINE) {
+        if (SystemStatus.ISONLINE.get()) {
             setMOD(MotD);
         }else{
             setRedMOD( MotD );
@@ -933,7 +933,7 @@ this.btnFullRequest.setEnabled(true);
     }
 
     private void updateComboBox( int _index ){
-        if (SystemStatus.ISONLINE) {
+        if (SystemStatus.ISONLINE.get()) {
             if( this.certificateCSRInfos[ _index ] != null ){
                 ListCellRenderer renderer = new ListItemRenderer();
                 String _dn = this.certificateCSRInfos[ _index ].getOwner();
@@ -985,7 +985,7 @@ this.btnFullRequest.setEnabled(true);
 
     private void fillComboBox() {
 
-        if (SystemStatus.ISONLINE) {
+        if (SystemStatus.ISONLINE.get()) {
             if( this.requestPendingInfos != null ){
                 ListCellRenderer renderer = new ListItemRenderer();
                 for( int i = 0; i < this.requestPendingInfos.length; i++ ){

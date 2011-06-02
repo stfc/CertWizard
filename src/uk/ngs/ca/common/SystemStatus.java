@@ -5,6 +5,7 @@
 package uk.ngs.ca.common;
 
 import java.io.File;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import uk.ngs.ca.tools.property.SysProperty;
 
@@ -14,8 +15,9 @@ import uk.ngs.ca.tools.property.SysProperty;
  */
 public class SystemStatus {
 
-    public static boolean ISONLINE = true;
-    public static boolean ISINIT = false;
+    // ISONLINE and ISINIT represent shared mutable state: Need to be atomic.
+    public static AtomicBoolean ISONLINE = new AtomicBoolean(true);
+    public static AtomicBoolean ISINIT = new AtomicBoolean(false);;
     private String errorMessage = null;
 
     public SystemStatus() {

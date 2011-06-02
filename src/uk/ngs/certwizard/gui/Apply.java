@@ -41,7 +41,7 @@ public class Apply extends javax.swing.JFrame {
         this.mainWindowPanel = mainWindowPanel;
         initComponents();
 
-        if (SystemStatus.ISONLINE) {
+        if (SystemStatus.ISONLINE.get()) {
 
             onLineCertRequest = new OnLineUserCertificateRequest(passphrase);
             onLineCertRequest.addObserver(mainWindowPanel);
@@ -339,7 +339,7 @@ public class Apply extends javax.swing.JFrame {
             jLabel5.setForeground(Color.RED);
             setInformation(text);
         } else {
-            if (SystemStatus.ISONLINE) {
+            if (SystemStatus.ISONLINE.get()) {
                 //The following checks if the CA Database as well as the CA Server is up or not.
                 if( !isPing() ){
                     JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
