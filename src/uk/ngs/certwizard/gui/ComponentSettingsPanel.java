@@ -9,7 +9,7 @@ import java.awt.Dimension;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import javax.swing.JPanel;
-import org.globus.cog.gui.setup.panels.ComponentPanel;
+//import org.globus.cog.gui.setup.panels.ComponentPanel;
 import org.globus.cog.gui.setup.panels.ListPanel;
 import org.globus.cog.gui.setup.panels.LogoPanel;
 import org.globus.cog.gui.setup.panels.NavPanel;

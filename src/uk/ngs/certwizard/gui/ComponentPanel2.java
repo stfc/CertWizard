@@ -27,7 +27,7 @@ import org.globus.cog.gui.setup.components.CertificateAuthorityComponent;
 import org.globus.cog.gui.setup.components.DateComponent;
 //import org.globus.cog.gui.setup.components.IPAddressComponent;
 import org.globus.cog.gui.setup.components.MyProxyComponent;
-import org.globus.cog.gui.setup.components.DoActionsComponent;
+//import org.globus.cog.gui.setup.components.DoActionsComponent;
 import org.globus.cog.gui.setup.components.PolicyJarComponent;
 import org.globus.cog.gui.setup.components.WelcomeComponent;
 //import org.globus.cog.gui.setup.components.LocalProxyComponent;
