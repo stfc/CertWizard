@@ -54,7 +54,7 @@ public class ContactServerPanel extends javax.swing.JPanel {
 
         jLabel2.setText("Attempting to connect to the CA Server...");
         jButton2.setVisible(false);
-        jButton1.setVisible(false);
+        //jButton1.setVisible(false);
         timer = new Timer();
         jProgressBar1.setIndeterminate(true);
 //        TimerTask task = new updateProgressBar(jProgressBar1);
@@ -169,6 +169,7 @@ public class ContactServerPanel extends javax.swing.JPanel {
             }
 
             if (isReachableServer.get()) {
+                System.out.println("PASSED");
                 SystemStatus.ISONLINE.set(true);
 
                 timer.cancel();
