@@ -130,10 +130,11 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         }
         
     }
-    
-    private void onLineInit() {
-       if( !isPing() ){ 
 
+
+    private void onLineInit() {
+        if( !isOnlinePing() ){
+        //if( !SystemStatus.ISONLINE.get() ){
             JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, "
                     + "\nplease report to helpdesk or work under offline by restarting "
                     + "CertWizard and select offline.", "Server Connection Fault",
@@ -142,11 +143,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             //return;
         } else {
             onLineCertInfo = new OnLineCertificateInfo(PASSPHRASE);
-
             this.certificateCSRInfos = onLineCertInfo.getCertCSRInfos();
-
-
-
             if ((this.certificateCSRInfos == null) || (this.certificateCSRInfos.length == 0)) {
                 this.btnExport.setEnabled(false);
                 this.btnRevoke.setEnabled(false);
@@ -154,31 +151,30 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 this.btnDelete.setEnabled(false);
                 this.btnInstall.setEnabled(false);
             }
-            
+
         }
     }
 
     private void offLineInit() {
         offLineCertInfo = new OffLineCertificateInfo(PASSPHRASE);
-
         this.btnNewCertificateRequest.setEnabled(false); //TEMPORARY ADDITION
-        this.btnRefresh.setEnabled(false);
+        //this.btnRefresh.setEnabled(false);
         
         if ((offLineCertInfo.getAllDNs() == null) || (offLineCertInfo.getAllDNs().length == 0)) {
             this.btnExport.setEnabled(false);
             this.btnRevoke.setEnabled(false);
             this.btnRenew.setEnabled(false);
             this.btnDelete.setEnabled(false);
-            this.btnInstall.setEnabled(false);
-            
-
-            
+            this.btnInstall.setEnabled(false);    
         }
     }
 
+    /**
+     * Attempt to connect online and update the GUI accordingly.
+     */
     public void refreshOnLine(){
-        if( !isPing() ){
-
+        if( !isOnlinePing() ){  // not online
+        //if( !SystemStatus.ISONLINE.get() ){ // not online
             JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, "
                     + "\nplease report to helpdesk or work under offline by restarting "
                     + "CertWizard and select offline.", "Server Connection Fault",
@@ -712,10 +708,10 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         );
     }// </editor-fold>//GEN-END:initComponents
 
-    private boolean isPing(){
-        //PingService pingService = new PingService();
-        //return pingService.isPingService();
-        return PingService.getPingService().isPingService();
+    private boolean isOnlinePing(){
+        boolean online = PingService.getPingService().isPingService();
+        this._certWizardMain.update();
+        return online;
     }
 
     private void jComboBox1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBox1ActionPerformed
@@ -752,7 +748,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
         if (SystemStatus.ISONLINE.get()) {
            
-           if( !isPing() ){
+           if( !isOnlinePing() ){
                
                 JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, "
                         + "\nplease report to helpdesk or work under offline by restarting "
@@ -944,7 +940,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private void btnNewCertificateRequestActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNewCertificateRequestActionPerformed
         // TODO add your handling code here:
         if( SystemStatus.ISONLINE.get() ){
-            if( !isPing() ){
+            if( !isOnlinePing() ){
                 JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
 
             }else{
@@ -960,7 +956,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         // TODO add your handling code here:
 //        WaitDialog.showDialog();
         if( SystemStatus.ISONLINE.get() ){
-            if( !isPing() ){
+            if( !isOnlinePing() ){
                 JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
 //                WaitDialog.hideDialog();
                 return;
@@ -996,7 +992,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         if (SystemStatus.ISONLINE.get()) {
             
             //check if connection is fine.
-            if( !isPing() ){
+            if( !isOnlinePing() ){
                 JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
 
                 return;
@@ -1023,7 +1019,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         if (SystemStatus.ISONLINE.get()) {
             
             //check if connection is fine.
-            if( !isPing() ){
+            if( !isOnlinePing() ){
                 JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
 
                 return;
@@ -1054,9 +1050,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         if (SystemStatus.ISONLINE.get()) {
 
             //check if connection is fine.
-            if( !isPing() ){
+            if( !isOnlinePing() ){
                 JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
-
+                // ok, can only do a revoke when we are online
                 return;
             }
 
@@ -1081,9 +1077,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         if (SystemStatus.ISONLINE.get()) {
 
             //check if connection is fine.
-            if( !isPing() ){
+            if( !isOnlinePing() ){
                 JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
-
+                // why do we have to return here ? i may want to install my cert when i have no internet !
                 return;
             }
             
@@ -1173,9 +1169,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
         if (SystemStatus.ISONLINE.get()) {
             //check if connection is fine.
-            if( !isPing() ){
+            if( !isOnlinePing() ){
                 JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
-
+                // why do we have to return here ? i may want to install my cert when i have no internet !
                 return;
             }
 

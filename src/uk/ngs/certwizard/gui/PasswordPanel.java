@@ -39,15 +39,13 @@ public class PasswordPanel extends javax.swing.JPanel {
         initComponents();
 
 //        this.setFocusable(true);
-//
-//
-//
 //        txtPassword.requestFocusInWindow();
         
         this._certWizardMain = _certWizardMain;
         getCertPanel = this._certWizardMain.getCertificatePanel();
 
-        this.sysStatus = new SystemStatus();
+        //this.sysStatus = new SystemStatus();
+        this.sysStatus = SystemStatus.getInstance(); 
         this.isExistKeyStore = this.sysStatus.isExistKeyStore();
         if ( this.isExistKeyStore ) {
             jLabel3.setVisible(false);
@@ -58,16 +56,15 @@ public class PasswordPanel extends javax.swing.JPanel {
             txtConfirmPassword.setVisible(true);
             messageLabel.setText("<html>Please type in a new password to protect your certificate. As this is your first time, please confirm your password. Later you need to type in this password each time when running CertWizard.</html>");
         }
-        btnSubmit.setEnabled(false);
+        okButton.setEnabled(false);
 
     }
 
-    public PasswordPanel(String message, String messageTitle) {
+    /*public PasswordPanel(String message, String messageTitle) {
         initComponents();
         this.message = message;
         this.messageTitle = messageTitle;
-
-    }
+    }*/
 
     /** This method is called from within the constructor to
      * initialize the form.
@@ -81,11 +78,9 @@ public class PasswordPanel extends javax.swing.JPanel {
         jLabel1 = new javax.swing.JLabel();
         messageLabel = new javax.swing.JLabel();
         txtPassword = new javax.swing.JPasswordField();
-        btnSubmit = new javax.swing.JButton();
+        okButton = new javax.swing.JButton();
         jLabel3 = new javax.swing.JLabel();
         txtConfirmPassword = new javax.swing.JPasswordField();
-
-        setBorder(javax.swing.BorderFactory.createTitledBorder("Password"));
 
         jLabel1.setText("Password:");
 
@@ -100,10 +95,10 @@ public class PasswordPanel extends javax.swing.JPanel {
             }
         });
 
-        btnSubmit.setText("OK");
-        btnSubmit.addActionListener(new java.awt.event.ActionListener() {
+        okButton.setText("OK");
+        okButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnSubmitActionPerformed(evt);
+                okButtonActionPerformed(evt);
             }
         });
 
@@ -135,11 +130,11 @@ public class PasswordPanel extends javax.swing.JPanel {
                         .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
                             .add(txtConfirmPassword, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 359, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                             .add(org.jdesktop.layout.GroupLayout.LEADING, txtPassword, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 359, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                            .add(btnSubmit)))
+                            .add(okButton)))
                     .add(layout.createSequentialGroup()
                         .addContainerGap()
                         .add(messageLabel, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 469, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(43, Short.MAX_VALUE))
+                .addContainerGap(53, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -155,33 +150,32 @@ public class PasswordPanel extends javax.swing.JPanel {
                     .add(jLabel3)
                     .add(txtConfirmPassword, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
-                .add(btnSubmit)
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .add(okButton)
+                .addContainerGap(37, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
-    private void btnSubmitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSubmitActionPerformed
-
+    private void okButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_okButtonActionPerformed
 //        messageLabel.setText("<html>Please Wait..</html>");
-        if( this.isExistKeyStore ){
-            
-            doAction();
+        if( this.isExistKeyStore ){            
+            loadMainWindowPanel();
         }else{
-
             String password = new String( txtPassword.getPassword() );
             String confirm = new String( txtConfirmPassword.getPassword() );
             if( password.equals(confirm) ){
-                doAction();
+                loadMainWindowPanel();
             }else{
                 String errorMessage = "Please check your password. The password and the confirmed password should be same.";
                 JOptionPane.showMessageDialog(this, errorMessage, "Wrong Password", JOptionPane.ERROR_MESSAGE);
             }
         }
-        
+    }//GEN-LAST:event_okButtonActionPerformed
 
-    }//GEN-LAST:event_btnSubmitActionPerformed
-
-    private void doAction() {
+    /**
+     * Compare passwords and create/show a new instance of MainWindowPanel if the
+     * passwords are correct. Otherwise, show an error on the panel. 
+     */
+    private void loadMainWindowPanel() {
         
         char[] passphrase = txtPassword.getPassword();
         boolean isValid = this.sysStatus.isValidPassphrase(passphrase);
@@ -196,8 +190,8 @@ public class PasswordPanel extends javax.swing.JPanel {
             localBackup.isSuccess();
 
             getCertPanel.add(new MainWindowPanel(passphrase, this._certWizardMain), "MainWindowPanel");
-
             getCertPanel.remove(this);
+            getCertPanel.revalidate();
 
         } else {
             
@@ -211,12 +205,12 @@ public class PasswordPanel extends javax.swing.JPanel {
     private void txtPasswordActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtPasswordActionPerformed
         // TODO add your handling code here:
         if( this.isExistKeyStore ){
-            doAction();
+            loadMainWindowPanel();
         }else{
             String password = new String( txtPassword.getPassword() );
             String confirm = new String( txtConfirmPassword.getPassword() );
             if( password.equals(confirm) ){
-                doAction();
+                loadMainWindowPanel();
             }else{
                 String errorMessage = "Please check your password. The password and the confirmed password should be same.";
                 JOptionPane.showMessageDialog(this, errorMessage, "Wrong Password", JOptionPane.ERROR_MESSAGE);
@@ -227,14 +221,14 @@ public class PasswordPanel extends javax.swing.JPanel {
     private void txtPasswordKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtPasswordKeyReleased
         // TODO add your handling code here:
         if( this.isExistKeyStore ){
-            this.btnSubmit.setEnabled(true);
+            this.okButton.setEnabled(true);
         }else{
             String password = new String( txtPassword.getPassword() );
             String confirm = new String( txtConfirmPassword.getPassword() );
             if( password.equals(confirm) ){
-                this.btnSubmit.setEnabled(true);
+                this.okButton.setEnabled(true);
             }else{
-                this.btnSubmit.setEnabled(false);
+                this.okButton.setEnabled(false);
             }
         }
     }//GEN-LAST:event_txtPasswordKeyReleased
@@ -245,9 +239,9 @@ public class PasswordPanel extends javax.swing.JPanel {
         String confirm = new String( txtConfirmPassword.getPassword() );
 
         if( password.equals(confirm) ){
-            this.btnSubmit.setEnabled(true);
+            this.okButton.setEnabled(true);
         }else{
-            this.btnSubmit.setEnabled(false);
+            this.okButton.setEnabled(false);
         }
     }//GEN-LAST:event_txtConfirmPasswordKeyReleased
 
@@ -256,7 +250,7 @@ public class PasswordPanel extends javax.swing.JPanel {
         String password = new String( txtPassword.getPassword() );
         String confirm = new String( txtConfirmPassword.getPassword() );
         if( password.equals(confirm) ){
-            doAction();
+            loadMainWindowPanel();
         }else{
             String errorMessage = "Please check your password. The password and the confirmed password should be same.";
             JOptionPane.showMessageDialog(this, errorMessage, "Wrong Password", JOptionPane.ERROR_MESSAGE);
@@ -264,10 +258,10 @@ public class PasswordPanel extends javax.swing.JPanel {
     }//GEN-LAST:event_txtConfirmPasswordActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton btnSubmit;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel messageLabel;
+    private javax.swing.JButton okButton;
     private javax.swing.JPasswordField txtConfirmPassword;
     private javax.swing.JPasswordField txtPassword;
     // End of variables declaration//GEN-END:variables

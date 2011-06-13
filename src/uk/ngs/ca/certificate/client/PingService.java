@@ -115,7 +115,7 @@ public final class PingService {
             org.restlet.data.ClientInfo info = new org.restlet.data.ClientInfo();
             info.setAgent(SysProperty.getValue("uk.ngs.ca.request.useragent"));
             request.setClientInfo(info);
-            System.out.println("pingURL " + pingURL);
+            System.out.println("pinging URL [" + pingURL+"]");
 
             response = client.handle(request);
             //System.out.println("==============after response====================");

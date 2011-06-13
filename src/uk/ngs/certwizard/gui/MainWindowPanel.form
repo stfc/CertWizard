@@ -22,7 +22,7 @@
           <Group type="102" alignment="0" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="jLabel7" pref="181" max="32767" attributes="0"/>
+                  <Component id="jLabel7" pref="208" max="32767" attributes="0"/>
                   <Component id="jPanel1" alignment="0" max="32767" attributes="1"/>
                   <Component id="jPanel3" alignment="0" max="32767" attributes="1"/>
               </Group>
@@ -140,7 +140,7 @@
                           <EmptySpace min="-2" pref="4" max="-2" attributes="0"/>
                           <Component id="btnDelete" min="-2" max="-2" attributes="0"/>
                       </Group>
-                      <Component id="jComboBox1" alignment="0" pref="532" max="32767" attributes="2"/>
+                      <Component id="jComboBox1" alignment="0" pref="632" max="32767" attributes="2"/>
                       <Component id="pnlAllDetails" alignment="0" max="32767" attributes="2"/>
                       <Component id="jPanel4" alignment="0" max="32767" attributes="2"/>
                   </Group>
@@ -165,7 +165,7 @@
                       <Component id="btnDelete" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="btnRefresh" alignment="3" min="-2" max="-2" attributes="0"/>
                   </Group>
-                  <EmptySpace pref="42" max="32767" attributes="1"/>
+                  <EmptySpace pref="46" max="32767" attributes="1"/>
               </Group>
           </Group>
         </DimensionLayout>
@@ -207,7 +207,7 @@
                           <Component id="email" max="32767" attributes="1"/>
                           <Component id="DN" alignment="1" pref="384" max="32767" attributes="1"/>
                       </Group>
-                      <EmptySpace pref="75" max="32767" attributes="0"/>
+                      <EmptySpace pref="165" max="32767" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
@@ -294,9 +294,9 @@
                       <Group type="102" alignment="1" attributes="0">
                           <EmptySpace max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="1" attributes="0">
-                              <Component id="lblCertificateGenerated" alignment="0" pref="476" max="32767" attributes="1"/>
-                              <Component id="lblRequestApproved" alignment="0" pref="476" max="32767" attributes="1"/>
-                              <Component id="lblRequestReceived" alignment="1" pref="476" max="32767" attributes="1"/>
+                              <Component id="lblCertificateGenerated" alignment="0" pref="574" max="32767" attributes="1"/>
+                              <Component id="lblRequestApproved" alignment="0" pref="574" max="32767" attributes="1"/>
+                              <Component id="lblRequestReceived" alignment="1" pref="574" max="32767" attributes="1"/>
                           </Group>
                           <EmptySpace max="-2" attributes="0"/>
                       </Group>
@@ -515,7 +515,7 @@
           <Group type="103" groupAlignment="0" attributes="0">
               <Group type="102" alignment="1" attributes="0">
                   <EmptySpace max="-2" attributes="0"/>
-                  <Component id="jScrollPane1" pref="145" max="32767" attributes="0"/>
+                  <Component id="jScrollPane1" pref="174" max="32767" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
               </Group>
           </Group>

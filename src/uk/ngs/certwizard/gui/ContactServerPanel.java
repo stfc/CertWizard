@@ -30,6 +30,7 @@ public class ContactServerPanel extends javax.swing.JPanel {
     private AtomicBoolean isReachableServer = new AtomicBoolean(false);
     PingService pingService = null;
 
+    //private PasswordPanel passwordPanel;
     private CertWizardMain _certWizardMain = null;
 
     /** Creates new form ContactServerPanel */
@@ -38,10 +39,9 @@ public class ContactServerPanel extends javax.swing.JPanel {
         this.add(jPanel1, java.awt.BorderLayout.CENTER);
         this._certWizardMain = _certWizardMain;
         this.getCertPanel = this._certWizardMain.getCertificatePanel();
-        
-        
-        //pingService = new PingService();
         pingService = PingService.getPingService();
+      
+        getCertPanel.add(new PasswordPanel(this._certWizardMain), "PasswordPanel");
         _init();
     }
 
@@ -51,15 +51,17 @@ public class ContactServerPanel extends javax.swing.JPanel {
      * to the Internet.
      */
     private void _init(){
+        //passwordPanel.setVisible(false);
 
         jLabel2.setText("Attempting to connect to the CA Server...");
-        jButton2.setVisible(false);
+        tryAgainButton.setVisible(false);
         //jButton1.setVisible(false);
         timer = new Timer();
         jProgressBar1.setIndeterminate(true);
 //        TimerTask task = new updateProgressBar(jProgressBar1);
 //        timer.scheduleAtFixedRate(task, 500, 500);
         timer.schedule(new loadMainWindow(this), 2000);
+
 
     }
 
@@ -75,8 +77,8 @@ public class ContactServerPanel extends javax.swing.JPanel {
         jPanel1 = new javax.swing.JPanel();
         jLabel2 = new javax.swing.JLabel();
         jProgressBar1 = new javax.swing.JProgressBar();
-        jButton1 = new javax.swing.JButton();
-        jButton2 = new javax.swing.JButton();
+        cancelOnlineButton = new javax.swing.JButton();
+        tryAgainButton = new javax.swing.JButton();
 
         setBorder(javax.swing.BorderFactory.createTitledBorder("Contact Server"));
         setLayout(new java.awt.BorderLayout());
@@ -85,17 +87,17 @@ public class ContactServerPanel extends javax.swing.JPanel {
 
         jProgressBar1.setMaximum(10);
 
-        jButton1.setText("Work Offline");
-        jButton1.addActionListener(new java.awt.event.ActionListener() {
+        cancelOnlineButton.setText("Cancel");
+        cancelOnlineButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton1ActionPerformed(evt);
+                cancelOnlineButtonActionPerformed(evt);
             }
         });
 
-        jButton2.setText("Try Again");
-        jButton2.addActionListener(new java.awt.event.ActionListener() {
+        tryAgainButton.setText("Try Again");
+        tryAgainButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton2ActionPerformed(evt);
+                tryAgainButtonActionPerformed(evt);
             }
         });
 
@@ -108,11 +110,11 @@ public class ContactServerPanel extends javax.swing.JPanel {
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
                     .add(jPanel1Layout.createSequentialGroup()
                         .add(jLabel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 374, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .add(18, 18, Short.MAX_VALUE)
-                        .add(jButton2)
+                        .add(18, 59, Short.MAX_VALUE)
+                        .add(tryAgainButton)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(jButton1))
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, jProgressBar1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 593, Short.MAX_VALUE))
+                        .add(cancelOnlineButton))
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, jProgressBar1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 620, Short.MAX_VALUE))
                 .add(19, 19, 19))
         );
         jPanel1Layout.setVerticalGroup(
@@ -122,34 +124,41 @@ public class ContactServerPanel extends javax.swing.JPanel {
                 .add(jProgressBar1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .add(18, 18, 18)
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(jButton1)
+                    .add(cancelOnlineButton)
                     .add(jLabel2)
-                    .add(jButton2))
-                .addContainerGap(30, Short.MAX_VALUE))
+                    .add(tryAgainButton))
+                .addContainerGap(35, Short.MAX_VALUE))
         );
 
         add(jPanel1, java.awt.BorderLayout.CENTER);
     }// </editor-fold>//GEN-END:initComponents
 
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        // TODO add your handling code here:
-        timer.cancel();
-        SystemStatus.ISONLINE.set(false);
-        getCertPanel.add(new PasswordPanel(this._certWizardMain), "PasswordPanel");
-        getCertPanel.remove(this);
-    }//GEN-LAST:event_jButton1ActionPerformed
+    private void cancelOnlineButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelOnlineButtonActionPerformed
+        // Terminates this timer, discarding any currently scheduled tasks.
+        // Does not interfere with a currently executing task (if it exists).
+        // Once a timer has been terminated, its execution thread terminates
+        // gracefully, and no more tasks may be scheduled on it.
+        //timer.cancel();
 
-    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        //SystemStatus.ISONLINE.set(false);
+
+        // When clicking cancel, show a new PasswordPanel and remove
+        // this (ContactServerPanel) from itself.
+        //getCertPanel.add(new PasswordPanel(this._certWizardMain), "PasswordPanel");
+        //getCertPanel.remove(this);
+    }//GEN-LAST:event_cancelOnlineButtonActionPerformed
+
+    private void tryAgainButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tryAgainButtonActionPerformed
         // TODO add your handling code here:
-        _init();
-    }//GEN-LAST:event_jButton2ActionPerformed
+        //_init();
+    }//GEN-LAST:event_tryAgainButtonActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButton1;
-    private javax.swing.JButton jButton2;
+    private javax.swing.JButton cancelOnlineButton;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JProgressBar jProgressBar1;
+    private javax.swing.JButton tryAgainButton;
     // End of variables declaration//GEN-END:variables
 
     class loadMainWindow extends TimerTask {
@@ -161,31 +170,30 @@ public class ContactServerPanel extends javax.swing.JPanel {
         }
 
         public void run() {
-
-
-            if( pingService != null ){
-                System.out.println("EXECUTING PING CHECK STATEMENT");
-                isReachableServer.set( pingService.isPingService());
-            }
+            System.out.println("EXECUTING PING CHECK STATEMENT");
+            isReachableServer.set( pingService.isPingService() );
+            
 
             if (isReachableServer.get()) {
                 System.out.println("PASSED");
                 SystemStatus.ISONLINE.set(true);
-
-                timer.cancel();
-
-                getCertPanel.add(new PasswordPanel(_certWizardMain), "PasswordPanel");
-                getCertPanel.remove(cPanel);
+                // Terminates this timer, discarding any currently scheduled tasks.
+                // Does not interfere with a currently executing task (if it exists).
+                // Once a timer has been terminated, its execution thread terminates
+                // gracefully, and no more tasks may be scheduled on it.
+                //timer.cancel();
+                //getCertPanel.add(new PasswordPanel(_certWizardMain), "PasswordPanel");
+                //getCertPanel.remove(cPanel);
             } else {
                 SystemStatus.ISONLINE.set(false);
-                jLabel2.setText("<html>Failed to connect to the CA server. "
-                        + "You can switch to offline mode by clicking 'Work Offline' button, "
-                        + "or retry connecting by clicking 'Try Again'.");
+                //jLabel2.setText("<html>Failed to connect to the CA server. "
+                //        + "You can switch to offline mode by clicking 'Cancel' button, "
+                //        + "or retry connecting by clicking 'Try Again'.");
                 //new MainWindow().setVisible(true);
-                jButton2.setVisible(true);
-                jButton1.setVisible(true);
-                timer.cancel();
-                jProgressBar1.setIndeterminate(false);
+                //tryAgainButton.setVisible(true);
+                //cancelOnlineButton.setVisible(true);
+                //timer.cancel();
+                //jProgressBar1.setIndeterminate(false);
             }
 
         }

@@ -20,14 +20,33 @@ public class SystemStatus {
     public static AtomicBoolean ISINIT = new AtomicBoolean(false);;
     private String errorMessage = null;
 
-    public SystemStatus() {
+
+   
+   /**
+    * SystemStatusHolder is loaded on the first execution of SystemStatus.getInstance()
+    * or the first access to SystemStatusHolder.sysStatus, not before.
+    */
+    private static class SystemStatusHolder {
+         public static final SystemStatus sysStatus = new SystemStatus();
+    }
+
+    //force non-instantiation
+    private SystemStatus() {
+    }
+
+     /**
+     * Get the shared, thread safe instance.
+     * @return
+     */
+    public static SystemStatus getInstance(){
+      return SystemStatusHolder.sysStatus;
     }
 
     public String getErrorMessage() {
         return errorMessage;
     }
 
-    public boolean isExistKeyStore() {
+    public synchronized boolean isExistKeyStore() {
         String key = "ngsca.key.keystore.file";
         String value = SysProperty.getValue(key);
         if (value == null) {
@@ -43,7 +62,7 @@ public class SystemStatus {
         }
     }
 
-    public boolean isValidPassphrase(char[] passphrase) {
+    public synchronized boolean isValidPassphrase(char[] passphrase) {
         //uk.ngs.ca.common.ClientKeyStore keyStore = new uk.ngs.ca.common.ClientKeyStore(passphrase);
         ClientKeyStore keyStore = ClientKeyStore.getClientkeyStore(passphrase);
         String _errorMessage = keyStore.getErrorMessage();

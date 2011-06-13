@@ -13,23 +13,27 @@ import java.io.File;
 import java.net.URL;
 import java.util.Observer;
 import java.util.Observable;
+import java.util.Timer;
+import java.util.TimerTask;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.WindowConstants;
 import org.globus.common.CoGProperties;
+import uk.ngs.ca.certificate.client.PingService;
+import uk.ngs.ca.common.SystemStatus;
 import uk.ngs.ca.tools.property.SysProperty;
 
 /**
  *
  * @author xw75
  */
-public class CertWizardMain implements Observer{
+public class CertWizardMain implements Observer {
 
     //private CardLayout cardLayout;
     private JFrame frame;
-    private JTabbedPane jp;
+    private JTabbedPane tabbedPane;
     private JPanel getCertificatePanel;
     //private JPanel settingsPanel;
     //private JPanel useCertificatePanel;
@@ -39,6 +43,7 @@ public class CertWizardMain implements Observer{
     //private RAOperationPanel raopPanel = null;
     //private RAUtilityPanel rautilPanel = null;
 
+    private OnlineStatus onlineStatusPanel = new OnlineStatus();
 
     public CertWizardMain() {
         java.security.Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
@@ -90,7 +95,7 @@ public class CertWizardMain implements Observer{
         frame.setLocation(300, 200);
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
-        jp = new JTabbedPane();
+        tabbedPane = new JTabbedPane();
         //getCertificatePanel = new JPanel();
         //settingsPanel = new JPanel();
         //useCertificatePanel = new JPanel();
@@ -98,14 +103,15 @@ public class CertWizardMain implements Observer{
 
         initComponents();
 
-        frame.getContentPane().add(BorderLayout.CENTER, jp);
+        frame.getContentPane().add(BorderLayout.SOUTH, this.onlineStatusPanel);
+        frame.getContentPane().add(BorderLayout.CENTER, this.tabbedPane);
         frame.setVisible(true);
 
     }
 
     /**
      * Checks if the ~/.globus directory exists. If not, it creates one.
-     * Returns false if an error has occured
+     * Returns false if an error has occurred
      */
     private boolean checkGlobusDirectory() {
         //if(true)return false;
@@ -132,7 +138,7 @@ public class CertWizardMain implements Observer{
 
     /**
      * Checks if the ~/.ca directory exists. If not, it creates one.
-     * Returns false if an error has occured
+     * Returns false if an error has occurred
      */
     private boolean checkCADirectory() {
         //if(true)return false;
@@ -163,9 +169,9 @@ public class CertWizardMain implements Observer{
         getCertificatePanel = new JPanel();
         JPanel settingsPanel = new JPanel();
         JPanel useCertificatePanel = new JPanel();
-        jp.addTab("Apply For/Manage Your Certificate", getCertificatePanel);
-        jp.addTab("Use Your Installed Certificate", useCertificatePanel);
-        jp.addTab("Setup", settingsPanel);
+        tabbedPane.addTab("Apply For/Manage Your Certificate", getCertificatePanel);
+        tabbedPane.addTab("Use Your Installed Certificate", useCertificatePanel);
+        tabbedPane.addTab("Setup", settingsPanel);
 
 
         // First, create the settings/setup panel and the doActions panel.
@@ -174,37 +180,23 @@ public class CertWizardMain implements Observer{
         settingsPanel.add(setupPanel);
         useCertificatePanel.add(doActions);
 
-     
-        getCertificatePanel.setLayout(new CardLayout());
-        getCertificatePanel.add(new ContactServerPanel(this), "ContactServer");
+        //System.setProperty("http.proxyHost", "wwwnotexist.tr.ld");
+        //System.setProperty("http.proxyHost", "wwwcache.dl.ac.uk");
+        
+        Timer timer = new Timer();
+        // lets run ping check in a new thread so we don't block while it tries
+        // to connect. 
+        timer.schedule(new runPingCheck(), 500);
+        getCertificatePanel.add(new PasswordPanel(this));
+
+        //getCertificatePanel.setLayout(new CardLayout());
+        //getCertificatePanel.add(new ContactServerPanel(this), "ContactServer");
         //SystemStatus.ISONLINE = uk.ngs.ca.certificate.client.PingService.getPingService().isPingService();
 
         if (isExistPemFiles()) {
-            jp.setSelectedComponent(useCertificatePanel);
+            tabbedPane.setSelectedComponent(useCertificatePanel);
         }
 
-        /*if (isExistPemFiles()) {
-            jp.setSelectedComponent(useCertificatePanel);
-        } else {
-            String _property = SysProperty.getValue("uk.ngs.ca.immegration.password.property");
-            String _passphrase = System.getProperty(_property);
-            if (_passphrase == null) {
-                getCertificatePanel.add(new ContactServerPanel(this), "ContactServer");
-            } else {
-                cardLayout.show(getCertificatePanel, "MainWindowPanel");
-            }
-        }*/
-
-
-       
-        /*getCertificatePanel.addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentShown(ComponentEvent evt) {
-                getCertPanelComponentShown(evt);
-            }
-        });*/
-
-        
         
         // Second, add componentListeners so that the panel's can be refreshed
         // when the appropriate tab is shown.
@@ -229,10 +221,29 @@ public class CertWizardMain implements Observer{
     }
     
 
+    private class runPingCheck extends TimerTask {
+        private PingService pingService = PingService.getPingService();
+        public runPingCheck() {
+        }
+        public void run() {
+            if (pingService.isPingService()) {
+                SystemStatus.ISONLINE.set(true);
+            } else {
+                SystemStatus.ISONLINE.set(false);
+            }
+            onlineStatusPanel.update();
+        }
+    }
+
 
 
     public JPanel getCertificatePanel(){
         return this.getCertificatePanel;
+    }
+
+
+    public void update(){
+        this.onlineStatusPanel.update(); 
     }
 
     public void update( Observable o, Object obj ){
@@ -251,17 +262,17 @@ public class CertWizardMain implements Observer{
 //            if( _role.equals("RA Operator") || _role.equals("CA Operator")){
 //
 //                WaitDialog.showDialog();
-//                if( jp.getTabCount() != 5 ){
+//                if( tabbedPane.getTabCount() != 5 ){
 //                    String _id = _info.getId();
 //                    CertificateDownload certDownload = new CertificateDownload(_id);
 //                    if( ! certDownload.isCertificateExpired() ){
-//                        jp.addTab("RA Operation", new RAOperationPanel( _info ));
+//                        tabbedPane.addTab("RA Operation", new RAOperationPanel( _info ));
 //
-//                        jp.addTab("RA Utilities", new RAUtilityPanel( _info ));
+//                        tabbedPane.addTab("RA Utilities", new RAUtilityPanel( _info ));
 //                    }
 //                }else{
-//                    jp.remove( 4 );
-//                    jp.remove(3);
+//                    tabbedPane.remove( 4 );
+//                    tabbedPane.remove(3);
 //                }
 //
 //                WaitDialog.hideDialog();
@@ -269,7 +280,7 @@ public class CertWizardMain implements Observer{
 //================///commented out as RA Utils tab is currently not supported!
 
 //                WaitDialog.showDialog();
-//                if( jp.getTabCount() != 5 ){
+//                if( tabbedPane.getTabCount() != 5 ){
 //                    String _id = _info.getId();
 //                    CertificateDownload certDownload = new CertificateDownload(_id);
 //                    if( ! certDownload.isCertificateExpired() ){
@@ -277,22 +288,22 @@ public class CertWizardMain implements Observer{
 //                            this.raopPanel = new RAOperationPanel( _info );
 //                            this.rautilPanel = new RAUtilityPanel( _info );
 //                        }
-//                        jp.addTab("RA Operation", this.raopPanel);
-//                        jp.addTab("RA Utilities", this.rautilPanel);
+//                        tabbedPane.addTab("RA Operation", this.raopPanel);
+//                        tabbedPane.addTab("RA Utilities", this.rautilPanel);
 //                    }
 //
 //                }else{
-//                    jp.remove( 4 );
-//                    jp.remove(3);
+//                    tabbedPane.remove( 4 );
+//                    tabbedPane.remove(3);
 //                }
 //                WaitDialog.hideDialog();
 
 //================///
                 
             }else{
-                if( jp.getTabCount() == 5 ){
-                    jp.remove( 4 );
-                    jp.remove(3);
+                if( tabbedPane.getTabCount() == 5 ){
+                    tabbedPane.remove( 4 );
+                    tabbedPane.remove(3);
                 }
             }
         }
