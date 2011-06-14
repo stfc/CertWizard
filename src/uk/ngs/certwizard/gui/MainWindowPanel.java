@@ -14,7 +14,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.io.File;
-import java.util.ArrayList;
+//import java.util.ArrayList;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.security.PrivateKey;
@@ -25,7 +25,7 @@ import java.io.FileOutputStream;
 
 import java.util.Observer;
 import java.util.Observable;
-import java.util.Timer;
+//import java.util.Timer;
 
 import org.globus.common.CoGProperties;
 import org.globus.util.PEMUtils;
