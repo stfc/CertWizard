@@ -32,6 +32,8 @@ public class OnlineStatus extends javax.swing.JPanel implements Observer {
         onlineLabel = new javax.swing.JLabel();
         jLabel1 = new javax.swing.JLabel();
 
+        setToolTipText("Online CA status indicates whether the tool can contact the UK Certification Authority Server");
+
         connectButton.setText("Connect");
         connectButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -40,9 +42,9 @@ public class OnlineStatus extends javax.swing.JPanel implements Observer {
         });
 
         onlineLabel.setForeground(new java.awt.Color(255, 0, 51));
-        onlineLabel.setText("Not Online - Please check your network connection.");
+        onlineLabel.setText("Cannot Contact CA Server - Please check your network connection.");
 
-        jLabel1.setText("Online Status:");
+        jLabel1.setText("Online CA Status:");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
@@ -52,8 +54,8 @@ public class OnlineStatus extends javax.swing.JPanel implements Observer {
                 .addGap(12, 12, 12)
                 .addComponent(jLabel1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(onlineLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 318, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 49, Short.MAX_VALUE)
+                .addComponent(onlineLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 429, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(connectButton))
         );
         layout.setVerticalGroup(

@@ -1,6 +1,9 @@
 <?xml version="1.1" encoding="UTF-8" ?>
 
 <Form version="1.3" maxVersion="1.7" type="org.netbeans.modules.form.forminfo.JPanelFormInfo">
+  <Properties>
+    <Property name="toolTipText" type="java.lang.String" value="Online CA status indicates whether the tool can contact the UK Certification Authority Server"/>
+  </Properties>
   <AuxValues>
     <AuxValue name="FormSettings_autoResourcing" type="java.lang.Integer" value="0"/>
     <AuxValue name="FormSettings_autoSetComponentName" type="java.lang.Boolean" value="false"/>
@@ -20,8 +23,8 @@
               <EmptySpace min="-2" pref="12" max="-2" attributes="0"/>
               <Component id="jLabel1" min="-2" max="-2" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
-              <Component id="onlineLabel" min="-2" pref="318" max="-2" attributes="0"/>
-              <EmptySpace pref="49" max="32767" attributes="0"/>
+              <Component id="onlineLabel" min="-2" pref="429" max="-2" attributes="0"/>
+              <EmptySpace max="32767" attributes="0"/>
               <Component id="connectButton" min="-2" max="-2" attributes="0"/>
           </Group>
       </Group>
@@ -50,12 +53,12 @@
         <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
           <Color blue="33" green="0" red="ff" type="rgb"/>
         </Property>
-        <Property name="text" type="java.lang.String" value="Not Online - Please check your network connection."/>
+        <Property name="text" type="java.lang.String" value="Cannot Contact CA Server - Please check your network connection."/>
       </Properties>
     </Component>
     <Component class="javax.swing.JLabel" name="jLabel1">
       <Properties>
-        <Property name="text" type="java.lang.String" value="Online Status:"/>
+        <Property name="text" type="java.lang.String" value="Online CA Status:"/>
       </Properties>
     </Component>
   </SubComponents>
