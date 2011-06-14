@@ -24,6 +24,7 @@ import org.restlet.data.Status;
 //import org.restlet.ext.xml.DomRepresentation;
 //import org.restlet.resource.ClientResource;
 import uk.ngs.ca.common.ClientHostName;
+import uk.ngs.ca.common.SystemStatus;
 import uk.ngs.ca.tools.property.SysProperty;
 
 /**
@@ -127,6 +128,9 @@ public final class PingService {
 
             //Representation out = response.getEntity();
             //out.write(System.out);
+
+            // change the systems online status and update any observers. 
+            SystemStatus.getInstance().setIsOnline(isPing);
 
         } catch (Exception ep) {
             ep.printStackTrace();

@@ -5,7 +5,8 @@
 package uk.ngs.ca.common;
 
 import java.io.File;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Observable;
+//import java.util.concurrent.atomic.AtomicBoolean;
 
 import uk.ngs.ca.tools.property.SysProperty;
 
@@ -13,12 +14,31 @@ import uk.ngs.ca.tools.property.SysProperty;
  *
  * @author xw75
  */
-public class SystemStatus {
+public class SystemStatus extends Observable {
 
     // ISONLINE and ISINIT represent shared mutable state: Need to be atomic.
-    public static AtomicBoolean ISONLINE = new AtomicBoolean(true);
-    public static AtomicBoolean ISINIT = new AtomicBoolean(false);;
+    //public static AtomicBoolean ISONLINE = new AtomicBoolean(true);
+    //public static AtomicBoolean ISINIT = new AtomicBoolean(false);;
     private String errorMessage = null;
+
+    private boolean isOnline = false;
+   
+    public synchronized boolean getIsOnline(){
+        return this.isOnline;
+    }
+
+    /**
+     * Set the online system status flag and update any Observers registered
+     * to observe online status changes.
+     * @param online
+     */
+    public synchronized void setIsOnline(boolean online){
+        if (online != this.isOnline) {
+            this.isOnline = online;
+            setChanged();
+            notifyObservers();
+        }
+    }
 
 
    

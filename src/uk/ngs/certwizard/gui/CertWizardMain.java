@@ -180,14 +180,9 @@ public class CertWizardMain implements Observer {
         settingsPanel.add(setupPanel);
         useCertificatePanel.add(doActions);
 
-        //System.setProperty("http.proxyHost", "wwwnotexist.tr.ld");
-        //System.setProperty("http.proxyHost", "wwwcache.dl.ac.uk");
-        
-        Timer timer = new Timer();
-        // lets run ping check in a new thread so we don't block while it tries
-        // to connect. 
-        timer.schedule(new runPingCheck(), 500);
+       
         getCertificatePanel.add(new PasswordPanel(this));
+
 
         //getCertificatePanel.setLayout(new CardLayout());
         //getCertificatePanel.add(new ContactServerPanel(this), "ContactServer");
@@ -218,20 +213,29 @@ public class CertWizardMain implements Observer {
                 doActions.update();
             }
         });
+
+
+        // We want to ensure onlineStatusPanel can observe any changes in online system status
+        // so that we can update its GUI accordingly.
+        SystemStatus.getInstance().addObserver(onlineStatusPanel);
+
+        //System.setProperty("http.proxyHost", "wwwnotexist.tr.ld");
+        //System.setProperty("http.proxyHost", "wwwcache.dl.ac.uk");
+        
+        // Run ping check in a new thread so we don't block while it tries to connect.
+        Timer timer = new Timer();
+        timer.schedule(new runPingCheck(), 0); // no delay required.
+        
     }
     
 
     private class runPingCheck extends TimerTask {
-        private PingService pingService = PingService.getPingService();
         public runPingCheck() {
         }
         public void run() {
-            if (pingService.isPingService()) {
-                SystemStatus.ISONLINE.set(true);
-            } else {
-                SystemStatus.ISONLINE.set(false);
-            }
-            onlineStatusPanel.update();
+            // simply call isPingService which will itself call SystemStatus.setIsOnline(bool)
+            // and update any observers (such as the onlineStatusPanel). 
+            PingService.getPingService().isPingService();
         }
     }
 
@@ -242,12 +246,14 @@ public class CertWizardMain implements Observer {
     }
 
 
-    public void update(){
-        this.onlineStatusPanel.update(); 
-    }
+    /*public void update(){
+        this.onlineStatusPanel.update();
+    }*/
 
     public void update( Observable o, Object obj ){
-
+        // we want to update the online status panel e.g. whenever there is
+        // a change in online system status.
+        //this.onlineStatusPanel.update();
     }
 
     

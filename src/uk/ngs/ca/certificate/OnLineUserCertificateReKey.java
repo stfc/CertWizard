@@ -93,7 +93,7 @@ public class OnLineUserCertificateReKey {
      * @return true if valid, otherwise false.
      */
     public boolean isValidReKey() {
-        if ((!SystemStatus.ISONLINE.get()) || (this.CERTIFICATE == null)) {
+        if ((!SystemStatus.getInstance().getIsOnline()) || (this.CERTIFICATE == null)) {
             return false;
         }
         try {

@@ -69,7 +69,7 @@ public class RAUtilityPanel extends javax.swing.JPanel {
 
         initComponents();
 
-        if (SystemStatus.ISONLINE.get()) {
+        if ( SystemStatus.getInstance().getIsOnline() ) {
             String id = info.getId();
             long long_id = new Long( id ).longValue();
 
@@ -479,7 +479,7 @@ public class RAUtilityPanel extends javax.swing.JPanel {
 
     private void btnCertSearchActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCertSearchActionPerformed
         // TODO add your handling code here:
-        if( SystemStatus.ISONLINE.get() ){
+        if( SystemStatus.getInstance().getIsOnline()  ){
 
             WaitDialog.showDialog("General");
 
@@ -546,7 +546,7 @@ public class RAUtilityPanel extends javax.swing.JPanel {
 
     private void btnCertSearchMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnCertSearchMouseExited
         // TODO add your handling code here:
-        if (SystemStatus.ISONLINE.get()) {
+        if ( SystemStatus.getInstance().getIsOnline() ) {
             setMOD(MotD);
         }else{
             setRedMOD( MotD );
@@ -603,7 +603,7 @@ public class RAUtilityPanel extends javax.swing.JPanel {
 
     private void btnRASearchMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnRASearchMouseExited
         // TODO add your handling code here:
-        if (SystemStatus.ISONLINE.get()) {
+        if ( SystemStatus.getInstance().getIsOnline() ) {
             setMOD(MotD);
         }else{
             setRedMOD( MotD );
@@ -612,7 +612,7 @@ public class RAUtilityPanel extends javax.swing.JPanel {
 
     private void jTable1MouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable1MouseExited
         // TODO add your handling code here:
-        if (SystemStatus.ISONLINE.get()) {
+        if ( SystemStatus.getInstance().getIsOnline() ) {
             setMOD(MotD);
         }else{
             setRedMOD( MotD );
@@ -621,7 +621,7 @@ public class RAUtilityPanel extends javax.swing.JPanel {
 
     private void searchNameMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_searchNameMouseExited
         // TODO add your handling code here:
-        if (SystemStatus.ISONLINE.get()) {
+        if ( SystemStatus.getInstance().getIsOnline() ) {
             setMOD(MotD);
         }else{
             setRedMOD( MotD );
@@ -630,7 +630,7 @@ public class RAUtilityPanel extends javax.swing.JPanel {
 
     private void searchEmailMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_searchEmailMouseExited
         // TODO add your handling code here:
-        if (SystemStatus.ISONLINE.get()) {
+        if ( SystemStatus.getInstance().getIsOnline() ) {
             setMOD(MotD);
         }else{
             setRedMOD( MotD );
@@ -639,7 +639,7 @@ public class RAUtilityPanel extends javax.swing.JPanel {
 
     private void searchStatusMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_searchStatusMouseExited
         // TODO add your handling code here:
-        if (SystemStatus.ISONLINE.get()) {
+        if ( SystemStatus.getInstance().getIsOnline() ) {
             setMOD(MotD);
         }else{
             setRedMOD( MotD );
@@ -648,7 +648,7 @@ public class RAUtilityPanel extends javax.swing.JPanel {
 
     private void searchRAMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_searchRAMouseExited
         // TODO add your handling code here:
-        if (SystemStatus.ISONLINE.get()) {
+        if ( SystemStatus.getInstance().getIsOnline() ) {
             setMOD(MotD);
         }else{
             setRedMOD( MotD );
@@ -657,7 +657,7 @@ public class RAUtilityPanel extends javax.swing.JPanel {
 
     private void contactNameMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_contactNameMouseExited
         // TODO add your handling code here:
-        if (SystemStatus.ISONLINE.get()) {
+        if ( SystemStatus.getInstance().getIsOnline() ) {
             setMOD(MotD);
         }else{
             setRedMOD( MotD );
@@ -666,7 +666,7 @@ public class RAUtilityPanel extends javax.swing.JPanel {
 
     private void contactRAMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_contactRAMouseExited
         // TODO add your handling code here:
-        if (SystemStatus.ISONLINE.get()) {
+        if ( SystemStatus.getInstance().getIsOnline() ) {
             setMOD(MotD);
         }else{
             setRedMOD( MotD );

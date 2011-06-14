@@ -38,12 +38,12 @@
                   <Group type="103" groupAlignment="1" attributes="0">
                       <Group type="102" attributes="0">
                           <Component id="jLabel2" min="-2" pref="374" max="-2" attributes="0"/>
-                          <EmptySpace type="separate" pref="59" max="32767" attributes="0"/>
+                          <EmptySpace type="separate" pref="85" max="32767" attributes="0"/>
                           <Component id="tryAgainButton" min="-2" max="-2" attributes="0"/>
                           <EmptySpace min="-2" max="-2" attributes="1"/>
                           <Component id="cancelOnlineButton" min="-2" max="-2" attributes="0"/>
                       </Group>
-                      <Component id="jProgressBar1" alignment="0" pref="620" max="32767" attributes="0"/>
+                      <Component id="jProgressBar1" alignment="0" pref="609" max="32767" attributes="0"/>
                   </Group>
                   <EmptySpace min="-2" pref="19" max="-2" attributes="0"/>
               </Group>
@@ -60,7 +60,7 @@
                       <Component id="jLabel2" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="tryAgainButton" alignment="3" min="-2" max="-2" attributes="0"/>
                   </Group>
-                  <EmptySpace pref="35" max="32767" attributes="0"/>
+                  <EmptySpace pref="27" max="32767" attributes="0"/>
               </Group>
           </Group>
         </DimensionLayout>

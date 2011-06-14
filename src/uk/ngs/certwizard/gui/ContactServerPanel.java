@@ -176,7 +176,7 @@ public class ContactServerPanel extends javax.swing.JPanel {
 
             if (isReachableServer.get()) {
                 System.out.println("PASSED");
-                SystemStatus.ISONLINE.set(true);
+                SystemStatus.getInstance().setIsOnline(true);
                 // Terminates this timer, discarding any currently scheduled tasks.
                 // Does not interfere with a currently executing task (if it exists).
                 // Once a timer has been terminated, its execution thread terminates
@@ -185,7 +185,7 @@ public class ContactServerPanel extends javax.swing.JPanel {
                 //getCertPanel.add(new PasswordPanel(_certWizardMain), "PasswordPanel");
                 //getCertPanel.remove(cPanel);
             } else {
-                SystemStatus.ISONLINE.set(false);
+                SystemStatus.getInstance().setIsOnline(false); 
                 //jLabel2.setText("<html>Failed to connect to the CA server. "
                 //        + "You can switch to offline mode by clicking 'Cancel' button, "
                 //        + "or retry connecting by clicking 'Try Again'.");

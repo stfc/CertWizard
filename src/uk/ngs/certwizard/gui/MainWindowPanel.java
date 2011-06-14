@@ -51,8 +51,8 @@ import uk.ngs.ca.tools.property.SysProperty;
  */
 public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
-    String MotD = "Message of the Day: \n\n\nWelcome to the new Certificate Wizard!";
-    ArrayList<Certificate> array;
+    private String MotD = "Message of the Day: \n\n\nWelcome to the new Certificate Wizard!";
+    //private ArrayList<Certificate> array;
     private char[] PASSPHRASE;
     private OffLineCertificateInfo offLineCertInfo;
     private OnLineCertificateInfo onLineCertInfo;
@@ -73,7 +73,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
         initComponents();
 
-        if (SystemStatus.ISONLINE.get()) {
+        if (SystemStatus.getInstance().getIsOnline()) {
             WaitDialog.showDialog("Refresh");
             //setup timer for 10 minutes --ADDED REFRESH BUTTON INSTEAD
 //            long timeinmin = 1000*60*1;
@@ -108,7 +108,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         } else {
             offLineInit();
             WaitDialog.hideDialog();
-
             MotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
             setRedMOD( MotD );
         }
@@ -151,6 +150,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 this.btnDelete.setEnabled(false);
                 this.btnInstall.setEnabled(false);
             }
+            //this.setMOD("");
 
         }
     }
@@ -189,7 +189,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     }
 
     public void update(Observable observable, Object obj) {
-        if (SystemStatus.ISONLINE.get()) {
+        if ( SystemStatus.getInstance().getIsOnline() ) {
             //keystore and certificateCSRInfo need to be refreshed in OnLineCertificayeInfo.
             this.onLineCertInfo.refresh();
 
@@ -710,7 +710,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     private boolean isOnlinePing(){
         boolean online = PingService.getPingService().isPingService();
-        this._certWizardMain.update();
+        //this._certWizardMain.update();
         return online;
     }
 
@@ -746,7 +746,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
 
 
-        if (SystemStatus.ISONLINE.get()) {
+        if ( SystemStatus.getInstance().getIsOnline() ) {
            
            if( !isOnlinePing() ){
                
@@ -939,7 +939,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     private void btnNewCertificateRequestActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNewCertificateRequestActionPerformed
         // TODO add your handling code here:
-        if( SystemStatus.ISONLINE.get() ){
+        if( SystemStatus.getInstance().getIsOnline() ){
             if( !isOnlinePing() ){
                 JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
 
@@ -955,7 +955,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private void btnImportCertificateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnImportCertificateActionPerformed
         // TODO add your handling code here:
 //        WaitDialog.showDialog();
-        if( SystemStatus.ISONLINE.get() ){
+        if( SystemStatus.getInstance().getIsOnline() ){
             if( !isOnlinePing() ){
                 JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
 //                WaitDialog.hideDialog();
@@ -989,7 +989,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         PrivateKey privateKey = null;
         ClientKeyStore keyStore = ClientKeyStore.getClientkeyStore(PASSPHRASE);
         
-        if (SystemStatus.ISONLINE.get()) {
+        if ( SystemStatus.getInstance().getIsOnline() ) {
             
             //check if connection is fine.
             if( !isOnlinePing() ){
@@ -1016,7 +1016,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private void btnRenewActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRenewActionPerformed
         // TODO add your handling code here:
 
-        if (SystemStatus.ISONLINE.get()) {
+        if ( SystemStatus.getInstance().getIsOnline() ) {
             
             //check if connection is fine.
             if( !isOnlinePing() ){
@@ -1047,7 +1047,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     private void btnRevokeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRevokeActionPerformed
         // TODO add your handling code here:
-        if (SystemStatus.ISONLINE.get()) {
+        if ( SystemStatus.getInstance().getIsOnline() ) {
 
             //check if connection is fine.
             if( !isOnlinePing() ){
@@ -1074,7 +1074,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     private void btnDeleteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDeleteActionPerformed
         // TODO add your handling code here:
-        if (SystemStatus.ISONLINE.get()) {
+        if ( SystemStatus.getInstance().getIsOnline() ) {
 
             //check if connection is fine.
             if( !isOnlinePing() ){
@@ -1114,7 +1114,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     private void btnNewCertificateRequestMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnNewCertificateRequestMouseExited
         // TODO add your handling code here:
-        if (SystemStatus.ISONLINE.get()) {
+        if ( SystemStatus.getInstance().getIsOnline() ) {
             setMOD(MotD);
         }else{
             setRedMOD( MotD );
@@ -1167,7 +1167,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         PublicKey publicKey = null;
         ClientKeyStore keyStore = ClientKeyStore.getClientkeyStore(PASSPHRASE);
 
-        if (SystemStatus.ISONLINE.get()) {
+        if ( SystemStatus.getInstance().getIsOnline() ) {
             //check if connection is fine.
             if( !isOnlinePing() ){
                 JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
@@ -1238,7 +1238,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     private void btnInstallMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnInstallMouseExited
         // TODO add your handling code here:
-        if (SystemStatus.ISONLINE.get()) {
+        if ( SystemStatus.getInstance().getIsOnline() ) {
             setMOD(MotD);
         }else{
             setRedMOD( MotD );
@@ -1247,7 +1247,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     private void btnImportCertificateMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnImportCertificateMouseExited
         // TODO add your handling code here:
-        if (SystemStatus.ISONLINE.get()) {
+        if ( SystemStatus.getInstance().getIsOnline() ) {
             setMOD(MotD);
         }else{
             setRedMOD( MotD );
@@ -1256,7 +1256,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     private void jComboBox1MouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jComboBox1MouseExited
         // TODO add your handling code here:
-        if (SystemStatus.ISONLINE.get()) {
+        if ( SystemStatus.getInstance().getIsOnline() ) {
             setMOD(MotD);
         }else{
             setRedMOD( MotD );
@@ -1265,7 +1265,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     private void btnRenewMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnRenewMouseExited
         // TODO add your handling code here:
-        if (SystemStatus.ISONLINE.get()) {
+        if ( SystemStatus.getInstance().getIsOnline() ) {
             setMOD(MotD);
         }else{
             setRedMOD( MotD );
@@ -1274,7 +1274,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     private void btnExportMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnExportMouseExited
         // TODO add your handling code here:
-        if (SystemStatus.ISONLINE.get()) {
+        if ( SystemStatus.getInstance().getIsOnline() ) {
             setMOD(MotD);
         }else{
             setRedMOD( MotD );
@@ -1283,7 +1283,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     private void btnRevokeMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnRevokeMouseExited
         // TODO add your handling code here:
-        if (SystemStatus.ISONLINE.get()) {
+        if ( SystemStatus.getInstance().getIsOnline() ) {
             setMOD(MotD);
         }else{
             setRedMOD( MotD );
@@ -1292,7 +1292,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     private void btnDeleteMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnDeleteMouseExited
         // TODO add your handling code here:
-        if (SystemStatus.ISONLINE.get()) {
+        if ( SystemStatus.getInstance().getIsOnline() ) {
             setMOD(MotD);
         }else{
             setRedMOD( MotD );
@@ -1393,13 +1393,13 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         TextMOD.setText(text);
     }
     
-    public void setMOD(String text) {
+    private void setMOD(String text) {
         TextMOD.setForeground(Color.BLACK);
         TextMOD.setText(text);
     }
 
     private void updateComboBox( int _index ){
-        if (SystemStatus.ISONLINE.get()) {
+        if ( SystemStatus.getInstance().getIsOnline() ) {
             if( this.certificateCSRInfos[ _index ] != null ){
                 ListCellRenderer renderer = new ListItemRenderer();
                 String _dn = this.certificateCSRInfos[ _index ].getOwner();
@@ -1459,7 +1459,7 @@ _obj = (Object[])jComboBox1.getItemAt(_index);
     }
 
     private void fillComboBox() {
-        if (SystemStatus.ISONLINE.get()) {
+        if ( SystemStatus.getInstance().getIsOnline() ) {
 
             if( this.certificateCSRInfos != null ){
                 ListCellRenderer renderer = new ListItemRenderer();

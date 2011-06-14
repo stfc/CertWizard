@@ -1,6 +1,8 @@
 package uk.ngs.certwizard.gui;
 
 import java.awt.Color;
+import java.util.Observable;
+import java.util.Observer;
 import uk.ngs.ca.certificate.client.PingService;
 import uk.ngs.ca.common.SystemStatus;
 
@@ -10,7 +12,7 @@ import uk.ngs.ca.common.SystemStatus;
  *
  * @author David Meredith
  */
-public class OnlineStatus extends javax.swing.JPanel {
+public class OnlineStatus extends javax.swing.JPanel implements Observer {
 
     /** Creates new form OnlineStatus */
     public OnlineStatus() {
@@ -81,13 +83,9 @@ public class OnlineStatus extends javax.swing.JPanel {
      * until completed which avoids re-clicking while trying to connect.
      */
     private void doPingCheck(){
-        boolean isOnline = PingService.getPingService().isPingService();
-        if(isOnline){
-             SystemStatus.ISONLINE.set(true);
-        } else {
-             SystemStatus.ISONLINE.set(false);
-        }
-        this.update();
+        // calling isPingService will call SystemStatus.setIsOnline(bool) which
+        // will subsequently invoke update below if the state changes.
+        PingService.getPingService().isPingService();
     }
 
 
@@ -95,15 +93,19 @@ public class OnlineStatus extends javax.swing.JPanel {
      * Update this panels online status GUI components based on the 
      * <code>SystemStatus.ISONLINE</code> property. Thread safe. 
      */
-    public synchronized void update() {
-        if (SystemStatus.ISONLINE.get()) {
+    public void update(Observable o, Object arg) {
+        //System.out.println("update called");
+        if ( SystemStatus.getInstance().getIsOnline() ) {
             this.onlineLabel.setText("Online");
             this.onlineLabel.setForeground(new Color(0, 153, 0));
+            this.connectButton.setText("Reconnect");
         } else {
-            this.onlineLabel.setText("Not Online - Please check your network connection.");
+            this.onlineLabel.setText("Cannot Contact CA Server - Please check your network connection.");
             this.onlineLabel.setForeground(Color.RED);
+            this.connectButton.setText("Connect");
         }
     }
+
 
 
 

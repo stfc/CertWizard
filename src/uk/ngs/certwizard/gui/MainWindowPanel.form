@@ -22,7 +22,7 @@
           <Group type="102" alignment="0" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="jLabel7" pref="208" max="32767" attributes="0"/>
+                  <Component id="jLabel7" pref="210" max="32767" attributes="0"/>
                   <Component id="jPanel1" alignment="0" max="32767" attributes="1"/>
                   <Component id="jPanel3" alignment="0" max="32767" attributes="1"/>
               </Group>
@@ -70,7 +70,7 @@
               <Group type="102" alignment="0" attributes="0">
                   <EmptySpace max="-2" attributes="0"/>
                   <Component id="btnNewCertificateRequest" min="-2" max="-2" attributes="0"/>
-                  <EmptySpace pref="21" max="32767" attributes="0"/>
+                  <EmptySpace pref="50" max="32767" attributes="0"/>
                   <Component id="btnImportCertificate" min="-2" max="-2" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
               </Group>
@@ -129,7 +129,7 @@
                   <Group type="103" groupAlignment="0" attributes="0">
                       <Group type="102" alignment="1" attributes="0">
                           <Component id="btnRefresh" min="-2" max="-2" attributes="0"/>
-                          <EmptySpace pref="108" max="32767" attributes="0"/>
+                          <EmptySpace pref="208" max="32767" attributes="0"/>
                           <Component id="btnInstall" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
                           <Component id="btnRenew" min="-2" max="-2" attributes="0"/>
@@ -207,7 +207,7 @@
                           <Component id="email" max="32767" attributes="1"/>
                           <Component id="DN" alignment="1" pref="384" max="32767" attributes="1"/>
                       </Group>
-                      <EmptySpace pref="165" max="32767" attributes="0"/>
+                      <EmptySpace pref="175" max="32767" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
@@ -294,9 +294,9 @@
                       <Group type="102" alignment="1" attributes="0">
                           <EmptySpace max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="1" attributes="0">
-                              <Component id="lblCertificateGenerated" alignment="0" pref="574" max="32767" attributes="1"/>
-                              <Component id="lblRequestApproved" alignment="0" pref="574" max="32767" attributes="1"/>
-                              <Component id="lblRequestReceived" alignment="1" pref="574" max="32767" attributes="1"/>
+                              <Component id="lblCertificateGenerated" alignment="0" pref="576" max="32767" attributes="1"/>
+                              <Component id="lblRequestApproved" alignment="0" pref="576" max="32767" attributes="1"/>
+                              <Component id="lblRequestReceived" alignment="1" pref="576" max="32767" attributes="1"/>
                           </Group>
                           <EmptySpace max="-2" attributes="0"/>
                       </Group>
@@ -523,7 +523,7 @@
         <DimensionLayout dim="1">
           <Group type="103" groupAlignment="0" attributes="0">
               <Group type="102" alignment="0" attributes="0">
-                  <Component id="jScrollPane1" pref="250" max="32767" attributes="0"/>
+                  <Component id="jScrollPane1" pref="254" max="32767" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
               </Group>
           </Group>
