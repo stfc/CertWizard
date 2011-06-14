@@ -11,6 +11,8 @@ import java.util.Observable;
 import uk.ngs.ca.tools.property.SysProperty;
 
 /**
+ * This class is <code>Observable</code>. Registered <code>Observer</code>s
+ * will be updated when the <code>isOnline</code> system changes.
  *
  * @author xw75
  */
