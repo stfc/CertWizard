@@ -36,7 +36,9 @@ import uk.ngs.ca.tools.property.SysProperty;
 
 /**
  * Read or create file $HOME/.ca/cakeystore.pkcs12 (create if it does not
- * already exist). This file is intended to hold.....what.
+ * already exist). This file is intended to hold.....what. It appears that
+ * this file will hold the CSR request (it is populated after applying for a
+ * cert).
  *
  * @author xw75
  */
@@ -66,9 +68,9 @@ public final class ClientKeyStore {
         // (a composite action, i.e. check if null then act, but this is ok
         // provided this method is synchronized). Lets create the keystore only
         // if it has not been created yet or if the password has changed.
-        if (clientKeyStore == null || (passphrase != null && !Arrays.equals(passphrase,clientKeyStore.PASSPHRASE))) {
+        //if (clientKeyStore == null || (passphrase != null && !Arrays.equals(passphrase,clientKeyStore.PASSPHRASE))) {
             clientKeyStore = new ClientKeyStore(passphrase);
-        }
+        //}
         return clientKeyStore;
     }
 

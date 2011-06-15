@@ -64,13 +64,14 @@ public final class ClientCertKeyStore {
         // (a composite action, i.e. check if null then act, but this is ok
         // provided this method is synchronized). Lets create the keystore only
         // if it has not been created yet or if the password has changed.
-        if (clientCertKeyStore == null || (passphrase != null && !Arrays.equals(passphrase,clientCertKeyStore.PASSPHRASE))) {
+        //if (clientCertKeyStore == null || (passphrase != null && !Arrays.equals(passphrase,clientCertKeyStore.PASSPHRASE))) {
             clientCertKeyStore = new ClientCertKeyStore(passphrase);
-        }
+        //}
         return clientCertKeyStore;
     }
 
     private ClientCertKeyStore(char[] passphrase) {
+        //System.out.println("ClientCertKeyStore constructor");
         PASSPHRASE = passphrase;
         init();
         setupCertKeyStoreFile(passphrase);
@@ -148,7 +149,9 @@ public final class ClientCertKeyStore {
                 File f = new File(this.keyStoreFileAbsPath);
                 fos = new FileOutputStream(f);
                 this.certKeyStore.store(fos, PASSPHRASE);
-            }
+                //System.out.println("this should print: creating: "+this.keyStoreFileAbsPath); // this should print: creating: C:\Documents and Settings\djm76\.ca\cacertkeystore.pkcs12
+                //if(true)System.exit(0);
+             }
         } catch (Exception ep) {
             ep.printStackTrace();
             errorMessage = ep.getMessage();
