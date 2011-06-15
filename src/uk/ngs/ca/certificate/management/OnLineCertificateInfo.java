@@ -84,7 +84,8 @@ import uk.ngs.ca.common.ClientKeyStore;
 import uk.ngs.ca.certificate.OnLineUserCertificateReKey;
 import uk.ngs.ca.certificate.client.ResourcesPublicKey;
 /**
- *
+ * No javadoc - what is this class intended to do ? A description is required.
+ * 
  * @author xw75
  */
 public class OnLineCertificateInfo extends Observable{
@@ -110,15 +111,28 @@ public class OnLineCertificateInfo extends Observable{
     private Vector CertCSRVector = null;
 
 
+    /**
+     * What does construction of this class do ? - what are the repercussions ?
+     * in terms of creating/deleting cacertkeystore.pkcs12 and cakeystore.pkcs12
+     * @param passphrase
+     */
     public OnLineCertificateInfo(char[] passphrase) {
         PASSPHRASE = passphrase;
+        System.out.println("in OnLineCertificateInfo");
+        // create or read '$HOME/.ca/cakeystore.pkcs12'
         ClientKeyStore _keyStore = ClientKeyStore.getClientkeyStore(passphrase);
+
+        // creae or read '$HOME/.ca/cacertkeystore.pkcs12'
         ClientCertKeyStore _certKeyStore = ClientCertKeyStore.getClientCertKeyStore(passphrase);
         init(passphrase);
+
+        // if ngsca.key.keystore.file exists (cakeystore.pkcs12)
         if (isExistKeyStore()) {
+            // if a keypair does not exist 
             if (!isExistKeyPair(passphrase)) {
-                removeCertKeyStore();
-                removeCSRFile();
+                System.out.println("empty cakeystore exists - deleting cacertkeystore.pkcs12, localcertificate.xml");
+                removeCertKeyStore(); // explicitly delete the 'cacertkeystore.pkcs12' file - why?
+                removeCSRFile();   // explicitly delete 'localcertificate.xml'
             } else {
                 isExistCertKeyStore();
                 submitRequest();
@@ -126,13 +140,15 @@ public class OnLineCertificateInfo extends Observable{
                 updateCertKeyStore();
             }
         } else {
-            removeCertKeyStore();
-            removeCSRFile();
+            System.out.println("cakeystore does NOT exist - deleting cacertkeystore.pkcs12, localcertificate.xml");
+            removeCertKeyStore(); // explicitly delete the 'cacertkeystore.pkcs12' file - why?
+            removeCSRFile();   // explicitly delete 'localcertificate.xml'
         }
     }
 
     public void notifyObserver( String _notifyMessage ){
         setChanged();
+        // any indication of who are the observers ?
         notifyObservers( _notifyMessage );
     }
 
