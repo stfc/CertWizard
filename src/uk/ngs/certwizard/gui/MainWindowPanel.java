@@ -51,7 +51,7 @@ import uk.ngs.ca.tools.property.SysProperty;
  */
 public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
-    private String MotD = "Message of the Day: \n\n\nWelcome to the new Certificate Wizard!";
+    private String stringMotD = "Message of the Day: \n\n\nWelcome to the new Certificate Wizard!";
     //private ArrayList<Certificate> array;
     private char[] PASSPHRASE;
     private OffLineCertificateInfo offLineCertInfo;
@@ -59,6 +59,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private CertificateCSRInfo[] certificateCSRInfos = null;
 
     private CertWizardMain _certWizardMain = null;
+    private CAMotd motd;
 
 
     /** Creates new form MainWindowPanel */
@@ -80,10 +81,14 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 //            Timer timer = new Timer();
 //            RefreshOnLine refreshOnline = new RefreshOnLine(this) ;
 //            timer.schedule(refreshOnline, timeinmin, timeinmin);
+
+             
+            offLineInit();
             onLineInit();
-            CAMotd motd = new CAMotd();
-            MotD = motd.getText();
-            setMOD(MotD);
+            
+            motd = new CAMotd();
+            stringMotD = motd.getText();
+            setMOD(stringMotD);
 
             String certWizardVersion = SysProperty.getValue("ngsca.certwizard.versionNumber");
 //            Float certWizardVersionFloat = new Float(certWizardVersion);
@@ -108,8 +113,10 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         } else {
             offLineInit();
             WaitDialog.hideDialog();
-            MotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-            setRedMOD( MotD );
+            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please click Refresh if you want to access all pending certificates.";
+            //setRedMOD( MotD );
+            setRedMOD(stringMotD);
+            this.btnRefresh.setText("Connect");
         }
 
 
@@ -143,6 +150,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         } else {
             onLineCertInfo = new OnLineCertificateInfo(PASSPHRASE);
             this.certificateCSRInfos = onLineCertInfo.getCertCSRInfos();
+            this.btnNewCertificateRequest.setEnabled(true);
             if ((this.certificateCSRInfos == null) || (this.certificateCSRInfos.length == 0)) {
                 this.btnExport.setEnabled(false);
                 this.btnRevoke.setEnabled(false);
@@ -181,10 +189,22 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                     JOptionPane.INFORMATION_MESSAGE);
             //WaitDialog.hideDialog();
             //return;
+
+            //do an offline init if the online refresh fails
+
+            offLineInit();
+            jComboBox1.removeAllItems();
+            fillComboBox();
+            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
+            setRedMOD(stringMotD);
+            this.btnRefresh.setText("Connect");
         } else {
             onLineInit();
             jComboBox1.removeAllItems();
             fillComboBox();
+            stringMotD = motd.getText();
+            setMOD(stringMotD);
+            this.btnRefresh.setText("Refresh");
         }
     }
 
@@ -394,7 +414,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
                     .add(email)
                     .add(DN, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 384, Short.MAX_VALUE))
-                .addContainerGap(69, Short.MAX_VALUE))
+                .addContainerGap(132, Short.MAX_VALUE))
         );
         pnlAllDetailsLayout.setVerticalGroup(
             pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -428,9 +448,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel5Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(jPanel5Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, lblCertificateGenerated, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 472, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, lblRequestApproved, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 472, Short.MAX_VALUE)
-                    .add(lblRequestReceived, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 472, Short.MAX_VALUE))
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, lblCertificateGenerated, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 535, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, lblRequestApproved, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 535, Short.MAX_VALUE)
+                    .add(lblRequestReceived, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 535, Short.MAX_VALUE))
                 .addContainerGap())
         );
         jPanel5Layout.setVerticalGroup(
@@ -602,6 +622,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 btnRefreshMouseEntered(evt);
             }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnRefreshMouseExited(evt);
+            }
         });
         btnRefresh.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -616,9 +639,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             .add(jPanel2Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel2Layout.createSequentialGroup()
+                    .add(jPanel2Layout.createSequentialGroup()
                         .add(btnRefresh)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 59, Short.MAX_VALUE)
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 122, Short.MAX_VALUE)
                         .add(btnInstall)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(btnRenew)
@@ -628,10 +651,11 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                         .add(btnRevoke)
                         .add(4, 4, 4)
                         .add(btnDelete))
-                    .add(jComboBox1, 0, 532, Short.MAX_VALUE)
-                    .add(pnlAllDetails, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .add(jPanel4, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .add(12, 12, 12))
+                    .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
+                        .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel4, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .add(org.jdesktop.layout.GroupLayout.LEADING, pnlAllDetails, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .add(org.jdesktop.layout.GroupLayout.LEADING, jComboBox1, 0, 584, Short.MAX_VALUE)))
+                .addContainerGap())
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -643,13 +667,13 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 .add(jPanel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                    .add(btnRefresh)
                     .add(btnRevoke)
                     .add(btnExport)
                     .add(btnRenew)
                     .add(btnInstall)
-                    .add(btnDelete)
-                    .add(btnRefresh))
-                .addContainerGap(20, Short.MAX_VALUE))
+                    .add(btnDelete))
+                .addContainerGap(16, Short.MAX_VALUE))
         );
 
         jPanel3.setBorder(javax.swing.BorderFactory.createTitledBorder("Information"));
@@ -664,7 +688,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         jPanel3.setLayout(jPanel3Layout);
         jPanel3Layout.setHorizontalGroup(
             jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel3Layout.createSequentialGroup()
+            .add(jPanel3Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 145, Short.MAX_VALUE)
                 .addContainerGap())
@@ -672,8 +696,8 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel3Layout.createSequentialGroup()
-                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 250, Short.MAX_VALUE)
-                .addContainerGap())
+                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 246, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         jLabel7.setIcon(new javax.swing.ImageIcon(getClass().getResource("/uk/ngs/ca/images/stfc-transparent.png"))); // NOI18N
@@ -685,31 +709,35 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             .add(layout.createSequentialGroup()
                 .addContainerGap()
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                    .add(jPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .add(jLabel7, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 181, Short.MAX_VALUE)
-                    .add(jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .add(jPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .add(jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
+            .add(layout.createSequentialGroup()
                 .addContainerGap()
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel2, 0, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .add(layout.createSequentialGroup()
+                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, layout.createSequentialGroup()
                         .add(jLabel7, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 47, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(jPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                .addContainerGap())
+                        .add(jPanel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
     private boolean isOnlinePing(){
         boolean online = PingService.getPingService().isPingService();
+        if (online)
+            this.btnRefresh.setText("Refresh");
+        else
+            this.btnRefresh.setText("Connect");
         //this._certWizardMain.update();
         return online;
     }
@@ -755,7 +783,12 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                         + "CertWizard and select offline.", "Server Connection Fault",
                         JOptionPane.INFORMATION_MESSAGE);
                 //WaitDialog.hideDialog();
+
                 //return;
+
+                stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
+                setRedMOD(stringMotD);
+                
             } else {
                 //update the selected item. This update will only be done if the ping check succeeds
                 // i.e. the detabase connection is available
@@ -772,6 +805,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                     fillComboBox();
                     jComboBox1.setSelectedIndex(index);
                 }
+
 
             }
 
@@ -901,6 +935,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             String _status = offLineCertInfo.getStatus(index);
             this.jPanel4.setBorder(new TitledBorder("Certificate Status: " + _status));
 
+
             if (_status.equals("Expired")) {
                 this.jComboBox1.setForeground(new ExpiredCertColor());
                 this.btnExport.setEnabled(true);
@@ -908,10 +943,12 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 this.btnInstall.setEnabled(true);
                 this.btnRevoke.setEnabled(false);
                 this.btnRenew.setEnabled(false);
+                this.btnNewCertificateRequest.setEnabled(false);
             } else if (_status.equals("Valid")) {
                 this.jComboBox1.setForeground(new ValidCertColor());
                 this.btnDelete.setEnabled(true);
                 this.btnRenew.setEnabled(false);
+                this.btnNewCertificateRequest.setEnabled(false);
                 this.btnRevoke.setEnabled(false);
                 this.btnInstall.setEnabled(true);
             } else {
@@ -919,6 +956,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 this.btnRenew.setEnabled(false);
                 this.btnExport.setEnabled(false);
                 this.btnRevoke.setEnabled(false);
+                this.btnNewCertificateRequest.setEnabled(false);
                 this.pnlValidDates.setVisible(false);
 
                 this.jPanel5.setSize(this.jPanel5.getWidth(), pnlValidDates.getHeight());
@@ -942,6 +980,13 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         if( SystemStatus.getInstance().getIsOnline() ){
             if( !isOnlinePing() ){
                 JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
+//                offLineInit();
+                jComboBox1.removeAllItems();
+                fillComboBox();
+                stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
+                setRedMOD(stringMotD);
+                this.btnRefresh.setText("Connect");
+                return;
 
             }else{
                 new Apply(this, PASSPHRASE).setVisible(true);
@@ -957,10 +1002,13 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 //        WaitDialog.showDialog();
         if( SystemStatus.getInstance().getIsOnline() ){
             if( !isOnlinePing() ){
-                JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
-//                WaitDialog.hideDialog();
-                return;
+//                JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
+////                WaitDialog.hideDialog();
+//                return;
+
+                //if user suddenly goes offline, it will set the SystemStatus to offline mode.
             }
+
         }
 
         JFileChooser importCert = new JFileChooser();
@@ -989,26 +1037,26 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         PrivateKey privateKey = null;
         ClientKeyStore keyStore = ClientKeyStore.getClientkeyStore(PASSPHRASE);
         
-        if ( SystemStatus.getInstance().getIsOnline() ) {
-            
-            //check if connection is fine.
-            if( !isOnlinePing() ){
-                JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
-
-                return;
-            }
-
-            String _id = this.certificateCSRInfos[ this.jComboBox1.getSelectedIndex() ].getId();
-            CertificateDownload certDownload = new CertificateDownload( _id );
-
-            cert = certDownload.getCertificate();
-            PublicKey publicKey = cert.getPublicKey();
-            privateKey = keyStore.getPrivateKey(publicKey);
-        } else {
+//        if ( SystemStatus.getInstance().getIsOnline() ) {
+//
+//            //check if connection is fine.
+//            if( !isOnlinePing() ){
+//                JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
+//
+//                return;
+//            }
+//
+//            String _id = this.certificateCSRInfos[ this.jComboBox1.getSelectedIndex() ].getId();
+//            CertificateDownload certDownload = new CertificateDownload( _id );
+//
+//            cert = certDownload.getCertificate();
+//            PublicKey publicKey = cert.getPublicKey();
+//            privateKey = keyStore.getPrivateKey(publicKey);
+//        } else {
             cert = offLineCertInfo.getCertificate(index);
             PublicKey publicKey = cert.getPublicKey();
             privateKey = keyStore.getPrivateKey(publicKey);
-        }
+//        }
         new ExportCertificate(cert, privateKey).setVisible(true);
 
     }//GEN-LAST:event_btnExportActionPerformed
@@ -1016,13 +1064,19 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private void btnRenewActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRenewActionPerformed
         // TODO add your handling code here:
 
-        if ( SystemStatus.getInstance().getIsOnline() ) {
+//        if ( SystemStatus.getInstance().getIsOnline() ) {
             
             //check if connection is fine.
             if( !isOnlinePing() ){
                 JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
-
+//                offLineInit();
+                jComboBox1.removeAllItems();
+                fillComboBox();
+                stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
+                setRedMOD(stringMotD);
+                this.btnRefresh.setText("Connect");
                 return;
+
             }
 
             if( ! this.certificateCSRInfos[ this.jComboBox1.getSelectedIndex() ].getStatus().equals("VALID")){
@@ -1035,25 +1089,31 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 }
             }
 
-        } else {
-            if (this.jComboBox1.getSelectedIndex() != -1) {
-                new OffLineConfirmation(this, "Renew", "Are you sure you want to renew the certificate with the following details?", this.jComboBox1.getSelectedIndex(), offLineCertInfo).setVisible(true);
-            } else {
-                JOptionPane.showMessageDialog(this, "You haven't selected any certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
-            }
-        }
+//        } else {
+//            if (this.jComboBox1.getSelectedIndex() != -1) {
+//                new OffLineConfirmation(this, "Renew", "Are you sure you want to renew the certificate with the following details?", this.jComboBox1.getSelectedIndex(), offLineCertInfo).setVisible(true);
+//            } else {
+//                JOptionPane.showMessageDialog(this, "You haven't selected any certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
+//            }
+//        }
 
     }//GEN-LAST:event_btnRenewActionPerformed
 
     private void btnRevokeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRevokeActionPerformed
         // TODO add your handling code here:
-        if ( SystemStatus.getInstance().getIsOnline() ) {
+//        if ( SystemStatus.getInstance().getIsOnline() ) {
 
             //check if connection is fine.
             if( !isOnlinePing() ){
                 JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
-                // ok, can only do a revoke when we are online
+                // ok, can only do a revoke when we are online                jComboBox1.removeAllItems();
+                jComboBox1.removeAllItems();
+                fillComboBox();
+                stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
+                setRedMOD(stringMotD);
+                this.btnRefresh.setText("Connect");
                 return;
+  
             }
 
             if( ! this.certificateCSRInfos[ this.jComboBox1.getSelectedIndex() ].getStatus().equals( "VALID")){
@@ -1066,22 +1126,26 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 }
             }
 
-        } else {
-            JOptionPane.showMessageDialog(this, "The certificate can not be revoked by offline. Please do it online.", "No offline certificate revocation", JOptionPane.INFORMATION_MESSAGE);
-        }
+//        } else {
+//            JOptionPane.showMessageDialog(this, "The certificate can not be revoked by offline. Please do it online.", "No offline certificate revocation", JOptionPane.INFORMATION_MESSAGE);
+//        }
         
     }//GEN-LAST:event_btnRevokeActionPerformed
 
     private void btnDeleteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDeleteActionPerformed
         // TODO add your handling code here:
-        if ( SystemStatus.getInstance().getIsOnline() ) {
+//        if ( SystemStatus.getInstance().getIsOnline() ) {
 
             //check if connection is fine.
             if( !isOnlinePing() ){
-                JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
-                // why do we have to return here ? i may want to install my cert when i have no internet !
-                return;
+//                JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
+//                // why do we have to return here ? i may want to install my cert when i have no internet !
+//                return;
+
+
             }
+
+        if ( SystemStatus.getInstance().getIsOnline() ) {
             
             if (this.jComboBox1.getSelectedIndex() != -1) {
                 new OnLineConfirmation(this, "Remove", "Are you sure you want to remove the certificate with the following details?", this.jComboBox1.getSelectedIndex(), onLineCertInfo).setVisible(true);
@@ -1115,9 +1179,10 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private void btnNewCertificateRequestMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnNewCertificateRequestMouseExited
         // TODO add your handling code here:
         if ( SystemStatus.getInstance().getIsOnline() ) {
-            setMOD(MotD);
+            setMOD(stringMotD);
         }else{
-            setRedMOD( MotD );
+            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
+            setRedMOD(stringMotD);
         }
     }//GEN-LAST:event_btnNewCertificateRequestMouseExited
 
@@ -1167,42 +1232,42 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         PublicKey publicKey = null;
         ClientKeyStore keyStore = ClientKeyStore.getClientkeyStore(PASSPHRASE);
 
-        if ( SystemStatus.getInstance().getIsOnline() ) {
-            //check if connection is fine.
-            if( !isOnlinePing() ){
-                JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
-                // why do we have to return here ? i may want to install my cert when i have no internet !
-                return;
-            }
-
-            String _id = this.certificateCSRInfos[ index ].getId();
-            CertificateDownload certDownload = new CertificateDownload(_id);
-            cert = certDownload.getCertificate();
-
-            publicKey = cert.getPublicKey();
-            privateKey = keyStore.getPrivateKey(publicKey);
-
-            if( ! this.certificateCSRInfos[ index ].getStatus().equals("VALID")){
-                JOptionPane.showMessageDialog(this, "You haven't selected one valid certificate!", "No suitable certificate selected", JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                if (this.jComboBox1.getSelectedIndex() != -1) {
-                    boolean isSuccess = isSuccessPemFiles( cert, privateKey );
-                    if( isSuccess ){
-                        String _message = "<html>Your certificate and private key were successfully installed to:<br>Private key: " + keyPemFile + "<br>Certificate: " + certPemFile;
-                        JOptionPane.showMessageDialog(this, _message, "Successful Install", JOptionPane.INFORMATION_MESSAGE);
-                        String _passphrase = new String(PASSPHRASE);
-                        String _property = SysProperty.getValue("uk.ngs.ca.immegration.password.property");
-                        System.setProperty(_property, _passphrase);
-                    }else{
-                        String _message = "<html>Your certificate and private key failed to install on:<br>Private key: " + keyPemFile + "\nCertificate: " + certPemFile;
-                        JOptionPane.showMessageDialog(this, _message, "Failed Install", JOptionPane.INFORMATION_MESSAGE);
-                    }
-                } else {
-                    JOptionPane.showMessageDialog(this, "You haven't selected any certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
-                }
-            }
-
-        } else {
+//        if ( SystemStatus.getInstance().getIsOnline() ) {
+//            //check if connection is fine.
+//            if( !isOnlinePing() ){
+//                JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
+//                // why do we have to return here ? i may want to install my cert when i have no internet !
+//                return;
+//            }
+//
+//            String _id = this.certificateCSRInfos[ index ].getId();
+//            CertificateDownload certDownload = new CertificateDownload(_id);
+//            cert = certDownload.getCertificate();
+//
+//            publicKey = cert.getPublicKey();
+//            privateKey = keyStore.getPrivateKey(publicKey);
+//
+//            if( ! this.certificateCSRInfos[ index ].getStatus().equals("VALID")){
+//                JOptionPane.showMessageDialog(this, "You haven't selected one valid certificate!", "No suitable certificate selected", JOptionPane.INFORMATION_MESSAGE);
+//            } else {
+//                if (this.jComboBox1.getSelectedIndex() != -1) {
+//                    boolean isSuccess = isSuccessPemFiles( cert, privateKey );
+//                    if( isSuccess ){
+//                        String _message = "<html>Your certificate and private key were successfully installed to:<br>Private key: " + keyPemFile + "<br>Certificate: " + certPemFile;
+//                        JOptionPane.showMessageDialog(this, _message, "Successful Install", JOptionPane.INFORMATION_MESSAGE);
+//                        String _passphrase = new String(PASSPHRASE);
+//                        String _property = SysProperty.getValue("uk.ngs.ca.immegration.password.property");
+//                        System.setProperty(_property, _passphrase);
+//                    }else{
+//                        String _message = "<html>Your certificate and private key failed to install on:<br>Private key: " + keyPemFile + "\nCertificate: " + certPemFile;
+//                        JOptionPane.showMessageDialog(this, _message, "Failed Install", JOptionPane.INFORMATION_MESSAGE);
+//                    }
+//                } else {
+//                    JOptionPane.showMessageDialog(this, "You haven't selected any certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
+//                }
+//            }
+//
+//        } else {
             cert = offLineCertInfo.getCertificate(index);
             publicKey = cert.getPublicKey();
             privateKey = keyStore.getPrivateKey(publicKey);
@@ -1223,7 +1288,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             } else {
                 JOptionPane.showMessageDialog(this, "You haven't selected any certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
             }
-        }
+//        }
 
 
 
@@ -1239,63 +1304,70 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private void btnInstallMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnInstallMouseExited
         // TODO add your handling code here:
         if ( SystemStatus.getInstance().getIsOnline() ) {
-            setMOD(MotD);
+            setMOD(stringMotD);
         }else{
-            setRedMOD( MotD );
+            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
+            setRedMOD(stringMotD);
         }
     }//GEN-LAST:event_btnInstallMouseExited
 
     private void btnImportCertificateMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnImportCertificateMouseExited
         // TODO add your handling code here:
         if ( SystemStatus.getInstance().getIsOnline() ) {
-            setMOD(MotD);
+            setMOD(stringMotD);
         }else{
-            setRedMOD( MotD );
+            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
+            setRedMOD(stringMotD);
         }
     }//GEN-LAST:event_btnImportCertificateMouseExited
 
     private void jComboBox1MouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jComboBox1MouseExited
         // TODO add your handling code here:
         if ( SystemStatus.getInstance().getIsOnline() ) {
-            setMOD(MotD);
+            setMOD(stringMotD);
         }else{
-            setRedMOD( MotD );
+            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
+            setRedMOD(stringMotD);
         }
     }//GEN-LAST:event_jComboBox1MouseExited
 
     private void btnRenewMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnRenewMouseExited
         // TODO add your handling code here:
         if ( SystemStatus.getInstance().getIsOnline() ) {
-            setMOD(MotD);
+            setMOD(stringMotD);
         }else{
-            setRedMOD( MotD );
+            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
+            setRedMOD(stringMotD);
         }
     }//GEN-LAST:event_btnRenewMouseExited
 
     private void btnExportMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnExportMouseExited
         // TODO add your handling code here:
         if ( SystemStatus.getInstance().getIsOnline() ) {
-            setMOD(MotD);
+            setMOD(stringMotD);
         }else{
-            setRedMOD( MotD );
+            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
+            setRedMOD(stringMotD);
         }
     }//GEN-LAST:event_btnExportMouseExited
 
     private void btnRevokeMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnRevokeMouseExited
         // TODO add your handling code here:
         if ( SystemStatus.getInstance().getIsOnline() ) {
-            setMOD(MotD);
+            setMOD(stringMotD);
         }else{
-            setRedMOD( MotD );
+            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
+            setRedMOD(stringMotD);
         }
     }//GEN-LAST:event_btnRevokeMouseExited
 
     private void btnDeleteMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnDeleteMouseExited
         // TODO add your handling code here:
         if ( SystemStatus.getInstance().getIsOnline() ) {
-            setMOD(MotD);
+            setMOD(stringMotD);
         }else{
-            setRedMOD( MotD );
+            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
+            setRedMOD(stringMotD);
         }
     }//GEN-LAST:event_btnDeleteMouseExited
 
@@ -1311,12 +1383,26 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 //        jComboBox1.setSelectedIndex(index);
         WaitDialog.hideDialog();
 
+
+
     }//GEN-LAST:event_btnRefreshActionPerformed
 
     private void btnRefreshMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnRefreshMouseEntered
         // TODO add your handling code here:
          setMOD("Retrieve certificate information from the CA Server and update the status of the certificates stored in the Certificate Wizard");
     }//GEN-LAST:event_btnRefreshMouseEntered
+
+    private void btnRefreshMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnRefreshMouseExited
+        // TODO add your handling code here:
+        if ( SystemStatus.getInstance().getIsOnline() ) {
+            setMOD(stringMotD);
+        }else{
+            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
+            setRedMOD(stringMotD);
+
+        }
+    }//GEN-LAST:event_btnRefreshMouseExited
+
 
     private boolean isSuccessPemFiles(X509Certificate certificate, PrivateKey privateKey){
         CoGProperties props = CoGProperties.getDefault();
@@ -1398,65 +1484,65 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         TextMOD.setText(text);
     }
 
-    private void updateComboBox( int _index ){
-        if ( SystemStatus.getInstance().getIsOnline() ) {
-            if( this.certificateCSRInfos[ _index ] != null ){
-                ListCellRenderer renderer = new ListItemRenderer();
-                String _dn = this.certificateCSRInfos[ _index ].getOwner();
-                String _status = this.certificateCSRInfos[ _index ].getStatus();
-
-                Object[] element = new Object[2];
-                if (_status.equals("VALID")) {
-                    String _lifedays = this.certificateCSRInfos[ _index ].getLifeDays();
-                    int int_lifedays = new Integer( _lifedays ).intValue();
-                    if( int_lifedays < 0 ){
-                        if( int_lifedays >= -30 ){
-                            element[ 0 ] =  new ExpiredCertColor();
-                        }else{
-                            element[ 0 ] = new ExpiredForeverCertColor();
-                        }
-                    }else{
-                        element[ 0 ] = new ValidCertColor();
-                    }
-
-                    element[ 1 ] = _dn;
-                } else if (_status.equals("REVOKED")) {
-                    element[ 0 ] = new RevokedCertColor();
-                    element[ 1 ] = _dn;
-                } else if (_status.equals("SUSPENDED")) {
-                    element[ 0 ] = new SuspendCertColor();
-                    element[ 1 ] = _dn;
-                } else if (_status.equals("NEW")) {
-                    element[ 0 ] = new PendingColor();
-                    element[ 1 ] = _dn;
-                } else if (_status.equals("RENEW")) {
-                    element[ 0 ] = new RenewalDueColor();
-                    element[ 1 ] = _dn;
-                } else if (_status.equals("APPROVED")) {
-                    element[ 0 ] = new SuspendCertColor();
-                    element[ 1 ] = _dn;
-                } else if (_status.equals("ARCHIVED")) {
-                    element[ 0 ] = new ValidCertColor();
-                    element[ 1 ] = _dn;
-                } else if (_status.equals("DELETED")) {
-                    element[ 0 ] = new RevokedCertColor();
-                    element[ 1 ] = _dn;
-                } else {
-                    element[ 0 ] = new RevokedCertColor();
-                    element[ 1 ] = _dn;
-                }
-
-Object[] _obj = (Object[])jComboBox1.getItemAt(_index);
-                jComboBox1.removeItemAt( _index );
-
-_obj = (Object[])jComboBox1.getItemAt(_index);
-
-                jComboBox1.insertItemAt( element, _index );
-_obj = (Object[])jComboBox1.getItemAt(_index);
-
-            }
-        }
-    }
+//    private void updateComboBox( int _index ){
+//        if ( SystemStatus.getInstance().getIsOnline() ) {
+//            if( this.certificateCSRInfos[ _index ] != null ){
+//                ListCellRenderer renderer = new ListItemRenderer();
+//                String _dn = this.certificateCSRInfos[ _index ].getOwner();
+//                String _status = this.certificateCSRInfos[ _index ].getStatus();
+//
+//                Object[] element = new Object[2];
+//                if (_status.equals("VALID")) {
+//                    String _lifedays = this.certificateCSRInfos[ _index ].getLifeDays();
+//                    int int_lifedays = new Integer( _lifedays ).intValue();
+//                    if( int_lifedays < 0 ){
+//                        if( int_lifedays >= -30 ){
+//                            element[ 0 ] =  new ExpiredCertColor();
+//                        }else{
+//                            element[ 0 ] = new ExpiredForeverCertColor();
+//                        }
+//                    }else{
+//                        element[ 0 ] = new ValidCertColor();
+//                    }
+//
+//                    element[ 1 ] = _dn;
+//                } else if (_status.equals("REVOKED")) {
+//                    element[ 0 ] = new RevokedCertColor();
+//                    element[ 1 ] = _dn;
+//                } else if (_status.equals("SUSPENDED")) {
+//                    element[ 0 ] = new SuspendCertColor();
+//                    element[ 1 ] = _dn;
+//                } else if (_status.equals("NEW")) {
+//                    element[ 0 ] = new PendingColor();
+//                    element[ 1 ] = _dn;
+//                } else if (_status.equals("RENEW")) {
+//                    element[ 0 ] = new RenewalDueColor();
+//                    element[ 1 ] = _dn;
+//                } else if (_status.equals("APPROVED")) {
+//                    element[ 0 ] = new SuspendCertColor();
+//                    element[ 1 ] = _dn;
+//                } else if (_status.equals("ARCHIVED")) {
+//                    element[ 0 ] = new ValidCertColor();
+//                    element[ 1 ] = _dn;
+//                } else if (_status.equals("DELETED")) {
+//                    element[ 0 ] = new RevokedCertColor();
+//                    element[ 1 ] = _dn;
+//                } else {
+//                    element[ 0 ] = new RevokedCertColor();
+//                    element[ 1 ] = _dn;
+//                }
+//
+//                Object[] _obj = (Object[])jComboBox1.getItemAt(_index);
+//                jComboBox1.removeItemAt( _index );
+//
+//                _obj = (Object[])jComboBox1.getItemAt(_index);
+//
+//                jComboBox1.insertItemAt( element, _index );
+//                _obj = (Object[])jComboBox1.getItemAt(_index);
+//
+//            }
+//        }
+//    }
 
     private void fillComboBox() {
         if ( SystemStatus.getInstance().getIsOnline() ) {
@@ -1535,6 +1621,34 @@ _obj = (Object[])jComboBox1.getItemAt(_index);
                     } else if (_status.equals("Valid")) {
                         element[ 0] = new ValidCertColor();
                         element[ 1] = _dn;
+                    } else if (_status.equals("REVOKED")) {
+                        element[ 0 ] = new RevokedCertColor();
+                        element[ 1 ] = _dn;
+                       
+                    } else if (_status.equals("SUSPENDED")) {
+                        element[ 0 ] = new SuspendCertColor();
+                        element[ 1 ] = _dn;
+                        
+                    } else if (_status.equals("NEW")) {
+                        element[ 0 ] = new PendingColor();
+                        element[ 1 ] = _dn;
+                       
+                    } else if (_status.equals("RENEW")) {
+                        element[ 0 ] = new RenewalDueColor();
+                        element[ 1 ] = _dn;
+                        
+                    } else if (_status.equals("APPROVED")) {
+                        element[ 0 ] = new SuspendCertColor();
+                        element[ 1 ] = _dn;
+                        
+                    } else if (_status.equals("ARCHIVED")) {
+                        element[ 0 ] = new ValidCertColor();
+                        element[ 1 ] = _dn;
+                       
+                    } else if (_status.equals("DELETED")) {
+                        element[ 0 ] = new RevokedCertColor();
+                        element[ 1 ] = _dn;
+                        
                     } else {
                         element[ 0] = new PendingColor();
                         element[ 1] = _dn;

@@ -341,11 +341,12 @@ public class Apply extends javax.swing.JFrame {
         } else {
             if ( SystemStatus.getInstance().getIsOnline() ) {
                 //The following checks if the CA Database as well as the CA Server is up or not.
-                if( !isPing() ){
-                    JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
-                    WaitDialog.hideDialog();
-                    return;
-                }
+//                if( !isPing() ){
+//                    JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
+//                    WaitDialog.hideDialog();
+//                    this.dispose();
+//                    return;
+//                }
                 onLineCertRequest.setEmail(this.txtEmail.getText());
                 onLineCertRequest.setName(myCN);
                 onLineCertRequest.setPIN1(new String(this.txtPin.getPassword()));

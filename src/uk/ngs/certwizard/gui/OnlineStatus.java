@@ -17,6 +17,7 @@ public class OnlineStatus extends javax.swing.JPanel implements Observer {
     /** Creates new form OnlineStatus */
     public OnlineStatus() {
         initComponents();
+        this.connectButton.setVisible(false);
     }
 
     /** This method is called from within the constructor to

@@ -290,11 +290,11 @@ public class OnLineConfirmation extends javax.swing.JFrame {
         if (this.action.equals("Revoke"))
             WaitDialog.showDialog("Revoke");
 
-        if( !isPing() ){
-            JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
-            WaitDialog.hideDialog();
-            return;
-        }
+//        if( !isPing() ){
+//            JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
+//            WaitDialog.hideDialog();
+//            return;
+//        }
         
 
         if (this.action.equals("Renew")) {

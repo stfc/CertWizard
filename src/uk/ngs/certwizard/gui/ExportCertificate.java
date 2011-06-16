@@ -248,7 +248,9 @@ public class ExportCertificate extends javax.swing.JFrame {
             File _outFile = new File( filePath );
             ExportCertificateToFile exportFile = new ExportCertificateToFile( certificate, privateKey, _outFile, password);
             if( exportFile.isSuccessExport() ){
-                JOptionPane.showMessageDialog(this, "You have export certificate/key file successfully.",
+                JOptionPane.showMessageDialog(this, "The selected certificate bundle has successfully been exported.\n"
+                        + "This bundle contains your private key, hence it should not be given to someone else.\n"
+                        + "Please ensure that you backup this bundle somewhere away from your computer.",
                     "Export Success", JOptionPane.INFORMATION_MESSAGE);
                 this.dispose();
             }else{
