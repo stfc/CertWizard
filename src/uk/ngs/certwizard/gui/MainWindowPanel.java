@@ -1137,14 +1137,16 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 //        if ( SystemStatus.getInstance().getIsOnline() ) {
 
             //check if connection is fine.
+        /*
             if( !isOnlinePing() ){
 //                JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
 //                // why do we have to return here ? i may want to install my cert when i have no internet !
 //                return;
-
-
             }
+            */
 
+        // force an invocation of the pingCheck so that the System online status is udpated. 
+        isOnlinePing();
         if ( SystemStatus.getInstance().getIsOnline() ) {
             
             if (this.jComboBox1.getSelectedIndex() != -1) {

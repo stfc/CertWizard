@@ -23,7 +23,7 @@
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
                   <Component id="jPanel3" max="32767" attributes="1"/>
-                  <Component id="jLabel7" pref="181" max="32767" attributes="0"/>
+                  <Component id="jLabel7" pref="193" max="32767" attributes="0"/>
                   <Component id="jPanel1" alignment="0" max="32767" attributes="1"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
@@ -167,7 +167,7 @@
                       <Component id="btnInstall" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="btnDelete" alignment="3" min="-2" max="-2" attributes="0"/>
                   </Group>
-                  <EmptySpace pref="16" max="32767" attributes="1"/>
+                  <EmptySpace pref="42" max="32767" attributes="1"/>
               </Group>
           </Group>
         </DimensionLayout>
@@ -296,9 +296,9 @@
                       <Group type="102" alignment="1" attributes="0">
                           <EmptySpace max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="1" attributes="0">
-                              <Component id="lblCertificateGenerated" alignment="0" pref="535" max="32767" attributes="1"/>
-                              <Component id="lblRequestApproved" alignment="0" pref="535" max="32767" attributes="1"/>
-                              <Component id="lblRequestReceived" alignment="1" pref="535" max="32767" attributes="1"/>
+                              <Component id="lblCertificateGenerated" alignment="0" pref="541" max="32767" attributes="1"/>
+                              <Component id="lblRequestApproved" alignment="0" pref="541" max="32767" attributes="1"/>
+                              <Component id="lblRequestReceived" alignment="1" pref="541" max="32767" attributes="1"/>
                           </Group>
                           <EmptySpace max="-2" attributes="0"/>
                       </Group>
@@ -518,7 +518,7 @@
           <Group type="103" groupAlignment="0" attributes="0">
               <Group type="102" alignment="0" attributes="0">
                   <EmptySpace max="-2" attributes="0"/>
-                  <Component id="jScrollPane1" pref="145" max="32767" attributes="0"/>
+                  <Component id="jScrollPane1" pref="159" max="32767" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
               </Group>
           </Group>
