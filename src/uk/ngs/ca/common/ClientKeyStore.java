@@ -39,6 +39,9 @@ import uk.ngs.ca.tools.property.SysProperty;
  * already exist). This file is intended to hold.....what. It appears that
  * this file will hold the CSR request (it is populated after applying for a
  * cert).
+ * 
+ * The cakeystore file contains a collection of the valid, expired, and the submission
+ * requests made by the user.
  *
  * @author xw75
  */

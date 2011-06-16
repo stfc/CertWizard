@@ -112,6 +112,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
         } else {
             offLineInit();
+            motd = new CAMotd();
             WaitDialog.hideDialog();
             stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please click Refresh if you want to access all pending certificates.";
             //setRedMOD( MotD );
@@ -142,8 +143,8 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         if( !isOnlinePing() ){
         //if( !SystemStatus.ISONLINE.get() ){
             JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, "
-                    + "\nplease report to helpdesk or work under offline by restarting "
-                    + "CertWizard and select offline.", "Server Connection Fault",
+                    + "\nif you believe your computer is connected to the Internet, please report "
+                    + "\nto helpdesk", "Server Connection Fault",
                     JOptionPane.INFORMATION_MESSAGE);
             //WaitDialog.hideDialog();
             //return;
@@ -774,21 +775,27 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
 
 
-        if ( SystemStatus.getInstance().getIsOnline() ) {
-           
+      if ( SystemStatus.getInstance().getIsOnline() ) {
+
+
+           //determine if online or offline, and process the combo box accordingly.
            if( !isOnlinePing() ){
-               
+
                 JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, "
-                        + "\nplease report to helpdesk or work under offline by restarting "
-                        + "CertWizard and select offline.", "Server Connection Fault",
-                        JOptionPane.INFORMATION_MESSAGE);
+                        + "\nYou are now working offline, which means the pending requests will not appear\n"
+                        + "until you are connected to the Internet. Please hit the Connect button to re-connect",
+                        "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
                 //WaitDialog.hideDialog();
 
                 //return;
-
+                offLineInit();
+                jComboBox1.removeAllItems();
+                fillComboBox();
+                this.btnRefresh.setText("Connect");
                 stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
                 setRedMOD(stringMotD);
-                
+                return;
+
             } else {
                 //update the selected item. This update will only be done if the ping check succeeds
                 // i.e. the detabase connection is available
@@ -806,8 +813,13 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                     jComboBox1.setSelectedIndex(index);
                 }
 
-
             }
+           
+        }
+
+            
+        if ( SystemStatus.getInstance().getIsOnline() ) {
+
 
             //rest of the code to alter the details when an item in the combo box has been selected,
             //based on the information stored in certificateCSRInfos variable
@@ -969,8 +981,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                     lblCertificateGenerated.setVisible(false);
                 }
             }
-
         }
+
+        
         //WaitDialog.hideDialog();
     }//GEN-LAST:event_jComboBox1ActionPerformed
 
@@ -1000,16 +1013,15 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private void btnImportCertificateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnImportCertificateActionPerformed
         // TODO add your handling code here:
 //        WaitDialog.showDialog();
-        if( SystemStatus.getInstance().getIsOnline() ){
-            if( !isOnlinePing() ){
-//                JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
-////                WaitDialog.hideDialog();
-//                return;
+//        if( SystemStatus.getInstance().getIsOnline() ){
 
-                //if user suddenly goes offline, it will set the SystemStatus to offline mode.
-            }
+            //we need to refresh the status in order to determine if the user is online or on offline mode.
 
-        }
+            isOnlinePing();
+
+
+
+//        }
 
         JFileChooser importCert = new JFileChooser();
         importCert.addChoosableFileFilter(new certFilter());
@@ -1134,19 +1146,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     private void btnDeleteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDeleteActionPerformed
         // TODO add your handling code here:
-//        if ( SystemStatus.getInstance().getIsOnline() ) {
-
-            //check if connection is fine.
-        /*
-            if( !isOnlinePing() ){
-//                JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
-//                // why do we have to return here ? i may want to install my cert when i have no internet !
-//                return;
-            }
-            */
-
-        // force an invocation of the pingCheck so that the System online status is udpated. 
+        // force an invocation of the pingCheck so that the System online status is updated.
         isOnlinePing();
+
         if ( SystemStatus.getInstance().getIsOnline() ) {
             
             if (this.jComboBox1.getSelectedIndex() != -1) {

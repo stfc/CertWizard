@@ -38,6 +38,7 @@ import uk.ngs.ca.tools.property.SysProperty;
 /**
  * Read or create file $HOME/.ca/cacertkeystore.pkcs12 (create if it does not
  * already exist). This file is intended to hold....what.
+ * The cacertkeystore contains a collection of the valid and expired certificates only.
  *
  * @author xw75
  */
