@@ -128,11 +128,11 @@ public class ExportCertificate extends javax.swing.JFrame {
 
         jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder("File to Export"));
 
-        jLabel5.setText("Please specify name of the file you would like to export.");
+        jLabel5.setText("Please specify name of the (.p12) file you would like to export.");
 
         jLabel6.setText("File name:");
 
-        browserButton.setText("Browser...");
+        browserButton.setText("Browse");
         browserButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 browserButtonActionPerformed(evt);
@@ -152,7 +152,7 @@ public class ExportCertificate extends javax.swing.JFrame {
                         .addComponent(exportFileTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 246, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(browserButton)))
-                .addContainerGap(99, Short.MAX_VALUE))
+                .addContainerGap(112, Short.MAX_VALUE))
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -190,7 +190,7 @@ public class ExportCertificate extends javax.swing.JFrame {
                     .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(jPanel1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addContainerGap(338, Short.MAX_VALUE)
+                        .addContainerGap(434, Short.MAX_VALUE)
                         .addComponent(okButton)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jButton1)))
@@ -221,8 +221,8 @@ public class ExportCertificate extends javax.swing.JFrame {
         if (exportCert.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
             outFile = exportCert.getSelectedFile();
             String filePath = outFile.toString();
-            if( filePath.indexOf(".pfx") <= 0 ){
-               filePath = filePath + ".pfx";
+            if( filePath.indexOf(".p12") <= 0 ){
+               filePath = filePath + ".p12";
             }
             exportFileTextField.setText(filePath);
         }

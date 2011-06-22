@@ -18,12 +18,12 @@ public class ExportFilter extends FileFilter {
         if (f.isDirectory()) {
             return true;
         } else {
-            return f.getName().endsWith(".pfx");
+            return f.getName().endsWith(".p12");
         }
     }
 
     @Override
     public String getDescription() {
-        return "Certificate (.pfx)";
+        return "Certificate (.p12)";
     }
 }
