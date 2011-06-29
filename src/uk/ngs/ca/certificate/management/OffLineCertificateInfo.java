@@ -46,8 +46,13 @@ import uk.ngs.ca.common.ClientKeyStore;
  * methods that query their entries regardless of which file is actually queried:
  * <p>
  * <ol>
- *  <li>'$HOME/.ca/cacertkeystore.pkcs12'  // contains only valid Certs recognised by the CA</li>
- *  <li>'$HOME/.ca/localcertificate.xml'   // contains only CSRs</li>
+ *  <li>'$HOME/.ca/cacertkeystore.pkcs12'  // contains only valid certificates
+ *       recognised by the CA (this file is populated when online on creation of
+ *       <code>OnLineCertificateInfo</code>).
+ *  </li>
+ *  <li>'$HOME/.ca/localcertificate.xml'   // contains only CSRs (CSRs are
+ *       stored in this file when offline - is this really necessary?)
+ *  </li>
  * </ol>
  * <p>
  * Note, on class creation, this class only reads cacertkeystore.pkcs12 and
@@ -58,13 +63,11 @@ import uk.ngs.ca.common.ClientKeyStore;
  * @author xw75
  */
 public class OffLineCertificateInfo extends Observable {
-
-    private char[] PASSPHRASE = null;
+    private static final Logger myLogger = Logger.getLogger(OffLineCertificateInfo.class);
     private final String CERTIFICATE = "Certificate";
     private final String DN = "DN";
     private final String ALIAS = "Alias";
-    private static final Logger myLogger = Logger.getLogger(OffLineCertificateInfo.class);
-
+    
 
     //private String key_KeyStoreFilePath = null;  // '$HOME/.ca/cakeystore.pkcs12'
     private ClientKeyStore key_keyStore = null;
@@ -72,6 +75,8 @@ public class OffLineCertificateInfo extends Observable {
     private KeyStore cert_KeyStore;
     private String csr_xmlFilePath;  // '$HOME/.ca/localcertificate.xml'
     private Document csrXMLDoc;
+    private char[] PASSPHRASE = null;
+
 
     // Indicate the combined status of the cert_KeyStore and csrXMLDoc
     // (certs stored in cert_KeyStore, CSRs in csrXMLDoc).
