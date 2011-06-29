@@ -28,17 +28,15 @@ public class Apply extends javax.swing.JFrame {
 
     String mainInfo = "Please enter all the information";
     String readyInfo = "Your input is ready, please click Apply button to request certificate or click Cancel button to cancel";
-    private char[] PASSPHRASE;
+    //private char[] PASSPHRASE;
     private OffLineUserCertificateRequest offLineCertRequest = null;
     private OnLineUserCertificateRequest onLineCertRequest = null;
-    private MainWindowPanel mainWindowPanel = null;
+    //private MainWindowPanel mainWindowPanel = null;
 
     /** Creates new form Apply */
     public Apply( MainWindowPanel mainWindowPanel, char[] passphrase ){
-
-
-        PASSPHRASE = passphrase;
-        this.mainWindowPanel = mainWindowPanel;
+        //PASSPHRASE = passphrase;
+        //this.mainWindowPanel = mainWindowPanel;
         initComponents();
 
         if (SystemStatus.getInstance().getIsOnline()) {
@@ -53,7 +51,7 @@ public class Apply extends javax.swing.JFrame {
         } else {
             offLineCertRequest = new OffLineUserCertificateRequest(passphrase);
             offLineCertRequest.addObserver(mainWindowPanel);
-// offline, we can not call CAInfo, we can get the RAs from class
+            // offline, we can not call CAInfo, we can get the RAs from class
             RAs = CAInfo.offLineRAs;
             javax.swing.DefaultComboBoxModel m = new javax.swing.DefaultComboBoxModel(RAs);
             cmbSelectRA.setModel(m);
@@ -293,11 +291,11 @@ public class Apply extends javax.swing.JFrame {
         this.dispose();
     }//GEN-LAST:event_btnCancelActionPerformed
 
-    private boolean isPing(){
+    /*private boolean isPing(){
         //PingService pingService = new PingService();
         //return pingService.isPingService();
         return PingService.getPingService().isPingService();
-    }
+    }*/
 
     private void btnApplyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnApplyActionPerformed
 
@@ -405,30 +403,23 @@ public class Apply extends javax.swing.JFrame {
                         //to notify mainwindow onlt success
                         offLineCertRequest.notifyObserver();
                         JOptionPane.showMessageDialog(this, offLineCertRequest.getMessage(), messageTitle, JOptionPane.INFORMATION_MESSAGE);
-                    this.dispose();
+                        this.dispose();
                     } else {
                         messageTitle = "OffLine Request UnSuccessful";
-                       JOptionPane.showMessageDialog(this, offLineCertRequest.getMessage(), messageTitle, JOptionPane.INFORMATION_MESSAGE);
+                        JOptionPane.showMessageDialog(this, offLineCertRequest.getMessage(), messageTitle, JOptionPane.INFORMATION_MESSAGE);
                     }
-
                 }
-
             }
-
         }
-
         WaitDialog.hideDialog();
     }//GEN-LAST:event_btnApplyActionPerformed
 
     private boolean isValidEmail(String email) {
-
-//        Pattern p = Pattern.compile(".+@.+\\.[a-z]+");
+        //Pattern p = Pattern.compile(".+@.+\\.[a-z]+");
         Pattern p = Pattern.compile("[-\\.a-zA-Z0-9_]+@[-a-zA-Z0-9\\.]+\\.[a-z]+");
-//        Pattern p = Pattern.compile("[a-zA-Z0-9_]+@[-a-zA-Z0-9\\.]+\\.[a-z]+");
-
+        //Pattern p = Pattern.compile("[a-zA-Z0-9_]+@[-a-zA-Z0-9\\.]+\\.[a-z]+");
         //Match the given string with the pattern
         Matcher m = p.matcher(email);
-
         return m.matches();
     }
 
@@ -448,11 +439,8 @@ public class Apply extends javax.swing.JFrame {
 
     private void txtConfirmKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtConfirmKeyReleased
         // TODO add your handling code here:
-
         String pin = new String(txtPin.getPassword());
         String confirm = new String(txtConfirm.getPassword());
-
-
         if (pin.equals(confirm)) {
             this.btnApply.setEnabled(true);
             jLabel5.setForeground(Color.BLACK);
@@ -466,7 +454,6 @@ public class Apply extends javax.swing.JFrame {
 
     private boolean isInputReady(){
         boolean isReady = true;
-
         String pin = new String(txtPin.getPassword());
         String confirm = new String(txtConfirm.getPassword());
         if( ! pin.equals(confirm)){
@@ -484,7 +471,6 @@ public class Apply extends javax.swing.JFrame {
         if (this.txtConfirm.getPassword().length == 0) {
             isReady = false;
         }
-
         return isReady;
     }
 

@@ -41,9 +41,7 @@ public class CertificateDownload {
         try {
             String certURL = SysProperty.getValue("uk.ngs.ca.request.certificate.url");
             certURL = certURL + "/" + certID;
-
             Client c = new Client(Protocol.HTTPS);
-
             Request request = new Request(Method.GET, new Reference(certURL));
 
             Form form = new Form();

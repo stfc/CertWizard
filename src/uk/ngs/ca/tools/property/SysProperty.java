@@ -69,7 +69,7 @@ public class SysProperty {
 
         String value = properties.getProperty(key);
         if (value == null) {
-            myLogger.error("[SysProperty] could not find out the value of " + key + " in your property file.");
+           throw new IllegalStateException("[SysProperty] could not find out the value of " + key + " in your property file.");
         }
         return value;
     }
@@ -88,11 +88,10 @@ public class SysProperty {
         }
         String value = properties.getProperty(key);
         if (value == null) {
-            myLogger.error("[SysProperty] could not find out the value of " + key + " in your property file.");
-            return null;
+            throw new IllegalStateException("[SysProperty] could not find out the value of " + key + " in your property file.");
         }
 
-        String homePath = System.getProperty("user.home");
+        /*String homePath = System.getProperty("user.home");
         homePath = homePath + System.getProperty("file.separator") + FILEPATH;
         if (!new File(homePath).isDirectory()) {
             new File(homePath).mkdir();
@@ -111,23 +110,24 @@ public class SysProperty {
         if (!new File(homePath).exists()) {
             try {
                 new File(homePath).createNewFile();
-                SysProperty.createTemplateFile(homePath, passphrase);
+                SysProperty.createTemplateFile(homePath);
             } catch (IOException ioe) {
                 ioe.printStackTrace();
                 myLogger.error("[SysProperty] failed to create file");
                 return null;
             }
-        }
+        }*/
 
+        String absPath = System.getProperty("user.home") + File.separator + FILEPATH + File.separator + value;
         // check if the size of file is zero, if yes, then remove it and create a new template file.
-        if (new File(homePath).length() == 0) {
-            SysProperty.createTemplateFile(homePath, passphrase);
+        if ( !(new File(absPath).exists()) || (new File(absPath).length() == 0)) {
+            SysProperty.createTemplateFile(absPath);
         }
 
-        return homePath;
+        return absPath;
     }
 
-    private static boolean createTemplateFile(String filePath, char[] passphrase) {
+    private static boolean createTemplateFile(String filePath) {
         try {
 
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();

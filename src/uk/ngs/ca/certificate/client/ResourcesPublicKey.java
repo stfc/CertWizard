@@ -44,6 +44,8 @@ public class ResourcesPublicKey {
         Document _document = null;
         boolean isExist = false;
         try {
+
+            // call CA server and ask 'do you know about a certficate with this hash'
             String resourceURL = SysProperty.getValue("uk.ngs.ca.request.resource.publickey");
             resourceURL = resourceURL + "/" + this.encodedPublicKey;
             Client c = new Client(Protocol.HTTPS);

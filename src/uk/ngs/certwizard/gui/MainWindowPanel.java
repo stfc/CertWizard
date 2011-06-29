@@ -54,8 +54,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private String stringMotD = "Message of the Day: \n\n\nWelcome to the new Certificate Wizard!";
     //private ArrayList<Certificate> array;
     private char[] PASSPHRASE;
-    private OffLineCertificateInfo offLineCertInfo;
     private OnLineCertificateInfo onLineCertInfo;
+
+    private OffLineCertificateInfo offLineCertInfo;
     private CertificateCSRInfo[] certificateCSRInfos = null;
 
     private CertWizardMain _certWizardMain = null;
@@ -114,15 +115,13 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             offLineInit();
             motd = new CAMotd();
             WaitDialog.hideDialog();
-            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please click Refresh if you want to access all pending certificates.";
+            stringMotD = "You are working offline.\n\nPlease note that working offline only displays valid certificates. Please click Refresh if you want to access all pending certificates.";
             //setRedMOD( MotD );
             setRedMOD(stringMotD);
             this.btnRefresh.setText("Connect");
         }
 
-
         fillComboBox();
-
         this.jPanel5.setVisible(false);
 
     }
@@ -182,6 +181,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
      * Attempt to connect online and update the GUI accordingly.
      */
     public void refreshOnLine(){
+        jComboBox1.removeAllItems();
         if( !isOnlinePing() ){  // not online
         //if( !SystemStatus.ISONLINE.get() ){ // not online
             JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, "
@@ -190,23 +190,19 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                     JOptionPane.INFORMATION_MESSAGE);
             //WaitDialog.hideDialog();
             //return;
-
             //do an offline init if the online refresh fails
 
             offLineInit();
-            jComboBox1.removeAllItems();
-            fillComboBox();
             stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
             setRedMOD(stringMotD);
             this.btnRefresh.setText("Connect");
         } else {
             onLineInit();
-            jComboBox1.removeAllItems();
-            fillComboBox();
             stringMotD = motd.getText();
             setMOD(stringMotD);
             this.btnRefresh.setText("Refresh");
         }
+         fillComboBox();
     }
 
     public void update(Observable observable, Object obj) {
@@ -1548,6 +1544,11 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 //        }
 //    }
 
+    /**
+     * Add elements to this.jComboBox1 and set the renderer.
+     * If online populate this.jComboBox1 from this.certificateCSRInfos
+     * If offline populate populate from this.offLineCertInfo
+     */
     private void fillComboBox() {
         if ( SystemStatus.getInstance().getIsOnline() ) {
 
