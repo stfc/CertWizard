@@ -54,14 +54,15 @@ import uk.ngs.ca.certificate.client.ResourcesPublicKey;
  * If online, the class creates an in-memory cache of <code>CertificateCSRInfo</code>
  * objects that represent either CSRs or valid certificates that are recognised
  * by the online CA. The cacertkeystore.pkcs12 file is also updated so that
- * it contains only valid certificates.
+ * it contains only valid certificates for subsequent offline usage.
  * <p>
  * On class creation, the following actions occur;
  * <ol>
  * <li> Pending CSRs stored in the localcertificate.xml file are submitted to the CA server.</li>
  * <li> The cakeystore.pkcs12 file is read and for each CSR/cert entry,
  *    its status is checked with the online CA.</li>
- * <li> The cacertkeystore.pkcs12 file is re-initialised to contain only VALID certs.</li>
+ * <li> The cacertkeystore.pkcs12 file is re-initialised to contain only VALID certs
+ *    (done for subsequent offline usage)</li>
  * </ol>
  * <p>
  * Note, during class creation, the cakeystore.pkcs12 file is read-only while the
@@ -72,12 +73,8 @@ import uk.ngs.ca.certificate.client.ResourcesPublicKey;
  * @author xw75
  */
 public class OnLineCertificateInfo extends Observable {
-
     private static final Logger myLogger = Logger.getLogger(OffLineCertificateInfo.class);
-    private final String CSRURL = SysProperty.getValue("uk.ngs.ca.request.csr.url");
-    private final String USERAGENT = SysProperty.getValue("uk.ngs.ca.request.useragent");
-    private char[] PASSPHRASE = null;
-    //
+   
     // important class vars
     private String key_KeyStoreFilePath = null;  // '$HOME/.ca/cakeystore.pkcs12'
     private KeyStore key_keyStore = null;
@@ -85,6 +82,7 @@ public class OnLineCertificateInfo extends Observable {
     private KeyStore cert_KeyStore = null;
     private String csr_xmlFilePath = null;      // '$HOME/.ca/localcertificate.xml'
     private ArrayList<CertificateCSRInfo> certCSRInfos = null;
+    private char[] PASSPHRASE = null;
 
     /**
      * What does construction of this class do ? - what are the repercussions ?
@@ -128,7 +126,8 @@ public class OnLineCertificateInfo extends Observable {
             // For every VALID certificate certCSRInfos object, download the PubKey cert from the CA server and
             // compare to the PubKey certs in this.key_keyStore. For each match,
             // add the cert/key pair to cert_keyStore and Write to cert_KeyStoreFilePath.
-            this.updateSaveCertKeyStore_From_ValidCertCSRInfosWithOnlineCheck();
+            // The only reason this seems to be done is for subsequent offline usage.
+            this.updateSaveCertKeyStoreForOfflineUse_From_ValidCertCSRInfosWithOnlineCheck();
         }
     }
 
@@ -425,13 +424,27 @@ public class OnLineCertificateInfo extends Observable {
         }
     }
 
+    private boolean deleteKeyStoreFileEntry(String alias) {
+        try {
+            this.key_keyStore.deleteEntry(alias);
+            File f = new File(key_KeyStoreFilePath);
+            FileOutputStream fos = new FileOutputStream(f);
+            key_keyStore.store(fos, PASSPHRASE);
+            fos.close();
+            return true;
+        } catch (Exception kse) {
+            kse.printStackTrace();
+            return false;
+        }
+    }
+
     /**
-     * Populate cert_KeyStore.
+     * Populate cert_KeyStore for subsequent offline usage (maybe the network is lost).
      * For every VALID certCSRInfos (certificate), download the PubKey cert from the CA server and
      * compare to the certs' PubKeys in this.key_keyStore. For each match,
      * add the cert/key pair to cert_keyStore and write to cert_KeyStoreFilePath.
      */
-    private void updateSaveCertKeyStore_From_ValidCertCSRInfosWithOnlineCheck() {
+    private void updateSaveCertKeyStoreForOfflineUse_From_ValidCertCSRInfosWithOnlineCheck() {
         if (this.certCSRInfos == null || this.certCSRInfos.isEmpty()) {
             return;
         }
@@ -512,18 +525,29 @@ public class OnLineCertificateInfo extends Observable {
     }
 
 
-    private boolean deleteKeyStoreFileEntry(String alias) {
-        try {
-            this.key_keyStore.deleteEntry(alias);
-            File f = new File(key_KeyStoreFilePath);
-            FileOutputStream fos = new FileOutputStream(f);
-            key_keyStore.store(fos, PASSPHRASE);
-            fos.close();
-            return true;
-        } catch (Exception kse) {
-            kse.printStackTrace();
-            return false;
+
+
+    /**
+     * Delete the cert/key pair with the given index from the cacertkeystore.pkcs12
+     * and the cakeystore.pkcs12.
+     * @param index (zero offset)
+     * @return true if successfully deleted otherwise false.
+     */
+    public boolean remove(int index) {
+        CertificateCSRInfo info = getCertCSRInfos()[index];
+        String encodedPublicKey = info.getPublickey();
+        PublicKey publicKey = EncryptUtil.getPublicKey(encodedPublicKey);
+        ClientKeyStore keyStore = ClientKeyStore.getClientkeyStore(PASSPHRASE);
+        // get the alias of the key, and delete the entry with that alias (will
+        // also remove associated cert) and write change to cakeystore.pkcs12
+        boolean deleted = keyStore.removeKey( keyStore.getPrivateKey(publicKey) );
+        // also remove the corresponding entry from cacertkeystore.pkcs12 if
+        // recognized as a VALID certificate entry.
+        if ("VALID".equals(info.getStatus())) {
+            ClientCertKeyStore certKeyStore = ClientCertKeyStore.getClientCertKeyStore(PASSPHRASE);
+            deleted = certKeyStore.removeEntry( certKeyStore.getAlias(publicKey) );
         }
+        return deleted;
     }
 
     /**
@@ -604,13 +628,13 @@ public class OnLineCertificateInfo extends Observable {
 
     private Response doCSRRequest(Representation representation) {
         Client c = new Client(Protocol.HTTPS);
-        Request request = new Request(Method.POST, new Reference(CSRURL), representation);
+        Request request = new Request(Method.POST, new Reference(SysProperty.getValue("uk.ngs.ca.request.csr.url")), representation);
         Form form = new Form();
         form.add("LocalHost", uk.ngs.ca.common.ClientHostName.getHostName());
         request.getAttributes().put("org.restlet.http.headers", form);
         //by calling clientinfo to change standard header
         org.restlet.data.ClientInfo info = new org.restlet.data.ClientInfo();
-        info.setAgent(USERAGENT);
+        info.setAgent(SysProperty.getValue("uk.ngs.ca.request.useragent"));
         request.setClientInfo(info);
         Response _response = c.handle(request);
         return _response;
@@ -675,27 +699,6 @@ public class OnLineCertificateInfo extends Observable {
     }
 
 
-    /**
-     * Delete the cert/key pair with the given index from the cacertkeystore.pkcs12
-     * and the cakeystore.pkcs12.
-     * @param index (zero offset)
-     * @return true if successfully deleted otherwise false.
-     */
-    public boolean remove(int index) {
-        CertificateCSRInfo info = getCertCSRInfos()[index];
-        String encodedPublicKey = info.getPublickey();
-        PublicKey publicKey = EncryptUtil.getPublicKey(encodedPublicKey);
-        ClientKeyStore keyStore = ClientKeyStore.getClientkeyStore(PASSPHRASE);
-        // get the alias of the key, and delete the entry with that alias (will
-        // also remove associated cert) and write change to cakeystore.pkcs12
-        boolean deleted = keyStore.removeKey( keyStore.getPrivateKey(publicKey) );
-        // also remove the corresponding entry from cacertkeystore.pkcs12 if
-        // recognized as a VALID certificate entry.
-        if ("VALID".equals(info.getStatus())) {
-            ClientCertKeyStore certKeyStore = ClientCertKeyStore.getClientCertKeyStore(PASSPHRASE);
-            deleted = certKeyStore.removeEntry( certKeyStore.getAlias(publicKey) );
-        }
-        return deleted;
-    }
+
 
 }
