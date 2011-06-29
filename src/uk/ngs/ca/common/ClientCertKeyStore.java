@@ -6,52 +6,39 @@ package uk.ngs.ca.common;
 
 import java.security.PublicKey;
 import java.security.PrivateKey;
-
 import java.security.KeyStore;
 import java.security.NoSuchProviderException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-
 import java.util.Enumeration;
 import java.util.Date;
-
-import java.io.InputStream;
 import java.io.IOException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
-
 import java.security.KeyStoreException;
-import java.util.logging.Level;
-
 import org.apache.log4j.Logger;
-
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-
-import java.util.Properties;
 import org.bouncycastle.jce.provider.unlimited.PKCS12KeyStoreUnlimited;
 
 import uk.ngs.ca.tools.property.SysProperty;
 
 /**
  * Read or create file $HOME/.ca/cacertkeystore.pkcs12 (create if it does not
- * already exist). This file is intended to hold....what.
- * The cacertkeystore contains a collection of the valid and expired certificates only.
+ * already exist). This file contains a collection of the valid and expired 
+ * certificates only.  The class provides methods for adding/creating/deleting
+ * entries from this keyStore file.
  *
  * @author xw75
  */
 public final class ClientCertKeyStore {
-
-    private char[] PASSPHRASE = null;
     private static final Logger myLogger = Logger.getLogger(ClientCertKeyStore.class);
+    
     // certKeyStore represents shared mutable state, so its access must be thread safe.
     private KeyStore certKeyStore = null;
-    private static final String PROP_FILE = "/uk/ngs/ca/tools/property/configure.properties";
-    private Properties properties = new Properties();
-    private final String FILEPATH = ".ca";
     private String keyStoreFileAbsPath = null;
+    private char[] PASSPHRASE = null;
     private String errorMessage = null;
 
     private static ClientCertKeyStore clientCertKeyStore = null;
@@ -72,71 +59,30 @@ public final class ClientCertKeyStore {
     }
 
     private ClientCertKeyStore(char[] passphrase) {
-        //System.out.println("ClientCertKeyStore constructor");
-        PASSPHRASE = passphrase;
-        init();
-        setupCertKeyStoreFile(passphrase);
-    }
+        String caDir = System.getProperty("user.home") + File.separator + ".ca";
+        this.PASSPHRASE = passphrase;
+        this.keyStoreFileAbsPath = caDir + File.separator + SysProperty.getValue("ngsca.cert.keystore.file");
 
-    /*public ClientCertKeyStore(char[] passphrase) {
-        PASSPHRASE = passphrase;
-        init();
-        setupCertKeyStoreFile(passphrase);
-    }*/
-
-    /*public KeyStore getCertKeyStore() {
-        return certKeyStore;
-    }*/
-
-    private void init() {
-        myLogger.debug("[ClientKeyStore] init...");
-        InputStream input = null;
         try {
             this.certKeyStore = PKCS12KeyStoreUnlimited.getInstance();
-            input = SysProperty.class.getResourceAsStream(PROP_FILE);
-            this.properties.load(input);
-            
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-            myLogger.error("[ClientKeyStore] Property file is failed to load.");
-            errorMessage = ioe.getMessage();
         } catch (KeyStoreException ke) {
-            ke.printStackTrace();
-            myLogger.error("[ClientKeyStore] failed to create a keyStore: " + ke.getMessage());
-            errorMessage = ke.getMessage();
+            throw new IllegalStateException("[ClientCertKeyStore] failed to create a keyStore: " , ke);
         } catch (NoSuchProviderException ne) {
-            ne.printStackTrace();
-            myLogger.error("[ClientKeyStore] failed to create a keystore without suitable provider: " + ne.getMessage());
-            errorMessage = ne.getMessage();
-        } finally {
-            try {
-                if(input !=null) input.close();
-            } catch (IOException ex) {
-                java.util.logging.Logger.getLogger(ClientCertKeyStore.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            throw new IllegalStateException("[ClientCertKeyStore] failed to create a keystore without suitable provider: ", ne);
         }
+        // load this.certKeyStore from file if it exists.
+        this.loadCertKeyStoreFileFromFile(passphrase);
     }
+
+
 
     /**
      * If $HOME/.ca/cacertkeystore.pkcs12 already exists, load it otherwise
      * create an empty pkcs12 file.
-     *
-     * @param passphrase
      */
-    private void setupCertKeyStoreFile(char[] passphrase) {
+    private void loadCertKeyStoreFileFromFile(char[] passphrase) {
         myLogger.debug("[ClientCertKeyStore] get keystore ...");
-        String key = "ngsca.cert.keystore.file";
-        String value = properties.getProperty(key);
-        if (value == null) {
-            myLogger.error("[ClientCertKeyStore] could not find out the value of " + key + " in your property file.");
-        }
-        String homePath = System.getProperty("user.home");
-        homePath = homePath + System.getProperty("file.separator") + FILEPATH;
-        if (!new File(homePath).isDirectory()) {
-            new File(homePath).mkdir();
-        }
-        homePath = homePath + System.getProperty("file.separator") + value;
-        this.keyStoreFileAbsPath = homePath;
+        
         FileInputStream fis = null;
         FileOutputStream fos = null;
         try {
@@ -150,8 +96,6 @@ public final class ClientCertKeyStore {
                 File f = new File(this.keyStoreFileAbsPath);
                 fos = new FileOutputStream(f);
                 this.certKeyStore.store(fos, PASSPHRASE);
-                //System.out.println("this should print: creating: "+this.keyStoreFileAbsPath); // this should print: creating: C:\Documents and Settings\djm76\.ca\cacertkeystore.pkcs12
-                //if(true)System.exit(0);
              }
         } catch (Exception ep) {
             ep.printStackTrace();
@@ -169,13 +113,12 @@ public final class ClientCertKeyStore {
     public synchronized String getAlias( PublicKey publicKey ){
         String alias = null;
         try {
-            Enumeration aliases = this.certKeyStore.aliases();
+            Enumeration<String> aliases = this.certKeyStore.aliases();
             while (aliases.hasMoreElements()) {
-                String _alias = (String) aliases.nextElement();
+                String _alias = aliases.nextElement();
                 if (this.certKeyStore.isKeyEntry(_alias)) {
                     X509Certificate cert = (X509Certificate)this.certKeyStore.getCertificate(_alias);
-                    PublicKey _publicKey = cert.getPublicKey();
-                    if( _publicKey.equals(publicKey)){
+                    if( cert.getPublicKey().equals(publicKey) ){
                         alias = _alias;
                     }
                 }
@@ -185,7 +128,6 @@ public final class ClientCertKeyStore {
         } finally {
             return alias;
         }
-
     }
 
     public synchronized boolean removeEntry( String alias ){
@@ -201,10 +143,8 @@ public final class ClientCertKeyStore {
 
     public synchronized boolean addNewKey(PrivateKey privateKey, X509Certificate cert) {
         if (!isExistKey(privateKey, cert)) {
-            X509Certificate[] chain = new X509Certificate[1];
-            chain[ 0] = cert;
-            long _alias = new Date().getTime();
-            String my_alias = new Long(_alias).toString();
+            X509Certificate[] chain = {cert}; //new X509Certificate[1];
+            String my_alias = new Long(new Date().getTime()).toString();
             try {
                 certKeyStore.setKeyEntry(my_alias, privateKey, PASSPHRASE, chain);
                 reStore();
@@ -226,37 +166,25 @@ public final class ClientCertKeyStore {
             certKeyStore.store(fos, PASSPHRASE);
             return true;
         } catch (FileNotFoundException fe) {
-            fe.printStackTrace();
-            myLogger.error("[ClientCertKeyStore] failed to get pkcs file: " + fe.getMessage());
-            return false;
+            myLogger.error("[ClientCertKeyStore] failed to get pkcs file: " + fe.getMessage());           
         } catch (KeyStoreException ke) {
-            ke.printStackTrace();
             myLogger.error("[ClientCertKeyStore] failed to get keystore file: " + ke.getMessage());
-            return false;
         } catch (IOException ie) {
-            ie.printStackTrace();
             myLogger.error("[ClientCertKeyStore] failed to access pkcs file: " + ie.getMessage());
-            return false;
         } catch (NoSuchAlgorithmException ne) {
-            ne.printStackTrace();
             myLogger.error("[ClientCertKeyStore] no such algorithm: " + ne.getMessage());
-            return false;
         } catch (CertificateException ce) {
-            ce.printStackTrace();
             myLogger.error("[ClientCertKeyStore] certificate error: " + ce.getMessage());
-            return false;
         } finally {
             if(fos != null) try {fos.close();} catch (IOException ex) {}
         }
-
+        return false;
     }
 
     private synchronized boolean isExistKey(PrivateKey privateKey, X509Certificate cert) {
-        boolean isExist = false;
         try {
             Enumeration aliases = certKeyStore.aliases();
             PublicKey publicKey = cert.getPublicKey();
-
             while (aliases.hasMoreElements()) {
                 String alias = (String) aliases.nextElement();
                 if (certKeyStore.isKeyEntry(alias)) {
@@ -264,14 +192,13 @@ public final class ClientCertKeyStore {
                     PrivateKey _privateKey = (PrivateKey) certKeyStore.getKey(alias, PASSPHRASE);
                     PublicKey _publicKey = _cert.getPublicKey();
                     if ((publicKey.equals(_publicKey)) && (privateKey.equals(_privateKey))) {
-                        isExist = true;
+                        return true;
                     }
                 }
             }
-        } catch (KeyStoreException ke) {
+        } catch (Exception ke) {
             ke.printStackTrace();
-        } finally {
-            return isExist;
         }
+        return false;
     }
 }

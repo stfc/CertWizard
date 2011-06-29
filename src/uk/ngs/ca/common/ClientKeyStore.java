@@ -12,53 +12,37 @@ import java.security.NoSuchProviderException;
 import java.security.cert.X509Certificate;
 import java.security.KeyPair;
 import java.security.KeyStoreException;
-import java.util.Arrays;
-
 import java.util.Enumeration;
-//import java.util.Vector;
 import java.util.Date;
-
-import java.io.InputStream;
 import java.io.IOException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.util.ArrayList;
-import java.util.List;
-//import java.util.logging.Level;
-
+import java.util.logging.Level;
 import org.apache.log4j.Logger;
-
-import java.util.Properties;
 import org.bouncycastle.jce.provider.unlimited.PKCS12KeyStoreUnlimited;
-
 import uk.ngs.ca.tools.property.SysProperty;
 
 /**
  * Read or create file $HOME/.ca/cakeystore.pkcs12 (create if it does not
- * already exist). This file is intended to hold.....what. It appears that
- * this file will hold the CSR request (it is populated after applying for a
- * cert).
+ * already exist). This file holds CSR requests (it is populated after applying for a
+ * cert when online) and VALID/expired cert/key entries that are recognised by our CA.
+ * The class provides methods for adding/creating/deleting entries from this
+ * keyStore file.
  * 
- * The cakeystore file contains a collection of the valid, expired, and the submission
- * requests made by the user.
  *
  * @author xw75
  */
 public final class ClientKeyStore {
+    private static final Logger myLogger = Logger.getLogger(ClientKeyStore.class);
 
     // keyStore represents shared mutable state and so must by synchronized.
     private KeyStore keyStore;
-    private static final Logger myLogger = Logger.getLogger(ClientKeyStore.class);
-    private static final String PROP_FILE = "/uk/ngs/ca/tools/property/configure.properties";
-    private Properties properties = new Properties();
-    private final String FILEPATH = ".ca";
-    private String keyStoreFile = null;
-    private char[] PASSPHRASE;
-    //private String Alias = "Client Certificate";
+    private String key_KeyStoreFilePath = null;
+    private char[] PASSPHRASE = null;
     private String errorMessage = null;
 
-   
+  
     private static ClientKeyStore clientKeyStore = null;
 
     public static synchronized ClientKeyStore getClientkeyStore(char[] passphrase) {
@@ -78,159 +62,109 @@ public final class ClientKeyStore {
     }
 
     // force non-instantiability with private constructor
-    private ClientKeyStore(char[] passphrase)  {
-        PASSPHRASE = passphrase;
-        init();
-        setupKeyStoreFile(passphrase);
-    }
-    
+    private ClientKeyStore(char[] passphrase) {
+        String caDir = System.getProperty("user.home") + File.separator + ".ca";
+        this.PASSPHRASE = passphrase;
+        this.key_KeyStoreFilePath = caDir + File.separator + SysProperty.getValue("ngsca.key.keystore.file");
 
-    /*public ClientKeyStore(char[] passphrase)  {
-        PASSPHRASE = passphrase;
-        init();
-        setupKeyStoreFile(passphrase);
-    }*/
+        try {
+            this.keyStore = PKCS12KeyStoreUnlimited.getInstance();
+        } catch (KeyStoreException ke) {
+            throw new IllegalStateException("[ClientKeyStore] failed to create a keyStore: ", ke);
+        } catch (NoSuchProviderException ne) {
+            throw new IllegalStateException("[ClientKeyStore] failed to create a keystore without suitable provider: ", ne);
+        }
+        // load this.keyStore from file if it exists.
+        this.loadKeyStoreFileFromFile(passphrase);
+    }
+
+    /**
+     * If $HOME/.ca/cakeystore.pkcs12 already exists, load it otherwise
+     * create an empty pkcs12 file.
+     * @param passphrase
+     */
+    private void loadKeyStoreFileFromFile(char[] passphrase)  {
+        myLogger.debug("[ClientKeyStore] get keystore ...");
+        FileInputStream fis = null;
+        try {
+            File f = new File(this.key_KeyStoreFilePath);
+            if (f.exists() && f.length() != 0L) {
+                fis = new FileInputStream(key_KeyStoreFilePath);
+                this.keyStore.load(fis, passphrase);             
+            } else {
+                this.keyStore.load(null, null);
+                reStore();
+            }
+        } catch (Exception ep) {
+            ep.printStackTrace();
+            errorMessage = ep.getMessage();
+        } finally {
+            try {if(fis != null) fis.close();} catch (IOException ex) {}
+        }
+    }
+
 
     public synchronized String getErrorMessage(){
         return this.errorMessage;
     }
 
     public synchronized boolean isExistPublicKey(PublicKey publicKey) {
-        boolean isExist = false;
         try {
             Enumeration aliases = this.keyStore.aliases();
-            List vector = new ArrayList(0);
-            //Vector vector = new Vector();
             while (aliases.hasMoreElements()) {
                 String alias = (String) aliases.nextElement();
                 if (this.keyStore.isKeyEntry(alias)) {
-                    vector.add(this.keyStore.getCertificate(alias));
+                    X509Certificate cert = (X509Certificate) this.keyStore.getCertificate(alias);
+                    if(cert.getPublicKey().equals(publicKey)){
+                        return true;
+                    }
                 }
-            }
-            for (int i = 0; i < vector.size(); i++) {
-                X509Certificate cert = (X509Certificate) vector.get(i); //vector.elementAt(i);
-                PublicKey _publicKey = cert.getPublicKey();
-                if (publicKey.equals(_publicKey)) {
-                    isExist = true;
-                }
-            }
+            }  
         } catch (KeyStoreException ke) {
             ke.printStackTrace();
-        } finally {
-            return isExist;
         }
+        return false;
     }
 
     public synchronized boolean isExistPrivateKey(PrivateKey privateKey) {
-        boolean isExist = false;
         try {
             Enumeration aliases = this.keyStore.aliases();
-            List vector = new ArrayList(0);
-            while (aliases.hasMoreElements()) {
+             while (aliases.hasMoreElements()) {
                 String alias = (String) aliases.nextElement();
                 if (this.keyStore.isKeyEntry(alias)) {
-                    vector.add((PrivateKey) this.keyStore.getKey(alias, PASSPHRASE));
+                    if( this.keyStore.getKey(alias, PASSPHRASE).equals(privateKey) ){
+                        return true;
+                    }
                 }
             }
-            for (int i = 0; i < vector.size(); i++) {
-                PrivateKey _privateKey = (PrivateKey) vector.get(i);
-                if (_privateKey.equals(privateKey)) {
-                    isExist = true;
-                }
-            }
-        } catch (KeyStoreException ke) {
+        } catch (Exception ke) {
             ke.printStackTrace();
-        } finally {
-            return isExist;
         }
+        return false;
     }
+
 
     public synchronized PrivateKey getPrivateKey(PublicKey publicKey) {
-        PrivateKey privateKey = null;
         try {
             Enumeration aliases = this.keyStore.aliases();
-            List vector = new ArrayList(0);
             while (aliases.hasMoreElements()) {
                 String alias = (String) aliases.nextElement();
                 if (this.keyStore.isKeyEntry(alias)) {
-                    vector.add(this.keyStore.getCertificate(alias));
+                    X509Certificate cert = (X509Certificate) this.keyStore.getCertificate(alias);
+                    if(cert.getPublicKey().equals(publicKey)){
+                        String _alias = this.keyStore.getCertificateAlias(cert);
+                        return (PrivateKey) this.keyStore.getKey(_alias, PASSPHRASE);
+                    }
                 }
-            }
-            for (int i = 0; i < vector.size(); i++) {
-                X509Certificate cert = (X509Certificate) vector.get(i);
-                PublicKey _publicKey = cert.getPublicKey();
-                if (publicKey.equals(_publicKey)) {
-                    String _alias = this.keyStore.getCertificateAlias(cert);
-                    privateKey = (PrivateKey) this.keyStore.getKey(_alias, PASSPHRASE);
-                }
-            }
-        } catch (KeyStoreException ke) {
+            }     
+        } catch (Exception ke) {
             ke.printStackTrace();
-        } finally {
-            return privateKey;
         }
-    }
-
-    public synchronized PrivateKey getLatestPrivateKey() {
-        PrivateKey privateKey = null;
-        try {
-            Enumeration aliases = this.keyStore.aliases();
-            List vector = new ArrayList(0);
-            while (aliases.hasMoreElements()) {
-                String alias = (String) aliases.nextElement();
-                if (this.keyStore.isKeyEntry(alias)) {
-                    vector.add(alias);
-                }
-            }
-            String _alias = (String) vector.get(0);
-            long initialValue = new Long(_alias).longValue();
-            for (int i = 0; i < vector.size(); i++) {
-                String my_alias = (String) vector.get(i);
-                long tempValue = new Long(my_alias).longValue();
-                if (initialValue <= tempValue) {
-                    initialValue = tempValue;
-                }
-            }
-            privateKey = (PrivateKey) this.keyStore.getKey(new Long(initialValue).toString(), PASSPHRASE);
-
-        } catch (KeyStoreException ke) {
-            ke.printStackTrace();
-        } finally {
-            return privateKey;
-        }
-    }
-
-    public synchronized PublicKey getLatestPublicKey() {
-        PublicKey publicKey = null;
-        try {
-            Enumeration aliases = this.keyStore.aliases();
-            List vector = new ArrayList(0);
-            while (aliases.hasMoreElements()) {
-                String alias = (String) aliases.nextElement();
-                if (this.keyStore.isKeyEntry(alias)) {
-                    vector.add(alias);
-                }
-            }
-            String _alias = (String) vector.get(0);
-            long initialValue = new Long(_alias).longValue();
-            for (int i = 0; i < vector.size(); i++) {
-                String my_alias = (String) vector.get(i);
-                long tempValue = new Long(my_alias).longValue();
-                if (initialValue <= tempValue) {
-                    initialValue = tempValue;
-                }
-            }
-            X509Certificate cert = (X509Certificate) this.keyStore.getCertificate(new Long(initialValue).toString());
-            publicKey = cert.getPublicKey();
-        } catch (KeyStoreException ke) {
-            ke.printStackTrace();
-        } finally {
-            return publicKey;
-        }
+        return null;
     }
 
     /**
-     * create a new keypair and restore in the keystore file.
+     * create a new keypair in the keystore file and save to file.
      *
      * @return alias
      */
@@ -239,8 +173,8 @@ public final class ClientKeyStore {
             KeyPair keyPair = CAKeyPair.getKeyPair();
             PrivateKey privKey = keyPair.getPrivate();
             X509Certificate cert = CAKeyPair.createSelfSignedCertificate(keyPair);
-            X509Certificate[] certs = new X509Certificate[1];
-            certs[ 0] = cert;
+            X509Certificate[] certs = {cert};
+            // meaningless alias.
             String _alias = new Long(new Date().getTime()).toString();
             this.keyStore.setKeyEntry(_alias, privKey, PASSPHRASE, certs);
             reStore();
@@ -269,8 +203,7 @@ public final class ClientKeyStore {
         if (isExistPublicKey(publicKey) && isExistPrivateKey(privateKey)) {
             return true;
         }
-        X509Certificate[] chain = new X509Certificate[1];
-        chain[ 0 ] = cert;
+        X509Certificate[] chain = {cert}; //new X509Certificate[1];
         long _alias = new Date().getTime();
         String my_alias = new Long(_alias).toString();
         try {
@@ -302,9 +235,6 @@ public final class ClientKeyStore {
         }
     }
 
-    //public String getErrorMessage() {
-    //    return errorMessage;
-    //}
 
     public synchronized boolean removeKey(PrivateKey privateKey) {
         boolean isSuccess = true;
@@ -328,117 +258,29 @@ public final class ClientKeyStore {
         }
     }
 
-    private void init()  {
-        myLogger.debug("[ClientKeyStore] init...");
-        InputStream input =null;
-        try {
-            this.keyStore = PKCS12KeyStoreUnlimited.getInstance();
-            input = SysProperty.class.getResourceAsStream(PROP_FILE);
-            properties.load(input);
-            
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-            myLogger.error("[ClientKeyStore] Property file is failed to load.");
-            System.out.println("[ClientKeyStore]: ioexception = " + ioe.getMessage());
-            errorMessage = ioe.getMessage();
-            //throw ioe;
-        } catch (KeyStoreException ke) {
-            ke.printStackTrace();
-            myLogger.error("[ClientKeyStore] failed to create a keyStore: " + ke.getMessage());
-            System.out.println("[ClientKeyStore]: keystoreexception = " + ke.getMessage());
-            //errorMessage = ke.getMessage();
-            //throw ke;
 
-        } catch (NoSuchProviderException ne) {
-            ne.printStackTrace();
-            myLogger.error("[ClientKeyStore] failed to create a keystore without suitable provider: " + ne.getMessage());
-            System.out.println("[ClientKeyStore]: nosuchproviderexception = " + ne.getMessage());
-            errorMessage = ne.getMessage();
-            //throw ne;
-        } finally {
-            try {
-               if(input !=null) input.close();
-            } catch (IOException ex) {
-                //java.util.logging.Logger.getLogger(ClientKeyStore.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
-    }
-
-    private void setupKeyStoreFile(char[] passphrase)  {
-        myLogger.debug("[ClientKeyStore] get keystore ...");
-        String key = "ngsca.key.keystore.file";
-        String value = properties.getProperty(key);
-        if (value == null) {
-            myLogger.error("[ClientKeyStore] could not find out the value of " + key + " in your property file.");
-        }
-        String homePath = System.getProperty("user.home");
-        homePath = homePath + System.getProperty("file.separator") + FILEPATH;
-        if (!new File(homePath).isDirectory()) {
-            new File(homePath).mkdir();
-        }
-        homePath = homePath + System.getProperty("file.separator") + value;
-        keyStoreFile = homePath;
-        FileInputStream fis = null;
-        try {
-            if (new File(keyStoreFile).exists()) {
-                fis = new FileInputStream(keyStoreFile);
-                this.keyStore.load(fis, passphrase);
-                
-                if (this.keyStore.size() == 0) {
-                    _createDefaultKeyStore();
-                }
-            } else {
-                _createDefaultKeyStore();
-            }
-        } catch (Exception ep) {
-            ep.printStackTrace();
-            errorMessage = ep.getMessage();
-        } finally {
-            try {if(fis != null) fis.close();} catch (IOException ex) {}
-        }
-    }
-
-    public synchronized boolean removeCertKeyStore() {
-        String fileName = SysProperty.getValue("ngsca.key.keystore.file");
-        String homePath = System.getProperty("user.home");
-        homePath = homePath + System.getProperty("file.separator") + ".ca";
-        homePath = homePath + System.getProperty("file.separator") + fileName;
-        File _file = new File(homePath);
-        if (_file.exists()) {
-            return _file.delete();
-        } else {
-            return true;
-        }
-    }
-
-    private boolean _createDefaultKeyStore() {
-        try {
-            this.keyStore.load(null, null);
-            reStore();
-            return true;
-        } catch (Exception ep) {
-            ep.printStackTrace();
-            errorMessage = ep.getMessage();
-            return false;
-        }
-    }
 
     private boolean reStore() {
         FileOutputStream fos = null;
         try {
-            File f = new File(keyStoreFile);
+            File f = new File(this.key_KeyStoreFilePath);
             fos = new FileOutputStream(f);
-            this.keyStore.store(fos, PASSPHRASE);            
+            this.keyStore.store(fos, PASSPHRASE);
             return true;
         } catch (Exception ep) {
             errorMessage = ep.getMessage();
-            removeCertKeyStore();
+            File file = new File(this.key_KeyStoreFilePath);
+            if (file.exists()) {
+                return file.delete();
+            }
             return false;
         } finally {
             try {
-                if(fos != null) fos.close();
+                if (fos != null) {
+                    fos.close();
+                }
             } catch (IOException ex) {
-                //java.util.logging.Logger.getLogger(ClientKeyStore.class.getName()).log(Level.SEVERE, null, ex);
+                java.util.logging.Logger.getLogger(ClientKeyStore.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }
