@@ -164,7 +164,7 @@ public class ImportCertificate extends Observable {
 
 
                 String selectedAlias = storeKeyCertAliases_CertDN.get(selected);
-                _cert = this.importKeyStore.getCertificate(selectedAlias);
+                _cert = this.importKeyStore.getCertificate(selectedAlias); // shouldn't we be getting the whole cert chain here ?
                 _key = this.importKeyStore.getKey(selectedAlias, this.fileProtectionPassphrase);                
                 if (!(_cert instanceof X509Certificate)) {
                     JOptionPane.showMessageDialog(frame, "Could not find your certificate when trying to import.", "Certificate File Extraction", JOptionPane.ERROR_MESSAGE);
@@ -181,12 +181,12 @@ public class ImportCertificate extends Observable {
                 //ClientKeyStore clientKeyStore = new ClientKeyStore(this.keyStorePassphrase);
                 ClientKeyStore clientKeyStore = ClientKeyStore.getClientkeyStore(this.keyStorePassphrase);
                 String _dn = x509_cert.getSubjectDN().getName();
-                String _value = SysProperty.getValue("ngsca.cert.o");
+                String _value = SysProperty.getValue("ngsca.cert.o"); // the organization 
 
                 int _index = _dn.indexOf(_value);
 
-                                  //find out if the e-mail extension exists, and hence prevent host cert from getting imported
-                    String dn = x509_cert.getSubjectDN().getName();
+                //find out if the e-mail extension exists, and hence prevent host cert from getting imported
+                String dn = x509_cert.getSubjectDN().getName();
 
 
                     ///ADDED: CHECK FOR HOST CERTIFICATES AS WELL AS NON E-SCIENCE CERTIFICATES
@@ -196,7 +196,7 @@ public class ImportCertificate extends Observable {
                     String _message = SysProperty.getValue("ngsca.cert.limit");
                     _message = _message + "\nYou may have tried to import a certificate which is not issued by e-Science CA, or \n"
                             + "you may have tried to import a host certificate, which is not yet supported by this \n"
-                            + "version of Certificate Wizard Management." + "\nYour certificate DN is " + _dn + "\nPlease select a UK e-Science "
+                            + "version of Certificate Management Wizard ." + "\nYour certificate DN is " + _dn + "\nPlease select a UK e-Science "
                             + "personal certificate to import.";
                     this.Message = _message;
                     JOptionPane.showMessageDialog(frame, _message, "Certificate File Extraction", JOptionPane.ERROR_MESSAGE);

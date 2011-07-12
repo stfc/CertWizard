@@ -47,7 +47,7 @@ import uk.ngs.ca.common.ClientKeyStore;
  * <p>
  * <ol>
  *  <li>'$HOME/.ca/cacertkeystore.pkcs12'  // contains only valid certificates
- *       recognised by the CA (this file is populated when online on creation of
+ *       recognised by the CA (this file is populated when online with creation of
  *       <code>OnLineCertificateInfo</code>).
  *  </li>
  *  <li>'$HOME/.ca/localcertificate.xml'   // contains only CSRs (CSRs are
@@ -365,6 +365,9 @@ public class OffLineCertificateInfo extends Observable {
                 return _removeCSRHelper(index);
             }
         }
+        //notify MainWindow
+        setChanged();
+        notifyObservers(this);
         return false;
     }
 
@@ -432,12 +435,12 @@ public class OffLineCertificateInfo extends Observable {
         }
     }
 
-    public void notifyObserver() {
+    /*public void notifyObserver() {
         //notify MainWindow
         setChanged();
         notifyObservers(this);
 
-    }
+    }*/
 
     public String getFormatStartDate(int index) {
         Date date = getStartDate(index);

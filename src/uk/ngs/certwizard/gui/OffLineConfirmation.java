@@ -262,7 +262,7 @@ public class OffLineConfirmation extends javax.swing.JFrame {
             if (offLineCertInfo.remove(Index)) {
                 JOptionPane.showMessageDialog(this, "The certificate has now been removed from the CertWizard",
                         "Certificate removed", JOptionPane.INFORMATION_MESSAGE);
-                offLineCertInfo.notifyObserver();
+                //offLineCertInfo.notifyObserver();
             } else {
                 JOptionPane.showMessageDialog(this, "The item is fail to be removed from the CertWizard",
                         "Fail to remove certificate", JOptionPane.INFORMATION_MESSAGE);

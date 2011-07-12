@@ -118,7 +118,7 @@ public class RAOperationPanel extends javax.swing.JPanel implements Observer {
 
     }
 
-    private void setupObservable(){
+    /*private void setupObservable(){
         if (jComboBox1.getItemCount() != 0){
             int index = jComboBox1.getSelectedIndex();
                                 
@@ -127,7 +127,7 @@ public class RAOperationPanel extends javax.swing.JPanel implements Observer {
             _observable.change(this.certificateCSRInfos[ index ]);
         }
         
-    }
+    }*/
     
     private void onLineInit() {
         onLineCertInfo = new OnLineCertificateInfo(PASSPHRASE);

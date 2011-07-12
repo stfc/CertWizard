@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package uk.ngs.ca.certificate.management;
+package unused; //was in uk.ngs.ca.certificate.management;
 
 import java.security.KeyStore;
 import java.security.KeyStoreException;

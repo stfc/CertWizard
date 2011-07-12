@@ -59,7 +59,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private OffLineCertificateInfo offLineCertInfo;
     private CertificateCSRInfo[] certificateCSRInfos = null;
 
-    private CertWizardMain _certWizardMain = null;
+    //private CertWizardMain _certWizardMain = null;
     private CAMotd motd;
 
 
@@ -71,7 +71,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         System.setProperty(_property, _passphrase);
         PASSPHRASE = passphrase;
 
-        this._certWizardMain = _certWizardMain;
+        //this._certWizardMain = _certWizardMain;
 
         initComponents();
 
@@ -126,7 +126,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     }
 
-    private void setupObservable(){
+    /*private void setupObservable(){
         if (jComboBox1.getItemCount() != 0){
             int index = jComboBox1.getSelectedIndex();
                                 
@@ -135,7 +135,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             _observable.change(this.certificateCSRInfos[ index ]);
         }
         
-    }
+    }*/
 
 
     private void onLineInit() {
@@ -205,7 +205,11 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
          fillComboBox();
     }
 
+    /**
+     *
+     */
     public void update(Observable observable, Object obj) {
+
         if ( SystemStatus.getInstance().getIsOnline() ) {
             //keystore and certificateCSRInfo need to be refreshed in OnLineCertificayeInfo.
             this.onLineCertInfo.refresh();
@@ -219,7 +223,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
                 this.onLineCertInfo.addCertificateCSRInfo(_certCSRInfo);
                 this.certificateCSRInfos = this.onLineCertInfo.getCertCSRInfos();
+
             }else if( observable.getClass().getSimpleName().equals("OnLineCertificateInfo") ){
+                // Spaghetti code r us ! (See OnLineConfirmation.java)
                 String _message = (String)obj;
                 int _index = _message.indexOf("Renew:");
                 if( _index != -1 ){
@@ -236,6 +242,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                     for( int i = 0; i < this.certificateCSRInfos.length; i++ ){
                         String _encodedpublickey = this.certificateCSRInfos[ i ].getPublickey();
                         if( _publickey.equals(_encodedpublickey) ){
+                            System.out.println("update observerable");
                             this.certificateCSRInfos[ i ].update(this.PASSPHRASE);
                         }
                     }
@@ -741,8 +748,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     private void jComboBox1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBox1ActionPerformed
         // TODO add your handling code here:
-//System.out.println("------------------------------------------------------------------------");
-        //WaitDialog.showDialog();
         
         if (jComboBox1.getItemCount() == 0) {
             this.DN.setText("");
@@ -753,7 +758,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             this.email.setText("");
             return;
         }
-        /*   */ 
 
         this.DN.requestFocus();
         this.btnDelete.setEnabled(true);
@@ -800,6 +804,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 String my_status = _obj[ 2 ].toString();
 
                 //update the selected item.
+                System.out.println("combo action");
                 this.certificateCSRInfos[ index ].update( this.PASSPHRASE );
 
 
@@ -930,7 +935,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 this.jPanel5.setVisible(true);
             }
             //setup the Observable
-            setupObservable();
+            //setupObservable();
         } else {
 
             //int indexOffline = jComboBox1.getSelectedIndex();
@@ -1128,7 +1133,8 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 JOptionPane.showMessageDialog(this, "You haven't selected one valid certificate to revoke!", "No suitable certificate selected", JOptionPane.INFORMATION_MESSAGE);
             } else {
                 if (this.jComboBox1.getSelectedIndex() != -1) {
-                    new OnLineConfirmation(this, "Revoke", "Are you sure you want to revoke the certificate with the following details?", this.jComboBox1.getSelectedIndex(), onLineCertInfo).setVisible(true);
+                    new OnLineConfirmation(this, "Revoke", "Are you sure you want to revoke the certificate with the following details?",
+                            this.jComboBox1.getSelectedIndex(), onLineCertInfo).setVisible(true);
                 } else {
                     JOptionPane.showMessageDialog(this, "You haven't selected any certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
                 }
@@ -1484,65 +1490,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         TextMOD.setText(text);
     }
 
-//    private void updateComboBox( int _index ){
-//        if ( SystemStatus.getInstance().getIsOnline() ) {
-//            if( this.certificateCSRInfos[ _index ] != null ){
-//                ListCellRenderer renderer = new ListItemRenderer();
-//                String _dn = this.certificateCSRInfos[ _index ].getOwner();
-//                String _status = this.certificateCSRInfos[ _index ].getStatus();
-//
-//                Object[] element = new Object[2];
-//                if (_status.equals("VALID")) {
-//                    String _lifedays = this.certificateCSRInfos[ _index ].getLifeDays();
-//                    int int_lifedays = new Integer( _lifedays ).intValue();
-//                    if( int_lifedays < 0 ){
-//                        if( int_lifedays >= -30 ){
-//                            element[ 0 ] =  new ExpiredCertColor();
-//                        }else{
-//                            element[ 0 ] = new ExpiredForeverCertColor();
-//                        }
-//                    }else{
-//                        element[ 0 ] = new ValidCertColor();
-//                    }
-//
-//                    element[ 1 ] = _dn;
-//                } else if (_status.equals("REVOKED")) {
-//                    element[ 0 ] = new RevokedCertColor();
-//                    element[ 1 ] = _dn;
-//                } else if (_status.equals("SUSPENDED")) {
-//                    element[ 0 ] = new SuspendCertColor();
-//                    element[ 1 ] = _dn;
-//                } else if (_status.equals("NEW")) {
-//                    element[ 0 ] = new PendingColor();
-//                    element[ 1 ] = _dn;
-//                } else if (_status.equals("RENEW")) {
-//                    element[ 0 ] = new RenewalDueColor();
-//                    element[ 1 ] = _dn;
-//                } else if (_status.equals("APPROVED")) {
-//                    element[ 0 ] = new SuspendCertColor();
-//                    element[ 1 ] = _dn;
-//                } else if (_status.equals("ARCHIVED")) {
-//                    element[ 0 ] = new ValidCertColor();
-//                    element[ 1 ] = _dn;
-//                } else if (_status.equals("DELETED")) {
-//                    element[ 0 ] = new RevokedCertColor();
-//                    element[ 1 ] = _dn;
-//                } else {
-//                    element[ 0 ] = new RevokedCertColor();
-//                    element[ 1 ] = _dn;
-//                }
-//
-//                Object[] _obj = (Object[])jComboBox1.getItemAt(_index);
-//                jComboBox1.removeItemAt( _index );
-//
-//                _obj = (Object[])jComboBox1.getItemAt(_index);
-//
-//                jComboBox1.insertItemAt( element, _index );
-//                _obj = (Object[])jComboBox1.getItemAt(_index);
-//
-//            }
-//        }
-//    }
 
     /**
      * Add elements to this.jComboBox1 and set the renderer.

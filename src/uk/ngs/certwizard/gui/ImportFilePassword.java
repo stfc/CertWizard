@@ -25,10 +25,10 @@ import uk.ngs.ca.certificate.ImportCertificate;
  */
 public class ImportFilePassword extends javax.swing.JFrame {
 
-    private char[] PASSPHRASE = null;
+    //private char[] PASSPHRASE = null;
     File importFile = null;
 
-    private MainWindowPanel mainWindowPanel = null;
+    //private MainWindowPanel mainWindowPanel = null;
 
     private ImportCertificate importCertificate = new ImportCertificate();
     
@@ -36,10 +36,10 @@ public class ImportFilePassword extends javax.swing.JFrame {
     public ImportFilePassword( MainWindowPanel mainWindowPanel, char[] passphrase, File file ){
         initComponents();
 
-        this.mainWindowPanel = mainWindowPanel;
+        //this.mainWindowPanel = mainWindowPanel;
         importCertificate.addObserver(mainWindowPanel);
 
-        PASSPHRASE = passphrase;
+        //PASSPHRASE = passphrase;
         importFile = file;
         importCertificate.addCertificateFile(file);
         importCertificate.addKeyStorePassphrase(passphrase);
@@ -127,7 +127,7 @@ public class ImportFilePassword extends javax.swing.JFrame {
         if( isSuccess ){
             JOptionPane.showMessageDialog(this, "You have successfully imported the selected certificate in your local certificate keystore.", "Import Certificate Success", JOptionPane.INFORMATION_MESSAGE);
             importCertificate.notifyObserver();
-                this.dispose();
+            this.dispose();
         }else{
             //do we need to do importCertificate.notifyObserver()?
             //if we don't call this method, we must make sure that mainwindow will display certs fine.

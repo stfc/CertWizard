@@ -48,7 +48,11 @@ public class OnLineUserCertificateRequest extends Observable{
      */
     public boolean doOnLineCSR() {
         if (getError().equals("")) {
+            // caKeyStore.pkcs12
             ClientKeyStore clientKeyStore = ClientKeyStore.getClientkeyStore(this.PASSPHRASE);
+            // create new keypair entry under new meaningless alias and re-save file.
+            // TODO: pass-through the info provided by the user rather than
+            // creating a new dummy CSR certificate. 
             String alias = clientKeyStore.createNewKeyPair();
             this.Alias = alias;
             PublicKey publicKey = clientKeyStore.getPublicKey(alias);
@@ -64,11 +68,13 @@ public class OnLineUserCertificateRequest extends Observable{
             csrCreator.setPIN2(hashPIN2);
             csrCreator.createDN(false);
             String csrString = csrCreator.createCertificateRequest(privateKey, publicKey);
-            String dn = csrCreator.getDN().toString();
+            //String dn = csrCreator.getDN().toString();
 
             CSRRequest csrRequest = new CSRRequest(csrString, hashPIN1, this.Email);
             this.MESSAGE = csrRequest.getMessage();
             return csrRequest.isCSRREquestSuccess();
+             
+            //return true;
         } else {
             this.MESSAGE = "Please check you input parameters.";
             return false;

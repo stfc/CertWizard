@@ -3,49 +3,39 @@
  */
 package uk.ngs.ca.common;
 
-import java.io.IOException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.Provider;
+import org.bouncycastle.x509.X509V3CertificateGenerator;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.apache.log4j.Logger;
+import org.bouncycastle.asn1.x509.X509Name;
+import java.security.cert.X509Certificate;
+
+/*import java.io.IOException;
 import java.io.PrintStream;
 import java.io.File;
 import java.io.FileReader;
 import java.io.BufferedReader;
-
-import java.security.KeyPair;
-import java.security.KeyFactory;
-import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
-import java.security.Provider;
 import java.security.PublicKey;
 import java.security.AlgorithmParameters;
-import org.bouncycastle.x509.X509V3CertificateGenerator;
+import java.security.KeyFactory;
+import org.bouncycastle.util.encoders.Base64;
+import java.io.StringWriter;
+import javax.security.auth.x500.X500Principal;
+import org.bouncycastle.openssl.PEMWriter;
+import java.io.ByteArrayOutputStream;
+import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.bouncycastle.x509.X509V1CertificateGenerator;
 import java.security.spec.PKCS8EncodedKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
-
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.Cipher;
 import javax.crypto.EncryptedPrivateKeyInfo;
-
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-
-import org.bouncycastle.util.encoders.Base64;
-
-import org.apache.log4j.Logger;
-
-import java.io.StringWriter;
-import javax.security.auth.x500.X500Principal;
-
-import org.bouncycastle.asn1.x509.X509Name;
-
-import org.bouncycastle.openssl.PEMWriter;
-
-import java.security.cert.X509Certificate;
-
-import java.io.ByteArrayOutputStream;
-
-import org.bouncycastle.asn1.DERSet;
-
-import org.bouncycastle.jce.PKCS10CertificationRequest;
+*/
 
 import java.util.Date;
 import java.math.BigInteger;
@@ -58,15 +48,19 @@ import java.math.BigInteger;
  */
 public class CAKeyPair {
 
-    public static int KEYSIZE = 1024;
-    public static String KEY_ALG = "RSA";
-    public static String KEY_HEADER = "-----BEGIN ENCRYPTED PRIVATE KEY-----";
-    public static String KEY_FOOTER = "-----END ENCRYPTED PRIVATE KEY-----";
-    public static byte[] SALT = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-    public static int ITERATIONCOUNT = 100;
-    public static String ENCRYPT_ALG = "PBEWithSHA1AndDESede";
-    static final Logger myLogger = Logger.getLogger(CAKeyPair.class.getName());
-    private static String SIG_ALG = "MD5withRSA";
+    private static final int KEYSIZE = 1024;
+    private static final String KEY_ALG = "RSA";
+
+    //private static final String KEY_HEADER = "-----BEGIN ENCRYPTED PRIVATE KEY-----";
+    //private static final String KEY_FOOTER = "-----END ENCRYPTED PRIVATE KEY-----";
+    //private static final byte[] SALT = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    //private static int ITERATIONCOUNT = 100;
+    //private static final String ENCRYPT_ALG = "PBEWithSHA1AndDESede";
+    private static final Logger myLogger = Logger.getLogger(CAKeyPair.class.getName());
+    private static final String SIG_ALG = "MD5withRSA";
+
+    /** The Issuer DN of the self signed certs (note, no spaces are important) */
+    public static final String CSR_ISSUER_DN = "CN=root cert,L=DL,OU=CLRC,O=eScienceDev,C=UK";
 
     /**
      * Constructor does nothing.
@@ -75,22 +69,22 @@ public class CAKeyPair {
     }
 
     /*
-     * This factory function generates a pair of keys suitable for the use with NGS.
+     * This factory function generates a new pair of keys suitable for the use with NGS.
      * The default keyzise is 1024.
      *
      * @return The created KeyPair
      */
-    public static KeyPair getKeyPair() {
-        return getKeyPair(KEYSIZE);
+    public static KeyPair getNewKeyPair() {
+        return getNewKeyPairHelper(KEYSIZE);
     }
 
     /*
-     * This factory function generates a pair of keys suitable for the use with NGS.
+     * This factory function generates a new pair of keys suitable for the use with NGS.
      *
      * @return The created KeyPair
      * @param keysize the keysize of keypair
      */
-    public static KeyPair getKeyPair(int keysize) {
+    private static KeyPair getNewKeyPairHelper(int keysize) {
         try {
             Provider provider = new BouncyCastleProvider();
             KeyPairGenerator keyGenerator = KeyPairGenerator.getInstance(KEY_ALG, provider);
@@ -111,9 +105,9 @@ public class CAKeyPair {
      * @return private key
      * @param keypair
      */
-    public static PrivateKey getPrivateKey(KeyPair keyPair) {
+    /*public static PrivateKey getPrivateKey(KeyPair keyPair) {
         return keyPair.getPrivate();
-    }
+    }*/
 
     /*
      * Retrieve a Public Key from the KeyPair
@@ -121,9 +115,9 @@ public class CAKeyPair {
      * @return Public Key
      * @param KeyPair
      */
-    public static PublicKey getPublicKey(KeyPair keyPair) {
+    /*public static PublicKey getPublicKey(KeyPair keyPair) {
         return keyPair.getPublic();
-    }
+    }*/
 
     /*
      * Encrypt a Private Key and store in local disk
@@ -133,9 +127,9 @@ public class CAKeyPair {
      * @param privateKey Private Key
      * @param file a file to store the encrypted Private Key
      */
-    public static boolean encryptPrivateKey(char[] passphrase, PrivateKey privateKey, File file) {
+    /*public static boolean encryptPrivateKey(char[] passphrase, PrivateKey privateKey, File file) {
         return encryptPrivateKey(passphrase, privateKey, SALT, ITERATIONCOUNT, ENCRYPT_ALG, file);
-    }
+    }*/
 
     /*
      * Encrypt a Private Key and store in local disk
@@ -145,10 +139,10 @@ public class CAKeyPair {
      * @param privateKey Private Key
      * @param file a file path to store the encrypted Private Key
      */
-    public static boolean encryptPrivateKey(char[] passphrase, PrivateKey privateKey, String file) {
+    /*public static boolean encryptPrivateKey(char[] passphrase, PrivateKey privateKey, String file) {
         File f = new File(file);
         return encryptPrivateKey(passphrase, privateKey, SALT, ITERATIONCOUNT, ENCRYPT_ALG, f);
-    }
+    }*/
 
     /*
      * Encrypt a Private Key and restore in local disk.
@@ -162,8 +156,7 @@ public class CAKeyPair {
      * @param algorithm encryption algorithm
      * @file a file to restore the encrypted Private Key.
      */
-    public static boolean encryptPrivateKey(char[] passphrase, PrivateKey privateKey, byte[] salt, int iterationCount, String algorithm, File file) {
-
+    /*public static boolean encryptPrivateKey(char[] passphrase, PrivateKey privateKey, byte[] salt, int iterationCount, String algorithm, File file) {
         PBEParameterSpec defParams = new PBEParameterSpec(salt, iterationCount);
         try {
             AlgorithmParameters params = AlgorithmParameters.getInstance(algorithm);
@@ -188,8 +181,7 @@ public class CAKeyPair {
             myLogger.error("[CAKeyPair] failed to encrypt private key or failed to store in " + file.getAbsolutePath());
             return false;
         }
-
-    }
+    }*/
 
     /*
      * Decrypt Private Key
@@ -198,9 +190,9 @@ public class CAKeyPair {
      * @passphrase the passphrase to decrypt the Private Key
      * @param file a file to restore the encrypted Private Key
      */
-    public static PrivateKey decryptPrivateKey(char[] passphrase, File file) {
+    /*public static PrivateKey decryptPrivateKey(char[] passphrase, File file) {
         return decryptPrivateKey(passphrase, SALT, ITERATIONCOUNT, ENCRYPT_ALG, file);
-    }
+    }*/
 
     /*
      * Decrypt Private Key
@@ -209,10 +201,10 @@ public class CAKeyPair {
      * @passphrase the passphrase to decrypt the Private Key
      * @param file a file path to restore the encrypted Private Key
      */
-    public static PrivateKey decryptPrivateKey(char[] passphrase, String file) {
+    /*public static PrivateKey decryptPrivateKey(char[] passphrase, String file) {
         File f = new File(file);
         return decryptPrivateKey(passphrase, SALT, ITERATIONCOUNT, ENCRYPT_ALG, f);
-    }
+    }*/
 
     /*
      * Decrypt Private Key.
@@ -225,7 +217,7 @@ public class CAKeyPair {
      * @param algorithm decryption algorithm
      * @file a file to restore the encrypted Private Key.
      */
-    public static PrivateKey decryptPrivateKey(char[] passphrase, byte[] salt, int iterationCount, String algorithm, File file) {
+    /*private static PrivateKey decryptPrivateKey(char[] passphrase, byte[] salt, int iterationCount, String algorithm, File file) {
 
         String myKey = removeHeadFootString(getContents(file));
         PBEKeySpec pbeSpec = new PBEKeySpec(passphrase);
@@ -250,9 +242,9 @@ public class CAKeyPair {
             ep.printStackTrace();
             return null;
         }
-    }
+    }*/
 
-    static private String getContents(File aFile) {
+    /*private static String getContents(File aFile) {
         //...checks on aFile are elided
         StringBuilder contents = new StringBuilder();
         try {
@@ -261,12 +253,10 @@ public class CAKeyPair {
             BufferedReader input = new BufferedReader(new FileReader(aFile));
             try {
                 String line = null; //not declared within while loop
-    /*
-                 * readLine is a bit quirky :
-                 * it returns the content of a line MINUS the newline.
-                 * it returns null only for the END of the stream.
-                 * it returns an empty String if two newlines appear in a row.
-                 */
+                 // readLine is a bit quirky :
+                 // it returns the content of a line MINUS the newline.
+                 // it returns null only for the END of the stream.
+                 // it returns an empty String if two newlines appear in a row.
                 while ((line = input.readLine()) != null) {
                     contents.append(line);
                     contents.append(System.getProperty("line.separator"));
@@ -280,11 +270,10 @@ public class CAKeyPair {
             myLogger.error("[CAKeyPair] failed to read our private key from " + aFile.getAbsolutePath());
             ex.printStackTrace();
         }
-
         return contents.toString();
-    }
+    }*/
 
-    private static String removeHeadFootString(String originalString) {
+    /*private static String removeHeadFootString(String originalString) {
         String _originalString = originalString;
         int longString = _originalString.length();
         int _start = _originalString.indexOf(KEY_HEADER);
@@ -301,9 +290,9 @@ public class CAKeyPair {
                 _originalString.substring(0, _start);
         return _originalString;
 
-    }
+    }*/
 
-    public static String createCSR(KeyPair keyPair) {
+    /*public static String createCSR(KeyPair keyPair) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         DERSet derset = new DERSet();
         PrivateKey privateKey = keyPair.getPrivate();
@@ -326,7 +315,7 @@ public class CAKeyPair {
             myLogger.error("[CAKeyPair] createCSR: failed. " + ep.toString());
             return null;
         }
-    }
+    }*/
 
     /**
      * create a self signed certificate. the certificate is restore in keystore file with private key.
@@ -334,9 +323,9 @@ public class CAKeyPair {
      * @param keyPair
      * @return X509Certificate
      */
-    public static X509Certificate createSelfSignedCertificate(KeyPair keyPair) {
+    /*public static X509Certificate createSelfSignedCertificate(KeyPair keyPair) {
 
-        KeyPair _rootKeyPair = CAKeyPair.getKeyPair();
+        KeyPair _rootKeyPair = CAKeyPair.getNewKeyPair();
         X509Certificate rootCert = null;
         X509Certificate createdCert = null;
 
@@ -347,23 +336,22 @@ public class CAKeyPair {
         X509Name dnName = new X509Name("CN=root cert, L=DL, OU=CLRC, O=eScienceDev, C=UK");
 
 
-        X509V1CertificateGenerator v1certGen = new X509V1CertificateGenerator();
-        v1certGen.setSerialNumber(serialNumber);
-        v1certGen.setIssuerDN(dnName);
-        v1certGen.setSubjectDN(dnName);
-        v1certGen.setNotBefore(startDate);
-        v1certGen.setNotAfter(expiryDate);
-        v1certGen.setPublicKey(_rootKeyPair.getPublic());
-        v1certGen.setSignatureAlgorithm(SIG_ALG);
-
-        Date _startDate = new Date(110, 1, 1);
-        Date _expiryDate = new Date(120, 1, 1);
-        BigInteger _serialNumber = new BigInteger("1111111");
+        //X509V1CertificateGenerator v1certGen = new X509V1CertificateGenerator();
+        //v1certGen.setSerialNumber(serialNumber);
+        //v1certGen.setIssuerDN(dnName);
+        //v1certGen.setSubjectDN(dnName);
+        //v1certGen.setNotBefore(startDate);
+        //v1certGen.setNotAfter(expiryDate);
+        //v1certGen.setPublicKey(_rootKeyPair.getPublic());
+        //v1certGen.setSignatureAlgorithm(SIG_ALG);
+        
+          //Date _startDate = new Date(110, 1, 1);
+          //Date _expiryDate = new Date(120, 1, 1);
+          //BigInteger _serialNumber = new BigInteger("1111111");
 
         X509V3CertificateGenerator v3certGen = new X509V3CertificateGenerator();
 
         // test only
-        java.util.Vector order = new java.util.Vector();
         java.util.Hashtable attrs = new java.util.Hashtable();
         attrs.put(org.bouncycastle.jce.X509Principal.C, "UK");
         attrs.put(org.bouncycastle.jce.X509Principal.O, "eScience");
@@ -371,6 +359,8 @@ public class CAKeyPair {
         attrs.put(org.bouncycastle.jce.X509Principal.L, "DL");
         attrs.put(org.bouncycastle.jce.X509Principal.CN, "self sign");
         attrs.put(org.bouncycastle.jce.X509Principal.EmailAddress, "xiao.wang@stfc.ac.uk");
+
+        java.util.Vector order = new java.util.Vector();
         order.addElement(org.bouncycastle.jce.X509Principal.C);
         order.addElement(org.bouncycastle.jce.X509Principal.O);
         order.addElement(org.bouncycastle.jce.X509Principal.OU);
@@ -390,8 +380,87 @@ public class CAKeyPair {
         v3certGen.setSignatureAlgorithm(SIG_ALG);
 
         try {
-            rootCert = v1certGen.generateX509Certificate(_rootKeyPair.getPrivate(), "BC");
+            //rootCert = v1certGen.generateX509Certificate(_rootKeyPair.getPrivate(), "BC");
             createdCert = v3certGen.generateX509Certificate(_rootKeyPair.getPrivate(), "BC");
+          
+        } catch (Exception ep) {
+            ep.printStackTrace();
+        } finally {
+            return createdCert;
+        }
+    }*/
+
+
+    /**
+     * create a self signed certificate. the certificate is restore in keystore file with private key.
+     *
+     * @param keyPair
+     * @return X509Certificate
+     */
+    public static X509Certificate createSelfSignedCertificate(KeyPair keyPair) {
+        //KeyPair _rootKeyPair = CAKeyPair.getNewKeyPair();
+        X509Certificate createdCert = null;
+
+        Date startDate = new Date(110, 1, 1);
+        Date expiryDate = new Date(121, 1, 1);
+        BigInteger serialNumber = new BigInteger("123456789");
+
+       
+        /*X509V1CertificateGenerator v1certGen = new X509V1CertificateGenerator();
+        v1certGen.setSerialNumber(serialNumber);
+        v1certGen.setIssuerDN(dnName);
+        v1certGen.setSubjectDN(dnName);
+        v1certGen.setNotBefore(startDate);
+        v1certGen.setNotAfter(expiryDate);
+        v1certGen.setPublicKey(_rootKeyPair.getPublic());
+        v1certGen.setSignatureAlgorithm(SIG_ALG);
+        */
+        //Date _startDate = new Date(110, 1, 1);
+        //Date _expiryDate = new Date(120, 1, 1);
+        //BigInteger _serialNumber = new BigInteger("1111111");
+
+        X509V3CertificateGenerator v3certGen = new X509V3CertificateGenerator();
+
+        // TODO: here we need to fill the attributes from user given values or
+        // agree on sensible defaults for the following values. Note, this
+        // certificate is simply a placeholder that will be replaced by the
+        // cert that is issued from the CA (which will have the same public key) 
+        java.util.Hashtable attrs = new java.util.Hashtable();
+        attrs.put(org.bouncycastle.jce.X509Principal.C, "UK");
+        attrs.put(org.bouncycastle.jce.X509Principal.O, "eScience");
+        attrs.put(org.bouncycastle.jce.X509Principal.OU, "STFC");
+        attrs.put(org.bouncycastle.jce.X509Principal.L, "DL");
+        attrs.put(org.bouncycastle.jce.X509Principal.CN, "self signed CSR cert");
+        attrs.put(org.bouncycastle.jce.X509Principal.EmailAddress, "dummy@stfc.ac.uk");
+
+        java.util.Vector order = new java.util.Vector();
+        order.addElement(org.bouncycastle.jce.X509Principal.C);
+        order.addElement(org.bouncycastle.jce.X509Principal.O);
+        order.addElement(org.bouncycastle.jce.X509Principal.OU);
+        order.addElement(org.bouncycastle.jce.X509Principal.L);
+        order.addElement(org.bouncycastle.jce.X509Principal.CN);
+        order.addElement(org.bouncycastle.jce.X509Principal.EmailAddress);
+
+        // TODO: This is a self signed cert, so the issuer DN should be the same as the cert DN (check)?
+        // Important: this value is checked in ClientKeyStoreCaServiceWrapper to
+        // identify the CSR self-signed certificates which are replaced when
+        // the user's new cert is issued ! 
+        X509Name issuerDN = new X509Name(CAKeyPair.CSR_ISSUER_DN);
+
+        v3certGen.reset();
+        v3certGen.setSerialNumber(serialNumber);
+        v3certGen.setIssuerDN(issuerDN);
+        v3certGen.setSubjectDN(new org.bouncycastle.jce.X509Principal(order, attrs));
+        v3certGen.setNotBefore(startDate);
+        v3certGen.setNotAfter(expiryDate);
+        v3certGen.setPublicKey(keyPair.getPublic());
+
+        //can we put the different signature algorithm between CA certificate and this certificate???
+        v3certGen.setSignatureAlgorithm(SIG_ALG);
+
+        try {
+            //rootCert = v1certGen.generateX509Certificate(_rootKeyPair.getPrivate(), "BC");
+            createdCert = v3certGen.generateX509Certificate(keyPair.getPrivate(), "BC");
 
         } catch (Exception ep) {
             ep.printStackTrace();

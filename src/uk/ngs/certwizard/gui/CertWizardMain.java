@@ -5,13 +5,13 @@
 package uk.ngs.certwizard.gui;
 
 import java.awt.BorderLayout;
-import java.awt.CardLayout;
 import java.awt.Toolkit;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.io.File;
 import java.net.URL;
-import java.util.Observer;
+//import java.util.Observer;
+//import java.util.Observable;
 import java.util.Observable;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -29,7 +29,7 @@ import uk.ngs.ca.tools.property.SysProperty;
  *
  * @author xw75
  */
-public class CertWizardMain implements Observer {
+public class CertWizardMain { //implements Observer {
 
     //private CardLayout cardLayout;
     private JFrame frame;
@@ -91,7 +91,7 @@ public class CertWizardMain implements Observer {
             frame.setIconImage(Toolkit.getDefaultToolkit().getImage(iconURL));
         }
 
-        frame.setSize(880, 540);
+        frame.setSize(860, 540);
         frame.setLocation(300, 200);
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
@@ -180,8 +180,9 @@ public class CertWizardMain implements Observer {
         settingsPanel.add(setupPanel);
         useCertificatePanel.add(doActions);
 
-       
-        getCertificatePanel.add(new PasswordPanel(this));
+        PasswordPanel pp = new PasswordPanel(this);
+        pp.setSize(800, 500); 
+        getCertificatePanel.add(pp);
 
 
         //getCertificatePanel.setLayout(new CardLayout());
@@ -234,7 +235,7 @@ public class CertWizardMain implements Observer {
         }
         public void run() {
             // simply call isPingService which will itself call SystemStatus.setIsOnline(bool)
-            // and update any observers (such as the onlineStatusPanel). 
+            // and update any observers (such as the onlineStatusPanel).
             PingService.getPingService().isPingService();
         }
     }

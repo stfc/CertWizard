@@ -23,6 +23,7 @@ import uk.ngs.ca.certificate.client.PingService;
 /**
  *
  * @author kjm22495
+ * @deprecated will use Apply2 instead 
  */
 public class Apply extends javax.swing.JFrame {
 
@@ -31,6 +32,7 @@ public class Apply extends javax.swing.JFrame {
     //private char[] PASSPHRASE;
     private OffLineUserCertificateRequest offLineCertRequest = null;
     private OnLineUserCertificateRequest onLineCertRequest = null;
+    private String[] RAs;
     //private MainWindowPanel mainWindowPanel = null;
 
     /** Creates new form Apply */
@@ -569,7 +571,7 @@ public class Apply extends javax.swing.JFrame {
     private javax.swing.JTextField txtName;
     private javax.swing.JPasswordField txtPin;
     // End of variables declaration//GEN-END:variables
-    private String[] RAs;
+   
 
     private void setInformation(String text) {
         jLabel5.setText(text);

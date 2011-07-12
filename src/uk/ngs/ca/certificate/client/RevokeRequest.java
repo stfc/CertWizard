@@ -197,7 +197,7 @@ public class RevokeRequest {
         }
     }
 
-    private String _getFormattedMessage(Response response) {
+    /*private String _getFormattedMessage(Response response) {
 
         try {
             Document _document = new DomRepresentation(response.getEntity()).getDocument(); //response.getEntityAsDom().getDocument();
@@ -221,7 +221,7 @@ public class RevokeRequest {
             return null;
         }
 
-    }
+    }*/
 
     private Representation getRepresentation() {
         DomRepresentation representation = null;

@@ -16,7 +16,6 @@ import java.security.PrivateKey;
 import uk.ngs.ca.certificate.management.OnLineCertificateInfo;
 import uk.ngs.ca.certificate.OnLineUserCertificateReKey;
 import uk.ngs.ca.certificate.client.CertificateDownload;
-import uk.ngs.ca.certificate.client.PingService;
 import uk.ngs.ca.certificate.client.RevokeRequest;
 import uk.ngs.ca.certificate.management.CertificateCSRInfo;
 import uk.ngs.ca.common.ClientKeyStore;
@@ -33,12 +32,13 @@ public class OnLineConfirmation extends javax.swing.JFrame {
 //    private X509Certificate certificate;
     private int INDEX;
     private OnLineCertificateInfo onLineCertInfo;
-    private MainWindowPanel mainWindowPanel;
+    //private MainWindowPanel mainWindowPanel;
 
     private CertificateCSRInfo certCSRInfo = null;
 
     /** Creates new form Confirmation */
-    public OnLineConfirmation(MainWindowPanel mainWindowPanel, String action, String message, int index, OnLineCertificateInfo onLineCertInfo) {
+    public OnLineConfirmation(MainWindowPanel mainWindowPanel, String action,
+            String message, int index, OnLineCertificateInfo onLineCertInfo) {
 
         initComponents();
         URL iconURL = OnLineConfirmation.class.getResource("/uk/ngs/ca/images/ngs-icon.png");
@@ -50,8 +50,10 @@ public class OnLineConfirmation extends javax.swing.JFrame {
         this.setTitle(action + " certificate");
         this.jLabel8.setText(message);
 
-        this.mainWindowPanel = mainWindowPanel;
+        //this.mainWindowPanel = mainWindowPanel;
         this.onLineCertInfo = onLineCertInfo;
+
+        // this is really dodgy, adding an observer to another class (spaghetti)
         onLineCertInfo.addObserver(mainWindowPanel);
 
         this.INDEX = index;
@@ -90,11 +92,11 @@ public class OnLineConfirmation extends javax.swing.JFrame {
 
     }
 
-    private boolean isPing(){
+    /*private boolean isPing(){
         //PingService pingService = new PingService();
         //return pingService.isPingService();
         return PingService.getPingService().isPingService();
-    }
+    }*/
 
     /** This method is called from within the constructor to
      * initialize the form.
@@ -309,6 +311,14 @@ public class OnLineConfirmation extends javax.swing.JFrame {
                 if( rekey.doPosts() ){
                     JOptionPane.showMessageDialog(this, "The renewal request has been submitted", "Renewal request successful", JOptionPane.INFORMATION_MESSAGE);
                     String _notifyMessage = "Renew:" + rekey.getAlias();
+                    // Horrid: Invoke custom notifyObserver(msg) method on the Observerable onLineCertInfo
+                    // class so that it in turn notifies its Observers (i.e. the mainWindow). Carry through the
+                    // message.
+                    // Wouldn't it be better to make this an Observerable and
+                    // and call: this.addObserver(mainWindow); then call
+                    // this.setChanged();
+                    // this.notifyObservers(_notifyMessage)
+                    //
                     this.onLineCertInfo.notifyObserver( _notifyMessage );
                 } else {
                     String messageTitle = rekey.getErrorMessage();
@@ -335,6 +345,14 @@ public class OnLineConfirmation extends javax.swing.JFrame {
                 String message = revokeRequest.getMessage();
                 JOptionPane.showMessageDialog(this, message, "Certificate revoked", JOptionPane.INFORMATION_MESSAGE);
                 String _notifyMessage = "Revoke:" + encodedPublicKey;
+                // Horrid: Invoke custom notifyObserver(msg) method on the Observerable onLineCertInfo
+                // class so that it in turn notifies its Observers (i.e. the mainWindow). Carry through the
+                // message.
+                // Wouldn't it be better to make this an Observerable and
+                // and call: this.addObserver(mainWindow); then call
+                // this.setChanged();
+                // this.notifyObservers(_notifyMessage)
+                //
                 this.onLineCertInfo.notifyObserver( _notifyMessage );
             } else {
                 String message = revokeRequest.getMessage();
@@ -348,6 +366,14 @@ public class OnLineConfirmation extends javax.swing.JFrame {
                 JOptionPane.showMessageDialog(this, "The certificate has now been removed from the CertWizard",
                     "Certificate removed", JOptionPane.INFORMATION_MESSAGE);
                 String _notifyMessage = "Remove:" + this.INDEX;
+                // Horrid: Invoke custom notifyObserver(msg) method on the Observerable onLineCertInfo
+                // class so that it in turn notifies its Observers (i.e. the mainWindow). Carry through the
+                // message.
+                // Wouldn't it be better to make this an Observerable and
+                // and call: this.addObserver(mainWindow); then call
+                // this.setChanged();
+                // this.notifyObservers(_notifyMessage)
+                //
                 this.onLineCertInfo.notifyObserver( _notifyMessage );
             }else{
                 JOptionPane.showMessageDialog(this, "The certificate failed to remove from the CertWizard",

@@ -73,7 +73,7 @@ import uk.ngs.ca.certificate.client.ResourcesPublicKey;
  * @author xw75
  */
 public class OnLineCertificateInfo extends Observable {
-    private static final Logger myLogger = Logger.getLogger(OffLineCertificateInfo.class);
+    private static final Logger myLogger = Logger.getLogger(OnLineCertificateInfo.class);
    
     // important class vars
     private String key_KeyStoreFilePath = null;  // '$HOME/.ca/cakeystore.pkcs12'
@@ -123,10 +123,11 @@ public class OnLineCertificateInfo extends Observable {
             this.initCertCSRInfos_From_KeyStoreCertsWithOnlineCheck();
 
             // Online init cert_keyStore with VALID and recognized certificates.
-            // For every VALID certificate certCSRInfos object, download the PubKey cert from the CA server and
-            // compare to the PubKey certs in this.key_keyStore. For each match,
-            // add the cert/key pair to cert_keyStore and Write to cert_KeyStoreFilePath.
-            // The only reason this seems to be done is for subsequent offline usage.
+            // For every VALID certificate certCSRInfos object, download the cert from the CA server and
+            // compare its PubKey to the PubKey of the certs in this.key_keyStore. For each match,
+            // add the DOWNLOADED CERT and the keystore key as a pair to cert_keyStore
+            // and Write to cert_KeyStoreFilePath.
+            // This is done for subsequent offline usage.
             this.updateSaveCertKeyStoreForOfflineUse_From_ValidCertCSRInfosWithOnlineCheck();
         }
     }
@@ -165,10 +166,13 @@ public class OnLineCertificateInfo extends Observable {
         }
     }
 
-
+    /**
+     * Notify the <code>MainWindowPanel</code> which is an observer of this class.
+     * @param _notifyMessage
+     */
     public void notifyObserver(String _notifyMessage) {
-        setChanged();
-        notifyObservers(_notifyMessage); // any indication of who are the observers ?
+        this.setChanged();
+        this.notifyObservers(_notifyMessage); // any indication of who are the observers ?
     }
 
     public OnLineUserCertificateReKey getOnLineUserCertificateReKey() {
@@ -235,6 +239,7 @@ public class OnLineCertificateInfo extends Observable {
                 X509Certificate cert = (X509Certificate) key_keyStore.getCertificate(keyStoreAlias);
                 PublicKey keystorePublicKey = cert.getPublicKey();
                 // Query CA server and determine if it has a record of this public key
+                System.out.println("calling resources......................");
                 ResourcesPublicKey resourcesPublicKey = new ResourcesPublicKey( keystorePublicKey );
                 if( !resourcesPublicKey.isExist() ){
                     continue;  // move onto the next keystore entry if not.
@@ -442,7 +447,9 @@ public class OnLineCertificateInfo extends Observable {
      * Populate cert_KeyStore for subsequent offline usage (maybe the network is lost).
      * For every VALID certCSRInfos (certificate), download the PubKey cert from the CA server and
      * compare to the certs' PubKeys in this.key_keyStore. For each match,
-     * add the cert/key pair to cert_keyStore and write to cert_KeyStoreFilePath.
+     * create new cert_KeyStore keyentry under a new meaningless alias from:
+     * a) the downloaded cert and b) the corresponding private key residing in key_keyStore
+     * Then, write cert_KeyStore.
      */
     private void updateSaveCertKeyStoreForOfflineUse_From_ValidCertCSRInfosWithOnlineCheck() {
         if (this.certCSRInfos == null || this.certCSRInfos.isEmpty()) {
@@ -479,12 +486,17 @@ public class OnLineCertificateInfo extends Observable {
                     X509Certificate keyStoreCert = keyStoreCerts.get(j);
                     if (downloadedPublicKey.equals( keyStoreCert.getPublicKey() )) {
                         try {
-                            // ok, we have a match so extract the Key from Keystore
-                            // and add cert/key pair to cert_KeyStore under a new meaninglness alias ?
+                            // ok, we have a match,
+                            // create new cert_KeyStore keyentry under a new meaninglness alias from: 
+                            // a) the downloaded cert and b) the corresponding private key residing in key_keyStore
                             String keyStoreAlias = key_keyStore.getCertificateAlias(keyStoreCert);
                             PrivateKey privateKey = (PrivateKey) key_keyStore.getKey(keyStoreAlias, PASSPHRASE);
                             X509Certificate[] chain = {downloadedCert};
                             String my_alias = new Long((new Date().getTime())).toString();
+                            // if we were using a single keystore, here we should replace our self-signed
+                            // cert (that was used to do the CSR) with the new downloaded cert and key.
+                            // According to javadoc, "If the given alias already exists, the keystore information
+                            // associated with it is overridden by the given key (and possibly certificate chain)".
                             cert_KeyStore.setKeyEntry(my_alias, privateKey, PASSPHRASE, chain);
                         } catch (Exception ep) {
                             ep.printStackTrace();

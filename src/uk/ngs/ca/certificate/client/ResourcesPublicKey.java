@@ -48,6 +48,7 @@ public class ResourcesPublicKey {
             // call CA server and ask 'do you know about a certficate with this hash'
             String resourceURL = SysProperty.getValue("uk.ngs.ca.request.resource.publickey");
             resourceURL = resourceURL + "/" + this.encodedPublicKey;
+            //System.out.println("dave:::::::::::::"+resourceURL);
             Client c = new Client(Protocol.HTTPS);
 
             Request request = new Request(Method.GET, new Reference(resourceURL));

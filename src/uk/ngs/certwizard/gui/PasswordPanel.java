@@ -50,11 +50,11 @@ public class PasswordPanel extends javax.swing.JPanel {
         if ( this.isExistKeyStore ) {
             jLabel3.setVisible(false);
             txtConfirmPassword.setVisible(false);
-            messageLabel.setText("<html>Please type in password to protect your certificate. Please note you need to type in same password each time when calling CertWizard.</html>");
+            messageLabel.setText("<html>Please enter your password.</html>");
         } else {
             jLabel3.setVisible(true);
             txtConfirmPassword.setVisible(true);
-            messageLabel.setText("<html>Please type in a new password to protect your certificate. As this is your first time, please confirm your password. Later you need to type in this password each time when running CertWizard.</html>");
+            messageLabel.setText("<html>Please enter and confirm a new password.</html>");
         }
         okButton.setEnabled(false);
 
@@ -128,13 +128,14 @@ public class PasswordPanel extends javax.swing.JPanel {
                             .add(jLabel3))
                         .add(48, 48, 48)
                         .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                            .add(txtConfirmPassword, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 359, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                            .add(org.jdesktop.layout.GroupLayout.LEADING, txtPassword, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 359, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                            .add(okButton)))
+                            .add(okButton)
+                            .add(org.jdesktop.layout.GroupLayout.LEADING, layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                                .add(txtConfirmPassword, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 239, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                .add(org.jdesktop.layout.GroupLayout.LEADING, txtPassword, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 239, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))))
                     .add(layout.createSequentialGroup()
                         .addContainerGap()
-                        .add(messageLabel, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 469, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(53, Short.MAX_VALUE))
+                        .add(messageLabel, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 348, Short.MAX_VALUE)))
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -151,7 +152,7 @@ public class PasswordPanel extends javax.swing.JPanel {
                     .add(txtConfirmPassword, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                 .add(okButton)
-                .addContainerGap(37, Short.MAX_VALUE))
+                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -165,7 +166,7 @@ public class PasswordPanel extends javax.swing.JPanel {
             if( password.equals(confirm) ){
                 loadMainWindowPanel();
             }else{
-                String errorMessage = "Please check your password. The password and the confirmed password should be same.";
+                String errorMessage = "The passwords should match.";
                 JOptionPane.showMessageDialog(this, errorMessage, "Wrong Password", JOptionPane.ERROR_MESSAGE);
             }
         }
@@ -189,8 +190,10 @@ public class PasswordPanel extends javax.swing.JPanel {
 //later we need to provide further message if any error happens.
             localBackup.isSuccess();
 
-            getCertPanel.add(new MainWindowPanel(passphrase, this._certWizardMain), "MainWindowPanel");
             getCertPanel.remove(this);
+            MainWindowPanel2 mainpane = new MainWindowPanel2(passphrase, this._certWizardMain);
+            mainpane.setSize(800, 500);
+            getCertPanel.add(mainpane, "MainWindowPanel");
             getCertPanel.revalidate();
 
         } else {
@@ -212,7 +215,7 @@ public class PasswordPanel extends javax.swing.JPanel {
             if( password.equals(confirm) ){
                 loadMainWindowPanel();
             }else{
-                String errorMessage = "Please check your password. The password and the confirmed password should be same.";
+                String errorMessage = "The passwords should match.";
                 JOptionPane.showMessageDialog(this, errorMessage, "Wrong Password", JOptionPane.ERROR_MESSAGE);
             }
         }
@@ -252,7 +255,7 @@ public class PasswordPanel extends javax.swing.JPanel {
         if( password.equals(confirm) ){
             loadMainWindowPanel();
         }else{
-            String errorMessage = "Please check your password. The password and the confirmed password should be same.";
+            String errorMessage = "The passwords should match.";
             JOptionPane.showMessageDialog(this, errorMessage, "Wrong Password", JOptionPane.ERROR_MESSAGE);
         }
     }//GEN-LAST:event_txtConfirmPasswordActionPerformed

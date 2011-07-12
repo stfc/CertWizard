@@ -2,10 +2,12 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package uk.ngs.ca.certificate.management;
+package unused; // was in uk.ngs.ca.certificate.management
 
 import java.io.File;
 import java.io.IOException;
+import uk.ngs.ca.certificate.management.CertificateRequestManager;
+//import uk.ngs.ca.certificate.management.OnlineCertificateManager;
 
 import uk.ngs.ca.tools.property.SysProperty;
 
