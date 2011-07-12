@@ -12,6 +12,7 @@ import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
@@ -45,6 +46,11 @@ import net.sf.portecle.gui.password.DGetPassword;
 import org.bouncycastle.openssl.PEMReader;
 import org.bouncycastle.openssl.PEMWriter;
 import org.bouncycastle.openssl.PasswordFinder;
+import org.bouncycastle.util.encoders.Base64;
+import org.globus.common.CoGProperties;
+import org.globus.gsi.bc.BouncyCastleOpenSSLKey;
+import org.globus.util.PEMUtils;
+import org.globus.util.Util;
 import uk.ngs.ca.certificate.OnLineUserCertificateReKey;
 
 import uk.ngs.ca.common.SystemStatus;
@@ -662,8 +668,74 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
 
     /** Install the selected cert as '$HOME/.globus/usercert.pem'
      * and '$HOME/.globus/userkey.pem' for subsequent globus usage */
-    private void doInstallSelectedCertificateAction(){
-       // TODO
+    private void doInstallSelectedCertificateAction() {
+        // check that a certificate is selected
+        if (this.jComboBox1.getSelectedIndex() == -1) {
+            JOptionPane.showMessageDialog(this, "Please select a certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        KeyStoreEntryWrapper selectedKSEW = (KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem();
+        KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE selectedType = selectedKSEW.getEntryType();
+        if (selectedType == null || !selectedType.equals(selectedType.KEY_PAIR_ENTRY)) {
+            JOptionPane.showMessageDialog(this, "Please select a certificate and key pair!", "No certificate key pair selected", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        // ok, export the selected cert 
+        // TODO: remove the dependency on GoGProperties (we can do this ourselves - better to not depend on this) 
+        CoGProperties props = CoGProperties.getDefault();
+        String certPemFile = props.getUserCertFile();
+        String keyPemFile = props.getUserKeyFile();
+        File fCertFile = new File(certPemFile);
+        File fKeyFile = new File(keyPemFile);
+        // check usercert.pem and userkey.pem do not already exist.
+        String overwriteWarning = "";
+        boolean oneExists = false;
+        if (fKeyFile.exists()) {
+            oneExists = true;
+            overwriteWarning += "Local Key file already exists: \n     [" + keyPemFile + "]\n\n";
+        }
+        if (fCertFile.exists()) {
+            oneExists = true;
+            overwriteWarning += "Local Certificate file already exists: \n    [" + certPemFile + "]\n";
+        }
+        if (oneExists) {
+            overwriteWarning += "\nAre you sure you want to overwrite these files ?";
+            int ret = JOptionPane.showConfirmDialog(this, overwriteWarning, "Certificate/Key Installation", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            if (JOptionPane.YES_OPTION != ret) {
+                return;
+            }
+        }
+        // ok, here we can export the cert and key as pem files.    
+        FileOutputStream certfos = null; 
+        try {
+            // first, delete files (if they already exist) 
+            fCertFile.delete();
+            fKeyFile.delete();
+            // get X509Cert and Private key of selected alias 
+            String alias = selectedKSEW.getAlias() ; 
+            X509Certificate certificate = (X509Certificate)this.keyStoreCaWrapper.getClientKeyStore().getKeyStore().getCertificate( alias ); 
+            PrivateKey privateKey = (PrivateKey)this.keyStoreCaWrapper.getClientKeyStore().getKeyStore().getKey(alias, PASSPHRASE); 
+            // Write the certificate 
+            // TODO - remove dependency on org.globus.util.PEMUtils (we can do this ourselves - better to not depend on this)
+            // TODO - remove dependency on org.globus.util.Util (we can do this ourselves - better to not depend on this)
+            certfos = new FileOutputStream(fCertFile);
+            PEMUtils.writeBase64(certfos, "-----BEGIN CERTIFICATE-----", Base64.encode(certificate.getEncoded()), "-----END CERTIFICATE-----");
+            Util.setFilePermissions(certPemFile, 444);
+            
+            // Write the key - need to remove dependency on the bouncycastle here !
+            BouncyCastleOpenSSLKey bcosk = new BouncyCastleOpenSSLKey(privateKey);
+            bcosk.encrypt(new String(PASSPHRASE));
+            bcosk.writeTo(keyPemFile);
+            Util.setFilePermissions(keyPemFile, 400);
+            
+            JOptionPane.showMessageDialog(this, "usercert.pem and userkey.pem exported OK to '$USER_HOME/.globus/'",
+	            "Export usercert.pem userkey.pem", JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            DThrowable.showAndWait(null, null, ex);
+        } finally {
+            try{ certfos.close(); }catch(Exception ex){/* do nothing */}
+        }
     }
 
     /**
@@ -734,6 +806,11 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
             }
 
             // Load the PKCS #12 keystore
+            // DM: important note, the KeyStoreUtil.java class has been modified
+            // so that it uses the unlimited strength pkcs12 provider so that
+            // unlimited length passwords can be used (circumvents manually
+            // installing the unlimited strength Jurisdiction policy files from
+            // oracle). 
             try {
                 tempStore = KeyStoreUtil.loadKeyStore(fKeyPairFile, cPkcs12Password, KeyStoreType.PKCS12);
             } catch (Exception e) {
@@ -1479,41 +1556,7 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
 
     private void btnInstallActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnInstallActionPerformed
         // TODO add your handling code here:
-/*
-        CoGProperties props = CoGProperties.getDefault();
-        String certPemFile = props.getUserCertFile();
-        String keyPemFile = props.getUserKeyFile();
-
-        String message = "<html>Are you sure you want to install pem files in <br>[" + certPemFile + "] and [" + keyPemFile + "]?";
-
-        int index = jComboBox1.getSelectedIndex();
-        X509Certificate cert = null;
-        PrivateKey privateKey = null;
-        PublicKey publicKey = null;
-        ClientKeyStore keyStore = ClientKeyStore.getClientkeyStore(PASSPHRASE);
-
-        cert = offLineCertInfo.getCertificate(index);
-        publicKey = cert.getPublicKey();
-        privateKey = keyStore.getPrivateKey(publicKey);
-
-        if (this.jComboBox1.getSelectedIndex() != -1) {
-        boolean isSuccess = isSuccessPemFiles( cert, privateKey );
-        if( isSuccess ){
-        String _message = "<html>Your certificate and private key were successfully installed to:<br>Private key: " + keyPemFile + "<br>Certificate: " + certPemFile;
-        JOptionPane.showMessageDialog(this, _message, "Successful Install", JOptionPane.INFORMATION_MESSAGE);
-        String _passphrase = new String(PASSPHRASE);
-        String _property = SysProperty.getValue("uk.ngs.ca.immegration.password.property");
-        System.setProperty(_property, _passphrase);
-
-        }else{
-        String _message = "<html>Your certificate and private key failed to install on:<br>Private key: " + keyPemFile + "Certificate: " + certPemFile;
-        JOptionPane.showMessageDialog(this, _message, "Failed Install", JOptionPane.INFORMATION_MESSAGE);
-        }
-        } else {
-        JOptionPane.showMessageDialog(this, "You haven't selected any certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
-        }
-        //        }
-         */
+        this.doInstallSelectedCertificateAction();
     }//GEN-LAST:event_btnInstallActionPerformed
 
     private void btnInstallMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnInstallMouseEntered
@@ -1627,76 +1670,7 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
         this.doViewCertificateDetailsAction();
     }//GEN-LAST:event_viewCertDetailsButtonActionPerformed
 
-
-    /* private boolean isSuccessPemFiles(X509Certificate certificate, PrivateKey privateKey){
-    CoGProperties props = CoGProperties.getDefault();
-    String certPemFile = props.getUserCertFile();
-    String keyPemFile = props.getUserKeyFile();
-    File fCertFile = new File( certPemFile );
-    File fKeyFile = new File( keyPemFile );
-
-    String overwriteWarning = "";
-    boolean oneExists = false;
-    if (fKeyFile.exists()) {
-    oneExists = true;
-    overwriteWarning += "Local Key file already exists: \n     [" + keyPemFile + "]\n\n";
-    }
-    if (fCertFile.exists()) {
-    oneExists = true;
-    overwriteWarning += "Local Certificate file already exists: \n    [" + certPemFile + "]\n";
-    }
-    if (oneExists) {
-    // test here for permissions.
-    overwriteWarning += "\nAre you sure you want to overwrite these files ?";
-    int ret = JOptionPane.showConfirmDialog( this, overwriteWarning, "Certificate/Key Installation", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-    // added CLOSED_OPTION so that clicking 'X' does the same as clicking 'No'.
-    if (JOptionPane.NO_OPTION == ret || JOptionPane.CLOSED_OPTION == ret) {
-    return false;
-    }
-    if( JOptionPane.YES_OPTION == ret ){
-    try{
-    fCertFile.delete();
-    fKeyFile.delete();
-    FileOutputStream certfos = new FileOutputStream(fCertFile);
-    PEMUtils.writeBase64(certfos, "-----BEGIN CERTIFICATE-----", Base64.encode(certificate.getEncoded()), "-----END CERTIFICATE-----");
-    Util.setFilePermissions(certPemFile, 444);
-    certfos.close();
-
-    // Output key - need to remove dependency on the bouncycastle here !
-    BouncyCastleOpenSSLKey bcosk = new BouncyCastleOpenSSLKey(privateKey);
-    bcosk.encrypt(new String(PASSPHRASE));
-    bcosk.writeTo(keyPemFile);
-    Util.setFilePermissions(keyPemFile, 400);
-    return true;
-    }catch( Exception ep ){
-    ep.printStackTrace();
-    return false;
-    }
-    }
-
-    return true;
-    }else{
-    try{
-    FileOutputStream certfos = new FileOutputStream(fCertFile);
-    PEMUtils.writeBase64(certfos, "-----BEGIN CERTIFICATE-----", Base64.encode(certificate.getEncoded()), "-----END CERTIFICATE-----");
-    Util.setFilePermissions(certPemFile, 444);
-    certfos.close();
-
-    // Output key - need to remove dependency on the bouncycastle here !
-    BouncyCastleOpenSSLKey bcosk = new BouncyCastleOpenSSLKey(privateKey);
-    bcosk.encrypt(new String(PASSPHRASE));
-    bcosk.writeTo(keyPemFile);
-    Util.setFilePermissions(keyPemFile, 400);
-    return true;
-    }catch( Exception ep ){
-    ep.printStackTrace();
-    return false;
-    }
-
-    }
-
-
-    }*/
+  
     private void setRedMOD(String text) {
         TextMOD.setForeground(Color.RED);
         TextMOD.setText(text);

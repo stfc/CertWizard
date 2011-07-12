@@ -49,6 +49,9 @@ import org.bouncycastle.openssl.PEMReader;
 /**
  * Provides utility methods for loading/saving keystores. The Bouncy Castle provider must be registered before
  * using this class to create or load BKS or UBER type keystores.
+ *
+ * Note: DM: Modified by STFC to use the unlimited strength pkcs12 file to circumvent
+ * the need to manually install unlimited strength jurisdiction policy files.
  */
 public final class KeyStoreUtil
 {
@@ -90,8 +93,8 @@ public final class KeyStoreUtil
 			// Checked with BC 1.{29,40}, SunJSSE 1.5.0_0{3,4,14}, 1.6.0 (OpenJDK)
 			try
 			{
-                                // DM: we may need to use our keystore that supports 
-                                // unlimited lenghth passwords here: 
+                                // DM: need to use unlimited strength pkcs12 keystore that supports
+                                // unlimited lenghth passwords here
                                 keyStore = PKCS12KeyStoreUnlimited.getInstance();
                                 //keyStore = KeyStore.getInstance(keyStoreType.name(), "BC");
 			}
