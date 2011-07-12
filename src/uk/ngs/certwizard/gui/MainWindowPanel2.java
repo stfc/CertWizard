@@ -291,7 +291,7 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
                 setBackground(list.getBackground());
                 setForeground(list.getForeground());
             }
-
+                        
             // Can assume that we are dealing with KeyStoreEntryWrapper objects.
             KeyStoreEntryWrapper keyStoreEntry = (KeyStoreEntryWrapper) value;
             // can be null if the keyStore is empty ! 
@@ -321,6 +321,9 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
                 } else {
                     this.setForeground(Color.DARK_GRAY);
                 }
+            } else {
+                this.setText("No Key Store Entries");
+                this.setIcon(null);
             }
             return this;
         }
@@ -519,8 +522,8 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
             int delete = JOptionPane.showConfirmDialog(this, "Are you sure you want to delete this KeyStore entry ?", "Delete KeyStore Entry", JOptionPane.OK_CANCEL_OPTION);
             if (delete == JOptionPane.OK_OPTION) {
                 try {
-                    this.keyStoreCaWrapper.deleteEntry(((KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem()).getAlias());
-                    this.updateGUI();
+                     this.keyStoreCaWrapper.deleteEntry(((KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem()).getAlias());
+                     this.updateGUI();
                 } catch (KeyStoreException ex) {
                     Logger.getLogger(MainWindowPanel2.class.getName()).log(Level.SEVERE, null, ex);
                     JOptionPane.showMessageDialog(this, "Unable to delete KeyStore entry: " + ex.getMessage(), "Unable to delete KeyStore entry", JOptionPane.ERROR_MESSAGE);
