@@ -39,6 +39,7 @@ import javax.crypto.EncryptedPrivateKeyInfo;
 
 import java.util.Date;
 import java.math.BigInteger;
+import java.util.Calendar;
 
 /**
  * A special keypair class for this application. It holds a private key which is
@@ -399,8 +400,15 @@ public class CAKeyPair {
         //KeyPair _rootKeyPair = CAKeyPair.getNewKeyPair();
         X509Certificate createdCert = null;
 
-        Date startDate = new Date(110, 1, 1);
-        Date expiryDate = new Date(121, 1, 1);
+        
+        Calendar now = Calendar.getInstance();
+        Date startDate = now.getTime();
+        now.add(Calendar.YEAR, 1);
+        Date expiryDate = now.getTime();
+
+        //Date startDate = new Date();
+        //Date expiryDate = new Date(121, 1, 1);
+
         BigInteger serialNumber = new BigInteger("123456789");
 
        

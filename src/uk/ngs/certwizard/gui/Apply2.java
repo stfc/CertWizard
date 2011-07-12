@@ -19,6 +19,7 @@ import uk.ngs.ca.certificate.OffLineUserCertificateRequest;
 import uk.ngs.ca.certificate.OnLineUserCertificateRequest;
 import uk.ngs.ca.common.MyPattern;
 import uk.ngs.ca.certificate.client.PingService;
+import uk.ngs.ca.common.ClientKeyStore;
 //import uk.ngs.ca.certificate.client.PingService;
 
 /**
@@ -35,9 +36,11 @@ public class Apply2 extends javax.swing.JDialog {
     private final Pattern emailPattern = Pattern.compile("[-\\.a-zA-Z0-9_]+@[-a-zA-Z0-9\\.]+\\.[a-z]+");
     private boolean onlineCSRCompletedOK = false;
     private Observer observer;
+    private char[] passphrase;
 
     /** Creates new form Apply */
     public Apply2(Observer observer, char[] passphrase) {
+        this.passphrase = passphrase;
         initComponents();
         this.observer = observer;
 
@@ -89,6 +92,8 @@ public class Apply2 extends javax.swing.JDialog {
         jScrollPane1 = new javax.swing.JScrollPane();
         jLabel5 = new javax.swing.JTextArea();
         jLabel7 = new javax.swing.JLabel();
+        jLabel8 = new javax.swing.JLabel();
+        aliasTextField = new javax.swing.JTextField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("Apply for certificate");
@@ -213,6 +218,16 @@ public class Apply2 extends javax.swing.JDialog {
         jLabel7.setText("Registration Authority");
         jLabel7.setName("jLabel7"); // NOI18N
 
+        jLabel8.setText("Alias (user friendly name)");
+        jLabel8.setName("jLabel8"); // NOI18N
+
+        aliasTextField.setName("aliasTextField"); // NOI18N
+        aliasTextField.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                aliasTextFieldActionPerformed(evt);
+            }
+        });
+
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -220,32 +235,34 @@ public class Apply2 extends javax.swing.JDialog {
             .add(layout.createSequentialGroup()
                 .addContainerGap()
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
-                        .add(jScrollPane1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 350, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .add(34, 34, 34))
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
-                        .add(btnApply)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(btnCancel)
-                        .addContainerGap())
                     .add(layout.createSequentialGroup()
                         .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                             .add(jLabel3)
                             .add(jLabel4)
                             .add(jLabel7)
                             .add(jLabel1)
-                            .add(jLabel2))
+                            .add(jLabel2)
+                            .add(jLabel8))
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                             .add(layout.createSequentialGroup()
                                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
+                                    .add(org.jdesktop.layout.GroupLayout.LEADING, txtPin, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 104, Short.MAX_VALUE)
                                     .add(org.jdesktop.layout.GroupLayout.LEADING, txtConfirm)
-                                    .add(org.jdesktop.layout.GroupLayout.LEADING, txtPin, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 104, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                                .add(18, 18, 18)
+                                    .add(org.jdesktop.layout.GroupLayout.LEADING, aliasTextField))
+                                .add(18, 74, Short.MAX_VALUE)
                                 .add(jLabel6))
                             .add(txtName, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 267, Short.MAX_VALUE)
                             .add(txtEmail, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 267, Short.MAX_VALUE)
                             .add(cmbSelectRA, 0, 267, Short.MAX_VALUE))
+                        .addContainerGap())
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
+                        .add(btnApply)
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                        .add(btnCancel)
+                        .addContainerGap())
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
+                        .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 400, Short.MAX_VALUE)
                         .addContainerGap())))
         );
         layout.setVerticalGroup(
@@ -272,13 +289,17 @@ public class Apply2 extends javax.swing.JDialog {
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(jLabel4)
                     .add(txtConfirm, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .add(35, 35, 35)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                    .add(aliasTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(jLabel8))
+                .add(18, 18, 18)
                 .add(jScrollPane1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(btnCancel)
                     .add(btnApply))
-                .addContainerGap(23, Short.MAX_VALUE))
+                .addContainerGap(14, Short.MAX_VALUE))
         );
 
         pack();
@@ -317,6 +338,21 @@ public class Apply2 extends javax.swing.JDialog {
             text = text + "\n" + pattern.getErrorMessage();
         }
 
+        if(this.aliasTextField.getText().isEmpty()){
+            complete = false;
+            text = text + "\nEnter an alias";
+        }
+
+        // test to see if alias is already present
+        try {
+            if (ClientKeyStore.getClientkeyStore(passphrase).getKeyStore().containsAlias(
+                    this.aliasTextField.getText())) {
+                complete = false;
+                text = text + "\nAlias already exits - please enter another alias";
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
 
         if (this.txtEmail.getText().isEmpty()) {
             complete = false;
@@ -349,6 +385,7 @@ public class Apply2 extends javax.swing.JDialog {
                 onLineCertRequest.setPIN1(new String(this.txtPin.getPassword()));
                 onLineCertRequest.setPIN2(new String(this.txtConfirm.getPassword()));
                 onLineCertRequest.setRA((String) this.cmbSelectRA.getSelectedItem());
+                onLineCertRequest.setAlias(this.aliasTextField.getText());
 
                 String messageTitle;
                 if( ! isValidCN( this.txtName.getText() )){
@@ -517,7 +554,13 @@ public class Apply2 extends javax.swing.JDialog {
     private void txtPinActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtPinActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_txtPinActionPerformed
+
+    private void aliasTextFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_aliasTextFieldActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_aliasTextFieldActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JTextField aliasTextField;
     private javax.swing.JButton btnApply;
     private javax.swing.JButton btnCancel;
     private javax.swing.JComboBox cmbSelectRA;
@@ -528,6 +571,7 @@ public class Apply2 extends javax.swing.JDialog {
     private javax.swing.JTextArea jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
+    private javax.swing.JLabel jLabel8;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JPasswordField txtConfirm;
     private javax.swing.JTextField txtEmail;

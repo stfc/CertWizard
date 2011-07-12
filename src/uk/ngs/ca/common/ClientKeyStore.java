@@ -190,20 +190,22 @@ public final class ClientKeyStore {
 
     /**
      * create a new keypair in the keystore file and save to file.
-     *
+     * @param alias a suggested alias (can be null)
      * @return alias
      */
-    public String createNewKeyPair() {
+    public String createNewKeyPair(String alias) {
         try {
             KeyPair keyPair = CAKeyPair.getNewKeyPair();
             // the self signed certificate has some hardwired values - why?
             X509Certificate cert = CAKeyPair.createSelfSignedCertificate(keyPair);
             X509Certificate[] certs = {cert};
-            // meaningless alias.
-            String _alias = new Long(new Date().getTime()).toString();
-            this.keyStore.setKeyEntry(_alias, keyPair.getPrivate(), PASSPHRASE, certs);
+            // Alias not valid so create a meaningless alias instead. 
+            if(alias == null || alias.trim().length() == 0 || this.keyStore.containsAlias(alias)){
+               alias = new Long(new Date().getTime()).toString();
+            }
+            this.keyStore.setKeyEntry(alias, keyPair.getPrivate(), PASSPHRASE, certs);
             reStore();
-            return _alias;
+            return alias;
         } catch (Exception ep) {
             ep.printStackTrace();
             return null;

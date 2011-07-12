@@ -60,7 +60,7 @@ public class UserCertificateRequest {
         certRequestManager = new CertificateRequestManager(PASSPHRASE);
 
         ClientKeyStore my_keyStore = ClientKeyStore.getClientkeyStore(passphrase);
-        String a = my_keyStore.createNewKeyPair();
+        String a = my_keyStore.createNewKeyPair(null);
         privateKey = my_keyStore.getPrivateKey(a);
         publicKey = my_keyStore.getPublicKey(a);
 

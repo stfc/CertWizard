@@ -12,6 +12,7 @@ package uk.ngs.certwizard.gui;
 
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import uk.ngs.ca.common.ClientKeyStore;
 
 import uk.ngs.ca.common.SystemStatus;
 import uk.ngs.ca.common.LocalBackup;
@@ -179,30 +180,31 @@ public class PasswordPanel extends javax.swing.JPanel {
     private void loadMainWindowPanel() {
         
         char[] passphrase = txtPassword.getPassword();
-        boolean isValid = this.sysStatus.isValidPassphrase(passphrase);
+        //boolean isValid = this.sysStatus.isValidPassphrase(passphrase);
+        try {
+            // try to load keyStore, if no excpetion thrown that we can assume 
+            // it loaded ok.
+            ClientKeyStore.getClientkeyStore(passphrase);
 
-        if (isValid) {
-            String _pswdProperty = SysProperty.getValue("uk.ngs.ca.passphrase.property");
-            String _pswd = new String( this.txtPassword.getPassword() );
-            System.setProperty(_pswdProperty, _pswd);
-
-            LocalBackup localBackup = new LocalBackup();
-//later we need to provide further message if any error happens.
-            localBackup.isSuccess();
-
-            getCertPanel.remove(this);
-            MainWindowPanel2 mainpane = new MainWindowPanel2(passphrase, this._certWizardMain);
-            mainpane.setSize(800, 500);
-            getCertPanel.add(mainpane, "MainWindowPanel");
-            getCertPanel.revalidate();
-
-        } else {
-            
-            String errorMessage = sysStatus.getErrorMessage();
-            JOptionPane.showMessageDialog(this, errorMessage, "Wrong Password", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, ex.getCause().getMessage(), "Wrong Password", JOptionPane.ERROR_MESSAGE);
             txtPassword.setText("");
-
+            return; 
         }
+
+        String _pswdProperty = SysProperty.getValue("uk.ngs.ca.passphrase.property");
+        String _pswd = new String(this.txtPassword.getPassword());
+        System.setProperty(_pswdProperty, _pswd);
+
+        LocalBackup localBackup = new LocalBackup();
+        localBackup.isSuccess();
+
+        getCertPanel.remove(this);
+        MainWindowPanel2 mainpane = new MainWindowPanel2(passphrase, this._certWizardMain);
+        mainpane.setSize(800, 500);
+        getCertPanel.add(mainpane, "MainWindowPanel");
+        getCertPanel.revalidate();
+
     }
 
     private void txtPasswordActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtPasswordActionPerformed

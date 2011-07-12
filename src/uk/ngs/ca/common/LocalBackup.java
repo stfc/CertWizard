@@ -26,13 +26,13 @@ public class LocalBackup {
     }
 
     public boolean isSuccess() {
-        String _xmlFile = SysProperty.getValue("ngsca.cert.xml.file");
+        //String _xmlFile = SysProperty.getValue("ngsca.cert.xml.file");
         String _keyFile = SysProperty.getValue("ngsca.key.keystore.file");
-        String _certKeyFile = SysProperty.getValue("ngsca.cert.keystore.file");
+        //String _certKeyFile = SysProperty.getValue("ngsca.cert.keystore.file");
 
-        String _xmlBackupFile = SysProperty.getValue("ngsca.cert.xml.backup.file");
+        //String _xmlBackupFile = SysProperty.getValue("ngsca.cert.xml.backup.file");
         String _keyBackupFile = SysProperty.getValue("ngsca.key.keystore.backup.file");
-        String _certKeyBackupFile = SysProperty.getValue("ngsca.cert.keystore.backup.file");
+        //String _certKeyBackupFile = SysProperty.getValue("ngsca.cert.keystore.backup.file");
 
         String backupDir = System.getProperty("user.home");
         backupDir = backupDir + System.getProperty("file.separator") + ".ca";
@@ -48,15 +48,16 @@ public class LocalBackup {
             }
 
         }
-        String xmlFile = sourceDir + System.getProperty("file.separator") + _xmlFile;
+        //String xmlFile = sourceDir + System.getProperty("file.separator") + _xmlFile;
         String keyFile = sourceDir + System.getProperty("file.separator") + _keyFile;
-        String certKeyFile = sourceDir + System.getProperty("file.separator") + _certKeyFile;
-        String xmlBackupFile = backupDir + System.getProperty("file.separator") + _xmlBackupFile;
+        //String certKeyFile = sourceDir + System.getProperty("file.separator") + _certKeyFile;
+        //String xmlBackupFile = backupDir + System.getProperty("file.separator") + _xmlBackupFile;
         String keyBackupFile = backupDir + System.getProperty("file.separator") + _keyBackupFile;
-        String certKeyBackupFile = backupDir + System.getProperty("file.separator") + _certKeyBackupFile;
+        //String certKeyBackupFile = backupDir + System.getProperty("file.separator") + _certKeyBackupFile;
         try {
-            File inF = new File(xmlFile);
-            File outF = new File(xmlBackupFile);
+            File inF = null, outF = null;
+            //File inF = new File(xmlFile);
+            //File outF = new File(xmlBackupFile);
 
             copyFile(inF, outF);
 
@@ -65,10 +66,10 @@ public class LocalBackup {
 
             copyFile(inF, outF);
 
-            inF = new File(certKeyFile);
-            outF = new File(certKeyBackupFile);
+            //inF = new File(certKeyFile);
+            //outF = new File(certKeyBackupFile);
 
-            copyFile(inF, outF);
+            //copyFile(inF, outF);
 
             return true;
         } catch (Exception ep) {
