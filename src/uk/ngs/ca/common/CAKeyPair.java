@@ -58,8 +58,7 @@ public class CAKeyPair {
     //private static int ITERATIONCOUNT = 100;
     //private static final String ENCRYPT_ALG = "PBEWithSHA1AndDESede";
     private static final Logger myLogger = Logger.getLogger(CAKeyPair.class.getName());
-    private static final String SIG_ALG = "MD5withRSA";
-
+    private static final String SIG_ALG = "SHA1WITHRSA";  // was MD5withRSA 
    
     /**
      * Constructor does nothing.
