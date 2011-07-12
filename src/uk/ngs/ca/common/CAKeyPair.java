@@ -59,9 +59,7 @@ public class CAKeyPair {
     private static final Logger myLogger = Logger.getLogger(CAKeyPair.class.getName());
     private static final String SIG_ALG = "MD5withRSA";
 
-    /** The Issuer DN of the self signed certs (note, no spaces are important) */
-    public static final String CSR_ISSUER_DN = "CN=root cert,L=DL,OU=CLRC,O=eScienceDev,C=UK";
-
+   
     /**
      * Constructor does nothing.
      */
@@ -431,7 +429,7 @@ public class CAKeyPair {
         attrs.put(org.bouncycastle.jce.X509Principal.OU, "STFC");
         attrs.put(org.bouncycastle.jce.X509Principal.L, "DL");
         attrs.put(org.bouncycastle.jce.X509Principal.CN, "self signed CSR cert");
-        attrs.put(org.bouncycastle.jce.X509Principal.EmailAddress, "dummy@stfc.ac.uk");
+        //attrs.put(org.bouncycastle.jce.X509Principal.EmailAddress, "dummy@stfc.ac.uk");
 
         java.util.Vector order = new java.util.Vector();
         order.addElement(org.bouncycastle.jce.X509Principal.C);
@@ -439,24 +437,21 @@ public class CAKeyPair {
         order.addElement(org.bouncycastle.jce.X509Principal.OU);
         order.addElement(org.bouncycastle.jce.X509Principal.L);
         order.addElement(org.bouncycastle.jce.X509Principal.CN);
-        order.addElement(org.bouncycastle.jce.X509Principal.EmailAddress);
+        //order.addElement(org.bouncycastle.jce.X509Principal.EmailAddress);
 
-        // TODO: This is a self signed cert, so the issuer DN should be the same as the cert DN (check)?
-        // Important: this value is checked in ClientKeyStoreCaServiceWrapper to
-        // identify the CSR self-signed certificates which are replaced when
-        // the user's new cert is issued ! 
-        X509Name issuerDN = new X509Name(CAKeyPair.CSR_ISSUER_DN);
+        //X509Name issuerDN = new X509Name(CAKeyPair.CSR_ISSUER_DN);
 
         v3certGen.reset();
         v3certGen.setSerialNumber(serialNumber);
-        v3certGen.setIssuerDN(issuerDN);
+        //v3certGen.setIssuerDN(issuerDN); //wrong, different DN !
+        v3certGen.setIssuerDN(new org.bouncycastle.jce.X509Principal(order, attrs));
         v3certGen.setSubjectDN(new org.bouncycastle.jce.X509Principal(order, attrs));
         v3certGen.setNotBefore(startDate);
         v3certGen.setNotAfter(expiryDate);
         v3certGen.setPublicKey(keyPair.getPublic());
 
-        //can we put the different signature algorithm between CA certificate and this certificate???
         v3certGen.setSignatureAlgorithm(SIG_ALG);
+     
 
         try {
             //rootCert = v1certGen.generateX509Certificate(_rootKeyPair.getPrivate(), "BC");

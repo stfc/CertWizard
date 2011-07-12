@@ -681,7 +681,7 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
             return;
         }
         // ok, export the selected cert 
-        // TODO: remove the dependency on GoGProperties (we can do this ourselves - better to not depend on this) 
+        // TODO: remove the dependency on org.globus.common.GoGProperties (we can do this ourselves - better to not depend on this)
         CoGProperties props = CoGProperties.getDefault();
         String certPemFile = props.getUserCertFile();
         String keyPemFile = props.getUserKeyFile();

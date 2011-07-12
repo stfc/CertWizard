@@ -373,7 +373,7 @@ public class ClientKeyStoreCaServiceWrapper {
      * For each keyStoreEntriyWrapper with;
      *  a) a KEY_PAIR_ENTRY type
      *  b) a VALID CertificateCSRInfo object
-     *  c) an alias to a self-signed CSR cert with the known issuer DN (as this was created by this tool)
+     *  c) an alias to a self-signed CSR cert (as this was created by this tool)
      * Then:
      * Download the cert from the CA server and compare to the PubKey of the
      * corresponding entry in this.m_keyStore.
@@ -384,62 +384,55 @@ public class ClientKeyStoreCaServiceWrapper {
      */
     private boolean updateCertsWithKnownValidCerts() throws KeyStoreException {
         boolean updated = false;
-        for(Iterator<KeyStoreEntryWrapper> it = this.keyStoreEntryMap.values().iterator(); it.hasNext();) {
+        for (Iterator<KeyStoreEntryWrapper> it = this.keyStoreEntryMap.values().iterator(); it.hasNext();) {
             KeyStoreEntryWrapper keyStoreEntryWrapper = it.next();
 
-            // skip to next iteration if not KEY_PAIR_ENTRY, member CSRInfo is null
-            // or if the CertificateCSRInfo is not a VALID cert
-            if (!keyStoreEntryWrapper.getEntryType().equals(KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY)
-                    || keyStoreEntryWrapper.getServerCertificateCSRInfo() == null
-                    || !"VALID".equals(keyStoreEntryWrapper.getServerCertificateCSRInfo().getStatus())) {
-                continue;
-            }
-            // Check if the keyStoreEntry is a self-signed cert that
-            // was used to create the CSR and skip if not. The X509 cert's 
-            // IssuerX500Principal name can be checked as this is a known
-            // value that was used to create the CSR's pub/priv keys
-            // (i.e. hardwired values).
-            X509Certificate testCsrCert = (X509Certificate)this.getClientKeyStore().getKeyStore().getCertificate(keyStoreEntryWrapper.getAlias());
-            //System.out.println("comparing: "+CAKeyPair.CSR_ISSUER_DN+ " : "+ cert.getIssuerDN().toString());
-            if(!CAKeyPair.CSR_ISSUER_DN.equals(testCsrCert.getIssuerDN().toString())){
-                continue;
-            }
 
-            // Note, if this were a self signed cert then the subjectDN would
-            // equal the issuerDN also ?
-            //X509Certificate cert = (X509Certificate)this.m_keystore.getCertificate(keyStoreEntryWrapper.getAlias());
-            //System.out.println("subjectX500: "+ cert.getSubjectX500Principal().toString());
-            //System.out.println("issuerX500: "+ cert.getIssuerX500Principal().toString());
+            // we are only interested in replacing the cert with the CA issued
+            // cert if the keyStoreEntryWrapper is:
+            // 1) a KEY_PAIR_ENTRY,
+            // 2) its CertificateCSRInfo server is not null 
+            // 3) its CertificateCSRInfo is a VALID cert (recognized by our CA online)
+            if (keyStoreEntryWrapper.getEntryType().equals(KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY)
+                    && keyStoreEntryWrapper.getServerCertificateCSRInfo() != null
+                    && "VALID".equals(keyStoreEntryWrapper.getServerCertificateCSRInfo().getStatus())) {
 
-            // Download the cert from server by passing the id (dont think this
-            // returns a cert chain)
-            X509Certificate downloadedCert = (new CertificateDownload(keyStoreEntryWrapper.getServerCertificateCSRInfo().getId())).getCertificate();
-            if (downloadedCert == null) {
-                continue; // maybe we temporarily lost connection, so continue.
-            } else {
-                try {
-                    PublicKey downloadedPublicKey = downloadedCert.getPublicKey();
-                    PublicKey keystorePublicKey = this.clientKeyStore.getKeyStore().getCertificateChain(keyStoreEntryWrapper.getAlias())[0].getPublicKey();
-                    //PublicKey keystorePublicKey = this.m_keystore.getCertificate(keyStoreEntryWrapper.getAlias()).getPublicKey();
+                // Also check if cert is self signed (used for CSR where issuer dn == subject dn) 
+                // (we only want to replace the self signed cert with the CA issued cert once)
+                X509Certificate testCsrCert = (X509Certificate) this.getClientKeyStore().getKeyStore().getCertificate(keyStoreEntryWrapper.getAlias());
+                if (testCsrCert.getSubjectDN().toString().equals(testCsrCert.getIssuerDN().toString())) {
 
-                    if (downloadedPublicKey.equals( keystorePublicKey )) {
-                        // Replace the certificate chain
-                        PrivateKey privateKey = (PrivateKey) this.clientKeyStore.getKeyStore().getKey(keyStoreEntryWrapper.getAlias(), mKeystorePASSPHRASE);
-                        X509Certificate[] chain = {downloadedCert};
-                        // Replace keystore entry with the new downloaded cert and its corresponding key.
-                        // (i.e. replaces the self-signed cert that was used to do the CSR).
-                        // TODO: need to check if the newly issued cert contains only the
-                        // user cert? - what about the eSci CA and root certs in the chain ? 
-                        // According to javadoc, "If the given alias already exists, the keystore information
-                        // associated with it is overridden by the given key (and possibly certificate chain)".
-                        System.out.println("Replacing: ["+keyStoreEntryWrapper.getAlias()+"] with downloaded cert");
-                        this.clientKeyStore.getKeyStore().deleteEntry(keyStoreEntryWrapper.getAlias());
-                        this.clientKeyStore.getKeyStore().setKeyEntry(keyStoreEntryWrapper.getAlias(), privateKey, mKeystorePASSPHRASE, chain);
-                        updated = true;
+                    // Download the cert from server by passing the id (dont think this
+                    // returns a cert chain)
+                    X509Certificate downloadedCert = (new CertificateDownload(keyStoreEntryWrapper.getServerCertificateCSRInfo().getId())).getCertificate();
+                    if (downloadedCert == null) {
+                        continue; // maybe we temporarily lost connection, so continue.
+                    } else {
+                        try {
+                            PublicKey downloadedPublicKey = downloadedCert.getPublicKey();
+                            PublicKey keystorePublicKey = this.clientKeyStore.getKeyStore().getCertificateChain(keyStoreEntryWrapper.getAlias())[0].getPublicKey();
+                            //PublicKey keystorePublicKey = this.m_keystore.getCertificate(keyStoreEntryWrapper.getAlias()).getPublicKey();
+
+                            if (downloadedPublicKey.equals(keystorePublicKey)) {
+                                // Replace the certificate chain
+                                PrivateKey privateKey = (PrivateKey) this.clientKeyStore.getKeyStore().getKey(keyStoreEntryWrapper.getAlias(), mKeystorePASSPHRASE);
+                                X509Certificate[] chain = {downloadedCert};
+                                // Replace keystore entry with the new downloaded cert and its corresponding key.
+                                // (i.e. replaces the self-signed cert that was used to do the CSR).
+                                // TODO: need to check if the newly issued cert contains only the
+                                // user cert? - what about the eSci CA and root certs in the chain ?
+                                // According to javadoc, "If the given alias already exists, the keystore information
+                                // associated with it is overridden by the given key (and possibly certificate chain)".
+                                System.out.println("Replacing: [" + keyStoreEntryWrapper.getAlias() + "] with downloaded cert");
+                                this.clientKeyStore.getKeyStore().deleteEntry(keyStoreEntryWrapper.getAlias());
+                                this.clientKeyStore.getKeyStore().setKeyEntry(keyStoreEntryWrapper.getAlias(), privateKey, mKeystorePASSPHRASE, chain);
+                                updated = true;
+                            }
+                        } catch (Exception ex) {
+                            Logger.getLogger(ClientKeyStoreCaServiceWrapper.class.getName()).log(Level.SEVERE, null, ex);
+                            throw new IllegalStateException(ex);
+                        }
                     }
-                } catch (Exception ex) {
-                    Logger.getLogger(ClientKeyStoreCaServiceWrapper.class.getName()).log(Level.SEVERE, null, ex);
-                    throw new IllegalStateException(ex);
                 }
             }
         }
