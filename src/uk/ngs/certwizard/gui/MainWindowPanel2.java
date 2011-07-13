@@ -129,7 +129,16 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
             }
         }
         WaitDialog.hideDialog();
+
+        // if we have not certs, present a useful message
+        if(this.keyStoreCaWrapper.getKeyStoreEntryMap().isEmpty()){
+            JOptionPane.showMessageDialog(this, "You appear to have no certificates. Please either\n"
+                    + "a) Apply for a certificate with the 'Apply' button or\n"
+                    + "b) Import a certificate/key pair from file (this file can be exported from your web browser)");
+        }
     }
+
+
 
     /**
      * The keystore is reloaded and the GUI is updated when invoked by another
@@ -423,7 +432,7 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
         if (selectedKSEW != null
                 && KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY.equals(selectedKSEW.getEntryType())
                 && selectedKSEW.getServerCertificateCSRInfo() != null
-                && "VALID".equals(((KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem()).getServerCertificateCSRInfo().getStatus())) {
+                && "VALID".equals(((KeyStoreEntryWrapper) selectedKSEW).getServerCertificateCSRInfo().getStatus())) {
 
             int ok = JOptionPane.showConfirmDialog(this, "Are you sure you want to renew the selected certificate?", "Renew Certificate", JOptionPane.OK_CANCEL_OPTION);
             if (JOptionPane.OK_OPTION == ok) {
