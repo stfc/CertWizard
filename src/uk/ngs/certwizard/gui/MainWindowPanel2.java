@@ -689,61 +689,76 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
             JOptionPane.showMessageDialog(this, "Please select a certificate and key pair!", "No certificate key pair selected", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
-        // ok, export the selected cert 
-        // TODO: remove the dependency on org.globus.common.GoGProperties (we can do this ourselves - better to not depend on this)
-        CoGProperties props = CoGProperties.getDefault();
-        String certPemFile = props.getUserCertFile();
-        String keyPemFile = props.getUserKeyFile();
-        File fCertFile = new File(certPemFile);
-        File fKeyFile = new File(keyPemFile);
-        // check usercert.pem and userkey.pem do not already exist.
-        String overwriteWarning = "";
-        boolean oneExists = false;
-        if (fKeyFile.exists()) {
-            oneExists = true;
-            overwriteWarning += "Local Key file already exists: \n     [" + keyPemFile + "]\n\n";
-        }
-        if (fCertFile.exists()) {
-            oneExists = true;
-            overwriteWarning += "Local Certificate file already exists: \n    [" + certPemFile + "]\n";
-        }
-        if (oneExists) {
-            overwriteWarning += "\nAre you sure you want to overwrite these files ?";
-            int ret = JOptionPane.showConfirmDialog(this, overwriteWarning, "Certificate/Key Installation", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-            if (JOptionPane.YES_OPTION != ret) {
+        FileOutputStream certfos = null;
+        
+        try {
+            X509Certificate testValidCertificateToExport = (X509Certificate) this.keyStoreCaWrapper.getClientKeyStore().getKeyStore().getCertificate(selectedKSEW.getAlias());
+            if (testValidCertificateToExport.getIssuerDN().toString().equals(testValidCertificateToExport.getSubjectDN().toString())) {
+                JOptionPane.showMessageDialog(this, "You cannot install a self signed certficate \n");
                 return;
             }
-        }
-        // ok, here we can export the cert and key as pem files.    
-        FileOutputStream certfos = null; 
-        try {
+
+            // ok, export the selected cert
+            // TODO: remove the dependency on org.globus.common.GoGProperties (we can do this ourselves - better to not depend on this)
+            CoGProperties props = CoGProperties.getDefault();
+            String certPemFile = props.getUserCertFile();
+            String keyPemFile = props.getUserKeyFile();
+            File fCertFile = new File(certPemFile);
+            File fKeyFile = new File(keyPemFile);
+            // check usercert.pem and userkey.pem do not already exist.
+            String overwriteWarning = "";
+            boolean oneExists = false;
+            if (fKeyFile.exists()) {
+                oneExists = true;
+                overwriteWarning += "Local Key file already exists: \n     [" + keyPemFile + "]\n\n";
+            }
+            if (fCertFile.exists()) {
+                oneExists = true;
+                overwriteWarning += "Local Certificate file already exists: \n    [" + certPemFile + "]\n";
+            }
+            if (oneExists) {
+                overwriteWarning += "\nAre you sure you want to overwrite these files ?";
+                int ret = JOptionPane.showConfirmDialog(this, overwriteWarning, "Certificate/Key Installation", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                if (JOptionPane.YES_OPTION != ret) {
+                    return;
+                }
+            }
+            // ok, here we can export the cert and key as pem files.
+
+
             // first, delete files (if they already exist) 
             fCertFile.delete();
             fKeyFile.delete();
             // get X509Cert and Private key of selected alias 
-            String alias = selectedKSEW.getAlias() ; 
-            X509Certificate certificate = (X509Certificate)this.keyStoreCaWrapper.getClientKeyStore().getKeyStore().getCertificate( alias ); 
-            PrivateKey privateKey = (PrivateKey)this.keyStoreCaWrapper.getClientKeyStore().getKeyStore().getKey(alias, PASSPHRASE); 
+            String alias = selectedKSEW.getAlias();
+            X509Certificate certificate = (X509Certificate) this.keyStoreCaWrapper.getClientKeyStore().getKeyStore().getCertificate(alias);
+            PrivateKey privateKey = (PrivateKey) this.keyStoreCaWrapper.getClientKeyStore().getKeyStore().getKey(alias, PASSPHRASE);
             // Write the certificate 
             // TODO - remove dependency on org.globus.util.PEMUtils (we can do this ourselves - better to not depend on this)
             // TODO - remove dependency on org.globus.util.Util (we can do this ourselves - better to not depend on this)
             certfos = new FileOutputStream(fCertFile);
             PEMUtils.writeBase64(certfos, "-----BEGIN CERTIFICATE-----", Base64.encode(certificate.getEncoded()), "-----END CERTIFICATE-----");
             Util.setFilePermissions(certPemFile, 444);
-            
+
             // Write the key - need to remove dependency on the bouncycastle here !
             BouncyCastleOpenSSLKey bcosk = new BouncyCastleOpenSSLKey(privateKey);
             bcosk.encrypt(new String(PASSPHRASE));
             bcosk.writeTo(keyPemFile);
             Util.setFilePermissions(keyPemFile, 400);
-            
+
             JOptionPane.showMessageDialog(this, "usercert.pem and userkey.pem exported OK to '$USER_HOME/.globus/'",
-	            "Export usercert.pem userkey.pem", JOptionPane.INFORMATION_MESSAGE);
+                    "Export usercert.pem userkey.pem", JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception ex) {
             ex.printStackTrace();
             DThrowable.showAndWait(null, null, ex);
         } finally {
-            try{ certfos.close(); }catch(Exception ex){/* do nothing */}
+            try {
+                if (certfos != null) {
+                    certfos.close();
+                }
+            } catch (Exception ex) {/* do nothing */
+
+            }
         }
     }
 
