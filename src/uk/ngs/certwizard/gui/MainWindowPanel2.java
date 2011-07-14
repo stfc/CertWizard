@@ -692,10 +692,28 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
         FileOutputStream certfos = null;
         
         try {
+            // prevent install of self signed certs (CSRs)
             X509Certificate testValidCertificateToExport = (X509Certificate) this.keyStoreCaWrapper.getClientKeyStore().getKeyStore().getCertificate(selectedKSEW.getAlias());
             if (testValidCertificateToExport.getIssuerDN().toString().equals(testValidCertificateToExport.getSubjectDN().toString())) {
                 JOptionPane.showMessageDialog(this, "You cannot install a self signed certficate \n");
                 return;
+            }
+
+            // check online status before installing 
+            if (selectedKSEW.getServerCertificateCSRInfo() == null) {
+                int ret = JOptionPane.showConfirmDialog(this, "You are either offline or this certificate cannot be validated by our CA\n"
+                        + "Are you sure you want to export this certificate ?");
+                if (ret != JOptionPane.YES_OPTION) {
+                    return;
+                }
+            } else {
+                if (!"VALID".equals(selectedKSEW.getServerCertificateCSRInfo().getStatus())) {
+                    int ret = JOptionPane.showConfirmDialog(this, "According to our CA this certificate is not VALID\n"
+                            + "Are you sure you want to export this certificate ?");
+                    if (ret != JOptionPane.YES_OPTION) {
+                        return;
+                    }
+                }
             }
 
             // ok, export the selected cert
@@ -1666,7 +1684,7 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
 
     private void btnRefreshActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRefreshActionPerformed
         // TODO add your handling code here:
-        WaitDialog.showDialog("Updating");
+        WaitDialog.showDialog("General");
         assert this.keyStoreCaWrapper.getClientKeyStore().getKeyStore() ==
                 ClientKeyStore.getClientkeyStore(PASSPHRASE).getKeyStore();
         this.reloadKeystoreUpdateGUI();

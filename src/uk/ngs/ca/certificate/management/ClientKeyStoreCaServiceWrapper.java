@@ -125,8 +125,7 @@ public class ClientKeyStoreCaServiceWrapper {
                 issuerName = trustedCert.getIssuerX500Principal().toString();
                 notAfter = trustedCert.getNotAfter();
                 notBefore = trustedCert.getNotBefore();
-                System.out.println("trusted cert entry dave");
-
+                
             } else if (this.clientKeyStore.getKeyStore().isKeyEntry(sAlias) && this.clientKeyStore.getKeyStore().getCertificateChain(sAlias) != null
                     && this.clientKeyStore.getKeyStore().getCertificateChain(sAlias).length != 0) {
                 // A private key accompanied by the certificate "chain" for the corresponding public key
@@ -148,7 +147,7 @@ public class ClientKeyStoreCaServiceWrapper {
             keyStoreEntry.setNotBefore(notBefore);
             keyStoreEntry.setX500PrincipalName(x500PrincipalName);
             keyStoreEntry.setIssuerName(issuerName);
-            this.keyStoreEntryMap.put(sAlias, keyStoreEntry);   //().add(keyStoreEntry);
+            this.keyStoreEntryMap.put(sAlias, keyStoreEntry);   
         }
         // if online, append the CertificateCSRInfo instances to each KeyStoreEntryWrapper
         // (can simply comment out the followng calls to disable initialisation online).
@@ -157,9 +156,9 @@ public class ClientKeyStoreCaServiceWrapper {
             // update any self-signed CSR certs with the CA issued certs. Only
             // need to reStore keyStore if we did actually update a cert.
             if(this.updateValidCAIssuedCerts()){
-                // If either a self-signed CSR
-                // cert or a VALID CA issued cert was updated/replaced with
-                // new/updated CA issued certificate (i.e. new applications or renewals),
+                // If either a self-signed CSR cert or a VALID CA issued cert
+                // was updated/replaced with a new/updated CA issued certificate
+                // (i.e. occuring on new cert applications, renewals, online update),
                 // then reStore keyStore to persist changes.
                 this.reStore();
             }
@@ -444,10 +443,15 @@ public class ClientKeyStoreCaServiceWrapper {
                             System.out.println("Replacing: [" + keyStoreEntryWrapper.getAlias() + "] with downloaded cert");
                             this.clientKeyStore.getKeyStore().deleteEntry(keyStoreEntryWrapper.getAlias());
                             this.clientKeyStore.getKeyStore().setKeyEntry(keyStoreEntryWrapper.getAlias(), privateKey, mKeystorePASSPHRASE, chain);
-                            updated = true;
                             // ok, we have have replaced this cert, so we need to
-                            // update the certCSRInfo for this entry.
-                            this.initCertCSRInfo_WithOnlineCheck(keyStoreEntryWrapper);
+                            // update the ketStoreEntryWrapper for this entry.
+                            // Note, no need to update online info (this.initCertCSRInfo_WithOnlineCheck(keyStoreEntryWrapper));
+                            // or the alias as these have not changed. 
+                            keyStoreEntryWrapper.setX500PrincipalName(chain[0].getSubjectX500Principal().toString());
+                            keyStoreEntryWrapper.setIssuerName(chain[0].getIssuerX500Principal().toString());
+                            keyStoreEntryWrapper.setNotAfter(chain[0].getNotAfter());
+                            keyStoreEntryWrapper.setNotBefore(chain[0].getNotBefore());
+                            updated = true;
                         }
                     } catch (Exception ex) {
                         Logger.getLogger(ClientKeyStoreCaServiceWrapper.class.getName()).log(Level.SEVERE, null, ex);

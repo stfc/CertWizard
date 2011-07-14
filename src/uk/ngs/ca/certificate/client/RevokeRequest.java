@@ -155,7 +155,7 @@ public class RevokeRequest {
 
             if (response.getStatus().equals(Status.SUCCESS_CREATED)) {
                 //201
-                this.MESSAGE = "The certificate has been revoked successfully.";
+                this.MESSAGE = "The certificate revocation request has been submitted.";
                 return true;
 
             } else if (response.getStatus().equals(Status.SUCCESS_ACCEPTED)) {
