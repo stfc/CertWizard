@@ -1084,7 +1084,14 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
             keyStore.deleteEntry(sAliasOld);
 
             // Update the frame's components and title
-            this.reloadKeystoreUpdateGUI();
+            //this.reloadKeystoreUpdateGUI();
+            //this.updateCombo();
+            KeyStoreEntryWrapper changedKSEW = this.keyStoreCaWrapper.getKeyStoreEntryMap().get(sAliasOld);
+            changedKSEW.setAlias(sAliasNew);
+            this.keyStoreCaWrapper.getKeyStoreEntryMap().remove(sAliasOld);
+            this.keyStoreCaWrapper.getKeyStoreEntryMap().put(sAliasNew, changedKSEW);          
+            this.updateGUI();
+
 
             WaitDialog.hideDialog();
 

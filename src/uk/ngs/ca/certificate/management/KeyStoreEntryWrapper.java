@@ -57,6 +57,11 @@ public class KeyStoreEntryWrapper {
     }
 
 
+    
+    public void setAlias(String alias){
+        this.alias = alias;
+    }
+
 
     /**
      * @return the mAlias
