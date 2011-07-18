@@ -14,11 +14,8 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
 import uk.ngs.ca.info.CAInfo;
-import uk.ngs.ca.common.SystemStatus;
-import uk.ngs.ca.certificate.OffLineUserCertificateRequest;
 import uk.ngs.ca.certificate.OnLineUserCertificateRequest;
 import uk.ngs.ca.common.MyPattern;
-import uk.ngs.ca.certificate.client.PingService;
 import uk.ngs.ca.common.ClientKeyStore;
 //import uk.ngs.ca.certificate.client.PingService;
 

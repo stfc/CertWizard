@@ -360,7 +360,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             .add(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(btnNewCertificateRequest)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 35, Short.MAX_VALUE)
                 .add(btnImportCertificate)
                 .addContainerGap())
         );
@@ -418,7 +418,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
                     .add(email)
                     .add(DN, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 384, Short.MAX_VALUE))
-                .addContainerGap(132, Short.MAX_VALUE))
+                .addContainerGap(140, Short.MAX_VALUE))
         );
         pnlAllDetailsLayout.setVerticalGroup(
             pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -452,9 +452,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel5Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(jPanel5Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, lblCertificateGenerated, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 535, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, lblRequestApproved, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 535, Short.MAX_VALUE)
-                    .add(lblRequestReceived, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 535, Short.MAX_VALUE))
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, lblCertificateGenerated, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 543, Short.MAX_VALUE)
+                    .add(org.jdesktop.layout.GroupLayout.LEADING, lblRequestApproved, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 543, Short.MAX_VALUE)
+                    .add(lblRequestReceived, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 543, Short.MAX_VALUE))
                 .addContainerGap())
         );
         jPanel5Layout.setVerticalGroup(
@@ -482,8 +482,18 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         jLabel6.setText("Renewal Due:");
 
         dRemaining.setEditable(false);
+        dRemaining.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                dRemainingActionPerformed(evt);
+            }
+        });
 
         rDue.setEditable(false);
+        rDue.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                rDueActionPerformed(evt);
+            }
+        });
 
         org.jdesktop.layout.GroupLayout pnlValidDatesLayout = new org.jdesktop.layout.GroupLayout(pnlValidDates);
         pnlValidDates.setLayout(pnlValidDatesLayout);
@@ -645,7 +655,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(jPanel2Layout.createSequentialGroup()
                         .add(btnRefresh)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 122, Short.MAX_VALUE)
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 173, Short.MAX_VALUE)
                         .add(btnInstall)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(btnRenew)
@@ -677,7 +687,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                     .add(btnRenew)
                     .add(btnInstall)
                     .add(btnDelete))
-                .addContainerGap(16, Short.MAX_VALUE))
+                .addContainerGap(42, Short.MAX_VALUE))
         );
 
         jPanel3.setBorder(javax.swing.BorderFactory.createTitledBorder("Information"));
@@ -694,7 +704,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel3Layout.createSequentialGroup()
                 .addContainerGap()
-                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 145, Short.MAX_VALUE)
+                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 173, Short.MAX_VALUE)
                 .addContainerGap())
         );
         jPanel3Layout.setVerticalGroup(
@@ -714,7 +724,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 .addContainerGap()
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(jPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .add(jLabel7, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 181, Short.MAX_VALUE)
+                    .add(jLabel7, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 209, Short.MAX_VALUE)
                     .add(jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
@@ -1408,6 +1418,14 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
         }
     }//GEN-LAST:event_btnRefreshMouseExited
+
+    private void dRemainingActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_dRemainingActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_dRemainingActionPerformed
+
+    private void rDueActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rDueActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_rDueActionPerformed
 
 
     private boolean isSuccessPemFiles(X509Certificate certificate, PrivateKey privateKey){

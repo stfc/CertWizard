@@ -395,7 +395,7 @@ public class CAKeyPair {
      * @param keyPair
      * @return X509Certificate
      */
-    public static X509Certificate createSelfSignedCertificate(KeyPair keyPair) {
+    public static X509Certificate createSelfSignedCertificate(KeyPair keyPair, String ou, String l, String cn) {
         //KeyPair _rootKeyPair = CAKeyPair.getNewKeyPair();
         X509Certificate createdCert = null;
 
@@ -433,9 +433,13 @@ public class CAKeyPair {
         java.util.Hashtable attrs = new java.util.Hashtable();
         attrs.put(org.bouncycastle.jce.X509Principal.C, "UK");
         attrs.put(org.bouncycastle.jce.X509Principal.O, "eScience");
-        attrs.put(org.bouncycastle.jce.X509Principal.OU, "STFC");
-        attrs.put(org.bouncycastle.jce.X509Principal.L, "DL");
-        attrs.put(org.bouncycastle.jce.X509Principal.CN, "self signed CSR cert");
+//        attrs.put(org.bouncycastle.jce.X509Principal.OU, "STFC");
+//        attrs.put(org.bouncycastle.jce.X509Principal.L, "DL");
+//        attrs.put(org.bouncycastle.jce.X509Principal.CN, "self signed CSR cert");
+        attrs.put(org.bouncycastle.jce.X509Principal.OU, ou);
+        attrs.put(org.bouncycastle.jce.X509Principal.L, l);
+        attrs.put(org.bouncycastle.jce.X509Principal.CN, cn + " CSR cert");
+
         //attrs.put(org.bouncycastle.jce.X509Principal.EmailAddress, "dummy@stfc.ac.uk");
 
         java.util.Vector order = new java.util.Vector();

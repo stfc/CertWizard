@@ -53,7 +53,7 @@ public class OnLineUserCertificateRequest extends Observable{
             // create new keypair entry under new meaningless alias and re-save file.
             // TODO: pass-through the info provided by the user rather than
             // creating a new dummy CSR certificate. 
-            String alias = clientKeyStore.createNewKeyPair(this.Alias);
+            String alias = clientKeyStore.createNewKeyPair(this.Alias, getOU(), getL(), this.Name);
             this.Alias = alias;
             PublicKey publicKey = clientKeyStore.getPublicKey(alias);
             PrivateKey privateKey = clientKeyStore.getPrivateKey(alias);

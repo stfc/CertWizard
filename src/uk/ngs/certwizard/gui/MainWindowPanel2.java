@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.KeyStore;
+import java.security.KeyStore.Entry;
 import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
@@ -18,7 +19,9 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.*;
@@ -226,6 +229,9 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
      */
     private void updateGUIPanel() {
         // nullify/clear the gui components first
+
+        Date vToDate  = null;
+
         this.vFrom.setText("");
         this.vTo.setText("");
         this.subjectDnTextField.setText("");
@@ -280,9 +286,39 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
                 this.caCertStatusTextField.setText(state + " " + this.getExtraLabelTextFromState(state));
                 this.caCertStatusTextField.setForeground(this.getColorFromState(state));
             }
+
+          //Remaining time
+
+            vToDate= selectedKeyStoreEntry.getNotAfter();
+            this.dRemaining.setText(getLifeDays(vToDate));
+
+            //Renewal Due
+
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(vToDate);
+            cal.add(Calendar.MONTH, -1);
+
+            this.rDue.setText(cal.getTime().toString());
+
         }
         //((TitledBorder)this.jPanel2.getBorder()).setTitle("Your Certificates and Requests ("+this.jComboBox1.getItemCount()+" entries)");
     }
+
+    public String getLifeDays(Date date) {
+
+
+            long currentMillis = new Date().getTime();
+            long endMillis = date.getTime();
+            if (endMillis < currentMillis) { //This means it's expired
+                return "Expired";
+            }
+            long diffDays = (endMillis - currentMillis) / (24 * 60 * 60 * 1000);
+            //the live days would include the extra rekey days.
+            return new Long(diffDays).toString();
+
+    }
+
+
 
     /**
      * Renderer class for KeyStoreEntryWrapper objects for the combo box.
@@ -436,6 +472,36 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
 
             int ok = JOptionPane.showConfirmDialog(this, "Are you sure you want to renew the selected certificate?", "Renew Certificate", JOptionPane.OK_CANCEL_OPTION);
             if (JOptionPane.OK_OPTION == ok) {
+
+//                //let the user alter the alias
+//
+//                // Get an alias for the new keystore entry
+//
+//                String sAlias = selectedKSEW.getAlias();
+//
+//                KeyStore keyStore = this.keyStoreCaWrapper.getClientKeyStore().getKeyStore();
+//                try {
+//                    sAlias = getNewEntryAliasHelper(keyStore, sAlias, "FPortecle.KeyPairEntryAlias.Title", false);
+//
+//                    // Check entry does not already exist in the keystore
+//                    if (keyStore.containsAlias(sAlias)) {
+//
+//                        String sMessage =
+//                            MessageFormat.format(RB.getString("FPortecle.OverWriteEntry.message"), sAlias);
+//
+//                        int iSelected =
+//                            JOptionPane.showConfirmDialog(this, sMessage,
+//                                RB.getString("FPortecle.RenameEntry.Title"), JOptionPane.YES_NO_OPTION);
+//                        if (iSelected != JOptionPane.YES_OPTION)
+//                        {
+//                                return;
+//                        }
+//                    }
+//
+//                } catch (KeyStoreException ex) {
+//                    DThrowable.showAndWait(null, null, ex);
+//                }
+
                 WaitDialog.showDialog("Renew");
                 String cert_id = selectedKSEW.getServerCertificateCSRInfo().getId();
                 CertificateDownload certDownload = new CertificateDownload(cert_id);
@@ -937,6 +1003,101 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
     }
 
     /**
+     * Let the user change the alias for the selected keypair or trusted certificate entry.
+     * Based on Portecle.
+     * @see FPortecle#renameSelectedEntry()
+     */
+    private void doChangeAliasAction() {
+
+       if (this.jComboBox1.getSelectedIndex() == -1) {
+            JOptionPane.showMessageDialog(this, "Please select a certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        KeyStoreEntryWrapper selectedKSEW = (KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem();
+        KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE selectedType = selectedKSEW.getEntryType();
+        if (selectedType == null || selectedType.equals(selectedType.KEY_ENTRY)) {
+            JOptionPane.showMessageDialog(this, "Please select a certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        // Get the entry
+        String sAliasOld = selectedKSEW.getAlias();
+        KeyStore keyStore = this.keyStoreCaWrapper.getClientKeyStore().getKeyStore();
+
+
+        try {
+
+            //retrieve the new alias from the user
+            String sAliasNew = getNewEntryAliasHelper(keyStore, sAliasOld, "FPortecle.KeyPairEntryAlias.Title", false);
+
+            WaitDialog.showDialog("General");
+
+            if (sAliasNew == null) {
+                WaitDialog.hideDialog();
+                return;
+            }
+
+            // Check new alias differs from the present one
+            if (sAliasNew.equalsIgnoreCase(sAliasOld))
+            {
+                JOptionPane.showMessageDialog(
+                    this,
+                    MessageFormat.format(RB.getString("FPortecle.RenameAliasIdentical.message"), sAliasOld),
+                    RB.getString("FPortecle.RenameEntry.Title"), JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Check entry does not already exist in the keystore
+            if (keyStore.containsAlias(sAliasNew)) {
+
+                String sMessage =
+                    MessageFormat.format(RB.getString("FPortecle.OverWriteEntry.message"), sAliasNew);
+
+                int iSelected =
+                    JOptionPane.showConfirmDialog(this, sMessage,
+                        RB.getString("FPortecle.RenameEntry.Title"), JOptionPane.YES_NO_OPTION);
+                if (iSelected != JOptionPane.YES_OPTION)
+                {
+                        return;
+                }
+            }
+
+            // Create the new entry with the new name and copy the old entry across
+
+            // If the entry is a key pair...
+            if (keyStore.isKeyEntry(sAliasOld))
+            {
+
+                // Do the copy
+                Key key = keyStore.getKey(sAliasOld, this.PASSPHRASE);
+                Certificate[] certs = keyStore.getCertificateChain(sAliasOld);
+                keyStore.setKeyEntry(sAliasNew, key, this.PASSPHRASE, certs);
+
+            } else {
+                // ...if the entry is a trusted certificate
+                // Do the copy
+                Certificate cert = keyStore.getCertificate(sAliasOld);
+                keyStore.setCertificateEntry(sAliasNew, cert);
+            }
+
+            // Delete the old entry
+            keyStore.deleteEntry(sAliasOld);
+
+            // Update the frame's components and title
+            this.reloadKeystoreUpdateGUI();
+
+            WaitDialog.hideDialog();
+
+            return;
+
+        } catch (Exception ex) {
+            DThrowable.showAndWait(null, null, ex);
+        }
+
+    }
+
+
+    /**
      * Let the user choose a file to import from. Based on Portecle.
      * @see FPortecle#chooseImportFile()
      * @return The chosen file or null if none was chosen
@@ -1065,6 +1226,7 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
         btnExport = new javax.swing.JButton();
         btnRevoke = new javax.swing.JButton();
         btnDelete = new javax.swing.JButton();
+        btnChangeAlias = new javax.swing.JButton();
         jPanel3 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         TextMOD = new javax.swing.JTextArea();
@@ -1164,6 +1326,11 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
 
         subjectDnTextField.setEditable(false);
         subjectDnTextField.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
+        subjectDnTextField.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                subjectDnTextFieldActionPerformed(evt);
+            }
+        });
 
         jLabel8.setText("Issuer DN:");
 
@@ -1181,8 +1348,13 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
 
         caCertStatusTextField.setEditable(false);
         caCertStatusTextField.setFont(new java.awt.Font("Tahoma", 1, 11));
-        caCertStatusTextField.setText("Unknown (offilne or certificate not recognized by UK CA)");
+        caCertStatusTextField.setText("Unknown (offline or certificate not recognized by UK CA)");
         caCertStatusTextField.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
+        caCertStatusTextField.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                caCertStatusTextFieldActionPerformed(evt);
+            }
+        });
 
         jLabel2.setText("Status with CA:");
 
@@ -1202,9 +1374,19 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
 
         dRemaining.setEditable(false);
         dRemaining.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
+        dRemaining.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                dRemainingActionPerformed(evt);
+            }
+        });
 
         rDue.setEditable(false);
         rDue.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
+        rDue.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                rDueActionPerformed(evt);
+            }
+        });
 
         org.jdesktop.layout.GroupLayout jPanel4Layout = new org.jdesktop.layout.GroupLayout(jPanel4);
         jPanel4.setLayout(jPanel4Layout);
@@ -1350,46 +1532,55 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
             }
         });
 
+        btnChangeAlias.setText("< Change Alias");
+        btnChangeAlias.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnChangeAliasActionPerformed(evt);
+            }
+        });
+
         org.jdesktop.layout.GroupLayout pnlAllDetailsLayout = new org.jdesktop.layout.GroupLayout(pnlAllDetails);
         pnlAllDetails.setLayout(pnlAllDetailsLayout);
         pnlAllDetailsLayout.setHorizontalGroup(
             pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(pnlAllDetailsLayout.createSequentialGroup()
-                .addContainerGap()
                 .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(pnlAllDetailsLayout.createSequentialGroup()
-                        .add(jPanel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .addContainerGap())
-                    .add(pnlAllDetailsLayout.createSequentialGroup()
+                        .addContainerGap()
                         .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                            .add(jLabel1)
-                            .add(jLabel8)
-                            .add(jLabel10)
-                            .add(jLabel2)
-                            .add(jLabel9))
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                            .add(jPanel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                             .add(pnlAllDetailsLayout.createSequentialGroup()
-                                .add(certificateTypeLabel)
-                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 329, Short.MAX_VALUE)
-                                .add(viewCertDetailsButton))
-                            .add(org.jdesktop.layout.GroupLayout.LEADING, caCertStatusTextField, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 504, Short.MAX_VALUE)
-                            .add(issuerDnTextField, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 504, Short.MAX_VALUE)
-                            .add(subjectDnTextField, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 504, Short.MAX_VALUE)
-                            .add(aliasTextField, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 504, Short.MAX_VALUE))
-                        .addContainerGap())))
-            .add(org.jdesktop.layout.GroupLayout.TRAILING, pnlAllDetailsLayout.createSequentialGroup()
-                .add(btnRefresh)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 179, Short.MAX_VALUE)
-                .add(btnInstall)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(btnRenew)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(btnExport)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(btnRevoke)
-                .add(4, 4, 4)
-                .add(btnDelete)
+                                .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                                    .add(jLabel1)
+                                    .add(jLabel8)
+                                    .add(jLabel10)
+                                    .add(jLabel2)
+                                    .add(jLabel9))
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                                    .add(org.jdesktop.layout.GroupLayout.LEADING, caCertStatusTextField, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 487, Short.MAX_VALUE)
+                                    .add(issuerDnTextField, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 487, Short.MAX_VALUE)
+                                    .add(subjectDnTextField, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 487, Short.MAX_VALUE)
+                                    .add(pnlAllDetailsLayout.createSequentialGroup()
+                                        .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                                            .add(certificateTypeLabel)
+                                            .add(aliasTextField, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 359, Short.MAX_VALUE))
+                                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                        .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
+                                            .add(btnChangeAlias, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                            .add(viewCertDetailsButton, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))))))
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, pnlAllDetailsLayout.createSequentialGroup()
+                        .add(btnRefresh)
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 132, Short.MAX_VALUE)
+                        .add(btnInstall)
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                        .add(btnRenew)
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                        .add(btnExport)
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                        .add(btnRevoke)
+                        .add(4, 4, 4)
+                        .add(btnDelete)))
                 .addContainerGap())
         );
         pnlAllDetailsLayout.setVerticalGroup(
@@ -1410,7 +1601,8 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
                 .add(7, 7, 7)
                 .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(aliasTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 22, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(jLabel9))
+                    .add(jLabel9)
+                    .add(btnChangeAlias))
                 .add(19, 19, 19)
                 .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
@@ -1471,7 +1663,7 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel3Layout.createSequentialGroup()
-                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 233, Short.MAX_VALUE)
+                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 242, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -1484,7 +1676,7 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
             .add(layout.createSequentialGroup()
                 .addContainerGap()
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(jPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .add(jPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 181, Short.MAX_VALUE)
                     .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
                         .add(jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .add(jLabel7, 0, 0, Short.MAX_VALUE)))
@@ -1494,7 +1686,7 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(layout.createSequentialGroup()
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addContainerGap(34, Short.MAX_VALUE)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
                     .add(jPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                     .add(layout.createSequentialGroup()
@@ -1711,6 +1903,27 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
         // TODO add your handling code here:
         this.doViewCertificateDetailsAction();
     }//GEN-LAST:event_viewCertDetailsButtonActionPerformed
+
+    private void dRemainingActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_dRemainingActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_dRemainingActionPerformed
+
+    private void btnChangeAliasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnChangeAliasActionPerformed
+        // TODO add your handling code here:
+        this.doChangeAliasAction();
+    }//GEN-LAST:event_btnChangeAliasActionPerformed
+
+    private void caCertStatusTextFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_caCertStatusTextFieldActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_caCertStatusTextFieldActionPerformed
+
+    private void rDueActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rDueActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_rDueActionPerformed
+
+    private void subjectDnTextFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_subjectDnTextFieldActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_subjectDnTextFieldActionPerformed
 
   
     private void setRedMOD(String text) {
@@ -2447,6 +2660,7 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextArea TextMOD;
     private javax.swing.JTextField aliasTextField;
+    private javax.swing.JButton btnChangeAlias;
     private javax.swing.JButton btnDelete;
     private javax.swing.JButton btnExport;
     private javax.swing.JButton btnImportCertificate;

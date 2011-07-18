@@ -193,11 +193,11 @@ public final class ClientKeyStore {
      * @param alias a suggested alias (can be null)
      * @return alias
      */
-    public String createNewKeyPair(String alias) {
+    public String createNewKeyPair(String alias, String ou, String l, String cn) {
         try {
             KeyPair keyPair = CAKeyPair.getNewKeyPair();
             // the self signed certificate has some hardwired values - why?
-            X509Certificate cert = CAKeyPair.createSelfSignedCertificate(keyPair);
+            X509Certificate cert = CAKeyPair.createSelfSignedCertificate(keyPair, ou, l, cn );
             X509Certificate[] certs = {cert};
             // Alias not valid so create a meaningless alias instead. 
             if(alias == null || alias.trim().length() == 0 || this.keyStore.containsAlias(alias)){

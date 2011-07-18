@@ -501,7 +501,11 @@ public class OnLineUserCertificateReKey {
     private String getCSR() {
         try {
             if (this.PKCS10REQUEST == null) {
-                String ali = this.clientKeyStore.createNewKeyPair(null);
+                String dn = this.CERTIFICATE.getSubjectDN().getName();
+                String OU = _retrieveDataFromDN(dn, "OU=");
+                String L = _retrieveDataFromDN(dn, "L=");
+                String CN = _retrieveDataFromDN(dn, "CN=");
+                String ali = this.clientKeyStore.createNewKeyPair(null, OU, L, CN);
                 PublicKey _publicKey = this.clientKeyStore.getPublicKey(ali);
                 PrivateKey _privateKey = this.clientKeyStore.getPrivateKey(ali);
                 this.Alias = ali;
