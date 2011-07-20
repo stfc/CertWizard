@@ -369,7 +369,7 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
             return; //user hit cancel button
         }
 
-        if (new String(cPKCS12Password).equals("")) {
+        if (new String(cPKCS12Password).trim().equals("")) {
             JOptionPane.showMessageDialog(this, "Please enter a password for certificate keystore.",
                 "No Password Entered", JOptionPane.ERROR_MESSAGE);
             return;
