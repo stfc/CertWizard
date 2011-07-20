@@ -108,8 +108,12 @@ public final class PingService {
 
             String pingURL = SysProperty.getValue("uk.ngs.ca.request.pingservice.url");
             Client client = new Client(new Context(), Protocol.HTTPS);
+            
+            client.setConnectTimeout(20000);
+
             Request request = new Request(Method.GET, new Reference(pingURL));
 
+            System.out.println("TIMEOUT SUPPOSED TO BE SET TO: " +client.getConnectTimeout());
             Form form = new Form();
             form.add("LocalHost", ClientHostName.getHostName());
             request.getAttributes().put("org.restlet.http.headers", form);

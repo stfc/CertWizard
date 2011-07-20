@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.logging.Level;
 import org.apache.log4j.Logger;
 import org.bouncycastle.jce.provider.unlimited.PKCS12KeyStoreUnlimited;
+import uk.ngs.ca.certificate.management.KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE;
 import uk.ngs.ca.tools.property.SysProperty;
 
 /**
@@ -82,6 +83,12 @@ public final class ClientKeyStore {
         this.PASSPHRASE = passphrase;
         this.key_KeyStoreFilePath = caDir + File.separator + SysProperty.getValue("ngsca.key.keystore.file");
         this.loadKeyStoreFromFile();
+
+    }
+
+    public void reStorePassword(char[] passphrase) {
+        this.PASSPHRASE = passphrase;
+        this.reStore();
     }
 
 

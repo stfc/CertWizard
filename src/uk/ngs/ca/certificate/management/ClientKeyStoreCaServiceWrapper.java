@@ -61,7 +61,6 @@ public class ClientKeyStoreCaServiceWrapper {
     /** Class is a singleton, so hold internal reference */
     private static ClientKeyStoreCaServiceWrapper instance = null;
 
-
     /**
      * Get a shared singleton <code>KeyStoreWrapper</code> instance
      * @param passphrase for the '$HOME/.ca/cakeystore.pkcs12' keystore file.

@@ -2146,6 +2146,8 @@ public class FPortecle
 
 		// Dialog returned - retrieve the password and return it
 		return dGetNewPassword.getPassword();
+
+
 	}
 
 	/**
@@ -4857,6 +4859,8 @@ public class FPortecle
 			{
 				basename = X509CertUtil.getCertificateAlias((X509Certificate) certs[0]);
 			}
+
+
 			if (basename == null || basename.isEmpty())
 			{
 				basename = sEntryAlias;

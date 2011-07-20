@@ -13,9 +13,11 @@ import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStore.Entry;
 import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -80,6 +82,8 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
     private final CAMotd motd = new CAMotd();
     private char[] PASSPHRASE;
     private ClientKeyStoreCaServiceWrapper keyStoreCaWrapper = null;
+    private String stringMotDOffline = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
+
 
     /** The last directory accessed by the application */
     private final LastDir m_lastDir = new LastDir();
@@ -299,22 +303,92 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
             cal.add(Calendar.MONTH, -1);
 
             this.rDue.setText(cal.getTime().toString());
-
+            this.rDue.setForeground(new RenewalDueColor());
         }
         //((TitledBorder)this.jPanel2.getBorder()).setTitle("Your Certificates and Requests ("+this.jComboBox1.getItemCount()+" entries)");
     }
 
-    public String getLifeDays(Date date) {
+    /**
+     * Method used by updateGUIPanel() method to calculate the number of days
+     * remaining until the selected certificate expires.
+     *
+     * @param date of "Valid To"
+     * @return number of days remaining until certificate expires
+     */
+    private String getLifeDays(Date date) {
+
+        long currentMillis = new Date().getTime();
+        long endMillis = date.getTime();
+        if (endMillis < currentMillis) { //This means it's expired
+            return "Expired";
+        }
+        long diffDays = (endMillis - currentMillis) / (24 * 60 * 60 * 1000);
+        //the live days would include the extra rekey days.
+        return new Long(diffDays).toString();
+
+    }
+
+    /**
+     * Method to allow the user to change the keystore password.
+     *
+     */
+    private void doChangePasswdAction() {
+
+        //ask for the current password first.
+        DGetPassword dGetPassword =
+            new DGetPassword(null, "Enter the current Keystore Password");
+        dGetPassword.setLocationRelativeTo(this);
+        SwingHelper.showAndWait(dGetPassword);
+
+        char[] cPkcs12Password = dGetPassword.getPassword();
+
+        if (cPkcs12Password == null) {
+            return; //user hit cancel button
+        }
+
+        String sPkcs12Password = new String(cPkcs12Password);
+        String sCurrentPassword = new String(this.PASSPHRASE);
+        
+        if (!(sPkcs12Password.equals(sCurrentPassword)))
+        {
+            JOptionPane.showMessageDialog(this, "The current keystore password you've entered is incorrect",
+                    "Wrong Password", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
 
-            long currentMillis = new Date().getTime();
-            long endMillis = date.getTime();
-            if (endMillis < currentMillis) { //This means it's expired
-                return "Expired";
-            }
-            long diffDays = (endMillis - currentMillis) / (24 * 60 * 60 * 1000);
-            //the live days would include the extra rekey days.
-            return new Long(diffDays).toString();
+        // Get a new password for the new keystore password
+        DGetNewPassword dGetNewPassword =
+                new DGetNewPassword(null, RB.getString("FPortecle.SetKeyStorePassword.Title"));
+        dGetNewPassword.setLocationRelativeTo(this);
+        SwingHelper.showAndWait(dGetNewPassword);
+
+        char[] cPKCS12Password = dGetNewPassword.getPassword();
+
+        if (cPKCS12Password == null) {
+            return; //user hit cancel button
+        }
+
+        if (new String(cPKCS12Password).equals("")) {
+            JOptionPane.showMessageDialog(this, "Please enter a password for certificate keystore.",
+                "No Password Entered", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        //set the new keystore password: set in passphrase.property as well as
+        //the variable PASSPHRASE. Finally call the reStorePassword method in
+        //ClientKeyStore to restore the keystore with the new password.
+
+        String _pswdProperty = SysProperty.getValue("uk.ngs.ca.passphrase.property");
+        String _pswd = new String(cPKCS12Password);
+        System.setProperty(_pswdProperty, _pswd);
+        this.PASSPHRASE = cPKCS12Password;
+
+        this.keyStoreCaWrapper.getClientKeyStore().reStorePassword(PASSPHRASE);
+
+        JOptionPane.showMessageDialog(this, "Key Store password has successfully been changed",
+        "Password Change Successful", JOptionPane.INFORMATION_MESSAGE);
+
 
     }
 
@@ -458,8 +532,8 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
         }
         if (!isOnlinePing()) {
             JOptionPane.showMessageDialog(this, "Cannot connect", "Server Connection Fault", JOptionPane.ERROR_MESSAGE);
-            stringMotD = "You are working offline.\n\nThe certificate can not be renewed offline.";
-            setRedMOD(stringMotD);
+//            stringMotD = "You are working offline.\n\nThe certificate can not be renewed offline.";
+            setRedMOD(stringMotDOffline);
             this.btnRefresh.setText("Connect");
             return;
         }
@@ -538,8 +612,8 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
         }
         if (!isOnlinePing()) {
             JOptionPane.showMessageDialog(this, "Cannot connect", "Server Connection Fault", JOptionPane.ERROR_MESSAGE);
-            stringMotD = "You are working offline.\n\nThe certificate can not be revoked offline.";
-            setRedMOD(stringMotD);
+//            stringMotD = "You are working offline.\n\nThe certificate can not be revoked offline.";
+            setRedMOD(stringMotDOffline);
             this.btnRefresh.setText("Connect");
             return;
         }
@@ -579,7 +653,8 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
     private void doNewCertificateAction() {
         if (!this.isOnlinePing()) {
             JOptionPane.showMessageDialog(this, "Cannot connect to the server, \n please check your network connection", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
-            stringMotD = "You are working offline.\n\nYou must be online in order to apply for a new certificate.";
+//            stringMotD = "You are working offline.\n\nYou must be online in order to apply for a new certificate.";
+            setRedMOD(stringMotDOffline);
             return;
         } else {
             Apply2 apply = new Apply2(this, PASSPHRASE);
@@ -1238,6 +1313,7 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
         jScrollPane1 = new javax.swing.JScrollPane();
         TextMOD = new javax.swing.JTextArea();
         jLabel7 = new javax.swing.JLabel();
+        btnChangePasswd = new javax.swing.JButton();
 
         jRadioButton1.setText("jRadioButton1");
 
@@ -1443,6 +1519,14 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
         jPanel4Layout.linkSize(new java.awt.Component[] {dRemaining, rDue, vFrom, vTo}, org.jdesktop.layout.GroupLayout.VERTICAL);
 
         viewCertDetailsButton.setText("< View Details");
+        viewCertDetailsButton.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                viewCertDetailsButtonMouseEntered(evt);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                viewCertDetailsButtonMouseExited(evt);
+            }
+        });
         viewCertDetailsButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 viewCertDetailsButtonActionPerformed(evt);
@@ -1540,6 +1624,14 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
         });
 
         btnChangeAlias.setText("< Change Alias");
+        btnChangeAlias.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnChangeAliasMouseEntered(evt);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnChangeAliasMouseExited(evt);
+            }
+        });
         btnChangeAlias.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnChangeAliasActionPerformed(evt);
@@ -1676,6 +1768,21 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
 
         jLabel7.setIcon(new javax.swing.ImageIcon(getClass().getResource("/uk/ngs/ca/images/stfc-transparent.png"))); // NOI18N
 
+        btnChangePasswd.setText("Change Password");
+        btnChangePasswd.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnChangePasswdMouseEntered(evt);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnChangePasswdMouseExited(evt);
+            }
+        });
+        btnChangePasswd.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnChangePasswdActionPerformed(evt);
+            }
+        });
+
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -1683,17 +1790,24 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
             .add(layout.createSequentialGroup()
                 .addContainerGap()
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(jPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 181, Short.MAX_VALUE)
-                    .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
-                        .add(jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .add(jLabel7, 0, 0, Short.MAX_VALUE)))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(jPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .add(layout.createSequentialGroup()
+                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                            .add(jPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 181, Short.MAX_VALUE)
+                            .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
+                                .add(jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .add(jLabel7, 0, 0, Short.MAX_VALUE)))
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                        .add(jPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
+                        .add(btnChangePasswd)
+                        .addContainerGap())))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(layout.createSequentialGroup()
-                .addContainerGap(34, Short.MAX_VALUE)
+            .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
+                .addContainerGap()
+                .add(btnChangePasswd)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
                     .add(jPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                     .add(layout.createSequentialGroup()
@@ -1759,8 +1873,8 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
         if (SystemStatus.getInstance().getIsOnline()) {
             setMOD(stringMotD);
         } else {
-            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-            setRedMOD(stringMotD);
+//            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
+            setRedMOD(stringMotDOffline);
         }
     }//GEN-LAST:event_btnNewCertificateRequestMouseExited
 
@@ -1812,8 +1926,8 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
         if (SystemStatus.getInstance().getIsOnline()) {
             setMOD(stringMotD);
         } else {
-            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-            setRedMOD(stringMotD);
+//            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
+            setRedMOD(stringMotDOffline);
         }
     }//GEN-LAST:event_btnInstallMouseExited
 
@@ -1822,18 +1936,27 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
         if (SystemStatus.getInstance().getIsOnline()) {
             setMOD(stringMotD);
         } else {
-            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-            setRedMOD(stringMotD);
+//            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
+            setRedMOD(stringMotDOffline);
         }
     }//GEN-LAST:event_btnImportCertificateMouseExited
+
+    private void mouseExitedActionPerformed(java.awt.event.MouseEvent evt) {
+        if (SystemStatus.getInstance().getIsOnline()) {
+            setMOD(stringMotD);
+        } else {
+//            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
+            setRedMOD(stringMotDOffline);
+        }
+    }
 
     private void jComboBox1MouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jComboBox1MouseExited
         // TODO add your handling code here:
         if (SystemStatus.getInstance().getIsOnline()) {
             setMOD(stringMotD);
         } else {
-            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-            setRedMOD(stringMotD);
+//            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
+            setRedMOD(stringMotDOffline);
         }
     }//GEN-LAST:event_jComboBox1MouseExited
 
@@ -1842,8 +1965,8 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
         if (SystemStatus.getInstance().getIsOnline()) {
             setMOD(stringMotD);
         } else {
-            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-            setRedMOD(stringMotD);
+//            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
+            setRedMOD(stringMotDOffline);
         }
     }//GEN-LAST:event_btnRenewMouseExited
 
@@ -1852,8 +1975,8 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
         if (SystemStatus.getInstance().getIsOnline()) {
             setMOD(stringMotD);
         } else {
-            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-            setRedMOD(stringMotD);
+//            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
+            setRedMOD(stringMotDOffline);
         }
     }//GEN-LAST:event_btnExportMouseExited
 
@@ -1862,8 +1985,8 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
         if (SystemStatus.getInstance().getIsOnline()) {
             setMOD(stringMotD);
         } else {
-            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-            setRedMOD(stringMotD);
+//            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
+            setRedMOD(stringMotDOffline);
         }
     }//GEN-LAST:event_btnRevokeMouseExited
 
@@ -1872,8 +1995,8 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
         if (SystemStatus.getInstance().getIsOnline()) {
             setMOD(stringMotD);
         } else {
-            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-            setRedMOD(stringMotD);
+//            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
+            setRedMOD(stringMotDOffline);
         }
     }//GEN-LAST:event_btnDeleteMouseExited
 
@@ -1900,8 +2023,8 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
         if (SystemStatus.getInstance().getIsOnline()) {
             setMOD(stringMotD);
         } else {
-            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-            setRedMOD(stringMotD);
+//            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
+            setRedMOD(stringMotDOffline);
 
         }
     }//GEN-LAST:event_btnRefreshMouseExited
@@ -1931,6 +2054,58 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
     private void subjectDnTextFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_subjectDnTextFieldActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_subjectDnTextFieldActionPerformed
+
+    private void btnChangePasswdActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnChangePasswdActionPerformed
+        // TODO add your handling code here:
+        this.doChangePasswdAction();
+    }//GEN-LAST:event_btnChangePasswdActionPerformed
+
+    private void btnChangePasswdMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnChangePasswdMouseEntered
+        // TODO add your handling code here:
+        setMOD("Change the global password used to protect your certificates in Certificate Wizard");
+
+    }//GEN-LAST:event_btnChangePasswdMouseEntered
+
+    private void btnChangePasswdMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnChangePasswdMouseExited
+        // TODO add your handling code here:
+        if (SystemStatus.getInstance().getIsOnline()) {
+            setMOD(stringMotD);
+        } else {
+//            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
+            setRedMOD(stringMotDOffline);
+        }
+    }//GEN-LAST:event_btnChangePasswdMouseExited
+
+    private void btnChangeAliasMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnChangeAliasMouseExited
+        // TODO add your handling code here:
+        if (SystemStatus.getInstance().getIsOnline()) {
+            setMOD(stringMotD);
+        } else {
+//            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
+            setRedMOD(stringMotDOffline);
+        }
+    }//GEN-LAST:event_btnChangeAliasMouseExited
+
+    private void viewCertDetailsButtonMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_viewCertDetailsButtonMouseExited
+        // TODO add your handling code here:
+        if (SystemStatus.getInstance().getIsOnline()) {
+            setMOD(stringMotD);
+        } else {
+//            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
+            setRedMOD(stringMotDOffline);
+        }
+
+    }//GEN-LAST:event_viewCertDetailsButtonMouseExited
+
+    private void btnChangeAliasMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnChangeAliasMouseEntered
+        // TODO add your handling code here:
+        setMOD("Change the user friendly name of the selected certificate");
+    }//GEN-LAST:event_btnChangeAliasMouseEntered
+
+    private void viewCertDetailsButtonMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_viewCertDetailsButtonMouseEntered
+        // TODO add your handling code here:
+        setMOD("View further details of the selected certificate");
+    }//GEN-LAST:event_viewCertDetailsButtonMouseEntered
 
   
     private void setRedMOD(String text) {
@@ -2662,12 +2837,11 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
 
 
 
-
-
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextArea TextMOD;
     private javax.swing.JTextField aliasTextField;
     private javax.swing.JButton btnChangeAlias;
+    private javax.swing.JButton btnChangePasswd;
     private javax.swing.JButton btnDelete;
     private javax.swing.JButton btnExport;
     private javax.swing.JButton btnImportCertificate;
