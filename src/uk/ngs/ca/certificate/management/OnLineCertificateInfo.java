@@ -176,7 +176,7 @@ public class OnLineCertificateInfo extends Observable {
     }
 
     public OnLineUserCertificateReKey getOnLineUserCertificateReKey() {
-        return new OnLineUserCertificateReKey(PASSPHRASE);
+        return new OnLineUserCertificateReKey(PASSPHRASE,null); //THIS SHOULD NOT BE CALLED AS ONLINECONFIRMATION IS NO LONGER USED!
     }
 
     public ClientKeyStore getClientKeyStore() {

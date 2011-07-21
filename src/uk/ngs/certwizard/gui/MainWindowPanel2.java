@@ -552,39 +552,40 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
             int ok = JOptionPane.showConfirmDialog(this, "Are you sure you want to renew the selected certificate?", "Renew Certificate", JOptionPane.OK_CANCEL_OPTION);
             if (JOptionPane.OK_OPTION == ok) {
 
-//                //let the user alter the alias
-//
-//                // Get an alias for the new keystore entry
-//
-//                String sAlias = selectedKSEW.getAlias();
-//
-//                KeyStore keyStore = this.keyStoreCaWrapper.getClientKeyStore().getKeyStore();
-//                try {
-//                    sAlias = getNewEntryAliasHelper(keyStore, sAlias, "FPortecle.KeyPairEntryAlias.Title", false);
-//
-//                    // Check entry does not already exist in the keystore
-//                    if (keyStore.containsAlias(sAlias)) {
-//
-//                        String sMessage =
-//                            MessageFormat.format(RB.getString("FPortecle.OverWriteEntry.message"), sAlias);
-//
-//                        int iSelected =
-//                            JOptionPane.showConfirmDialog(this, sMessage,
-//                                RB.getString("FPortecle.RenameEntry.Title"), JOptionPane.YES_NO_OPTION);
-//                        if (iSelected != JOptionPane.YES_OPTION)
-//                        {
-//                                return;
-//                        }
-//                    }
-//
-//                } catch (KeyStoreException ex) {
-//                    DThrowable.showAndWait(null, null, ex);
-//                }
+                //let the user alter the alias
+                KeyStore keyStore = this.keyStoreCaWrapper.getClientKeyStore().getKeyStore();
+                String sAlias = selectedKSEW.getAlias();
+
+                try {
+                    sAlias = getNewEntryAliasHelper(keyStore, sAlias, "FPortecle.KeyPairEntryAlias.Title", false);
+
+                    if (sAlias == null) {
+                        WaitDialog.hideDialog(); //user hit cancel
+                        return;
+                    }
+
+                    // Check alias entry does not already exist in the keystore
+                    if (keyStore.containsAlias(sAlias)) {
+
+                        JOptionPane.showMessageDialog(
+                            this,
+                            MessageFormat.format("The keystore already contains an entry with the alias " + sAlias+ "\n"
+                            + "Please enter a unique alias", sAlias),
+                            RB.getString("FPortecle.RenameEntry.Title"), JOptionPane.ERROR_MESSAGE);
+                        WaitDialog.hideDialog();
+                        return;
+
+                    }
+
+                } catch (KeyStoreException ex) {
+                    DThrowable.showAndWait(null, null, ex);
+                }
+
 
                 WaitDialog.showDialog("Renew");
                 String cert_id = selectedKSEW.getServerCertificateCSRInfo().getId();
                 CertificateDownload certDownload = new CertificateDownload(cert_id);
-                OnLineUserCertificateReKey rekey = new OnLineUserCertificateReKey(PASSPHRASE);
+                OnLineUserCertificateReKey rekey = new OnLineUserCertificateReKey(PASSPHRASE,sAlias);
                 rekey.addCertificate(certDownload.getCertificate());
                 boolean isValidRekey = rekey.isValidReKey();
                 boolean submittedOk = rekey.doPosts();
@@ -1113,6 +1114,13 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
             WaitDialog.showDialog("General");
 
             if (sAliasNew == null) {
+                WaitDialog.hideDialog();
+                return;
+            }
+
+            if (sAliasNew.trim().equals("")) {
+                JOptionPane.showMessageDialog(this, "You cannot have empty alias name. Please enter a unique friendly name",
+                    "No Alias Entered", JOptionPane.ERROR_MESSAGE);
                 WaitDialog.hideDialog();
                 return;
             }
@@ -1915,22 +1923,12 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
 
     private void btnInstallMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnInstallMouseExited
         // TODO add your handling code here:
-        if (SystemStatus.getInstance().getIsOnline()) {
-            setMOD(stringMotD);
-        } else {
-//            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-            setRedMOD(stringMotDOffline);
-        }
+        this.mouseExitedActionPerformed(evt);
     }//GEN-LAST:event_btnInstallMouseExited
 
     private void btnImportCertificateMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnImportCertificateMouseExited
         // TODO add your handling code here:
-        if (SystemStatus.getInstance().getIsOnline()) {
-            setMOD(stringMotD);
-        } else {
-//            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-            setRedMOD(stringMotDOffline);
-        }
+        this.mouseExitedActionPerformed(evt);
     }//GEN-LAST:event_btnImportCertificateMouseExited
 
     private void mouseExitedActionPerformed(java.awt.event.MouseEvent evt) {
@@ -1944,52 +1942,27 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
 
     private void jComboBox1MouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jComboBox1MouseExited
         // TODO add your handling code here:
-        if (SystemStatus.getInstance().getIsOnline()) {
-            setMOD(stringMotD);
-        } else {
-//            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-            setRedMOD(stringMotDOffline);
-        }
+        this.mouseExitedActionPerformed(evt);
     }//GEN-LAST:event_jComboBox1MouseExited
 
     private void btnRenewMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnRenewMouseExited
         // TODO add your handling code here:
-        if (SystemStatus.getInstance().getIsOnline()) {
-            setMOD(stringMotD);
-        } else {
-//            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-            setRedMOD(stringMotDOffline);
-        }
+        this.mouseExitedActionPerformed(evt);
     }//GEN-LAST:event_btnRenewMouseExited
 
     private void btnExportMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnExportMouseExited
         // TODO add your handling code here:
-        if (SystemStatus.getInstance().getIsOnline()) {
-            setMOD(stringMotD);
-        } else {
-//            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-            setRedMOD(stringMotDOffline);
-        }
+        this.mouseExitedActionPerformed(evt);
     }//GEN-LAST:event_btnExportMouseExited
 
     private void btnRevokeMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnRevokeMouseExited
         // TODO add your handling code here:
-        if (SystemStatus.getInstance().getIsOnline()) {
-            setMOD(stringMotD);
-        } else {
-//            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-            setRedMOD(stringMotDOffline);
-        }
+        this.mouseExitedActionPerformed(evt);
     }//GEN-LAST:event_btnRevokeMouseExited
 
     private void btnDeleteMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnDeleteMouseExited
         // TODO add your handling code here:
-        if (SystemStatus.getInstance().getIsOnline()) {
-            setMOD(stringMotD);
-        } else {
-//            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-            setRedMOD(stringMotDOffline);
-        }
+        this.mouseExitedActionPerformed(evt);
     }//GEN-LAST:event_btnDeleteMouseExited
 
     private void jComboBox1ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_jComboBox1ItemStateChanged
@@ -2041,13 +2014,7 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
 
     private void btnRefreshMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnRefreshMouseExited
         // TODO add your handling code here:
-        if (SystemStatus.getInstance().getIsOnline()) {
-            setMOD(stringMotD);
-        } else {
-//            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-            setRedMOD(stringMotDOffline);
-
-        }
+        this.mouseExitedActionPerformed(evt);
     }//GEN-LAST:event_btnRefreshMouseExited
 
     private void viewCertDetailsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_viewCertDetailsButtonActionPerformed
@@ -2089,32 +2056,17 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
 
     private void btnChangePasswdMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnChangePasswdMouseExited
         // TODO add your handling code here:
-        if (SystemStatus.getInstance().getIsOnline()) {
-            setMOD(stringMotD);
-        } else {
-//            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-            setRedMOD(stringMotDOffline);
-        }
+        this.mouseExitedActionPerformed(evt);
     }//GEN-LAST:event_btnChangePasswdMouseExited
 
     private void btnChangeAliasMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnChangeAliasMouseExited
         // TODO add your handling code here:
-        if (SystemStatus.getInstance().getIsOnline()) {
-            setMOD(stringMotD);
-        } else {
-//            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-            setRedMOD(stringMotDOffline);
-        }
+        this.mouseExitedActionPerformed(evt);
     }//GEN-LAST:event_btnChangeAliasMouseExited
 
     private void viewCertDetailsButtonMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_viewCertDetailsButtonMouseExited
         // TODO add your handling code here:
-        if (SystemStatus.getInstance().getIsOnline()) {
-            setMOD(stringMotD);
-        } else {
-//            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-            setRedMOD(stringMotDOffline);
-        }
+        this.mouseExitedActionPerformed(evt);
 
     }//GEN-LAST:event_viewCertDetailsButtonMouseExited
 

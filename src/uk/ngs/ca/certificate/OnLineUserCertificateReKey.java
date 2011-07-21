@@ -71,11 +71,12 @@ public class OnLineUserCertificateReKey {
     String DETAILERRORMESSAGE = "";
     private Document DOCUMENT = null;
     private PKCS10CertificationRequest PKCS10REQUEST = null;
-    private String Alias = null;
+    private String alias = null;
 
-    public OnLineUserCertificateReKey(char[] passphrase) {
+    public OnLineUserCertificateReKey(char[] passphrase, String alias) {
         this.clientKeyStore = ClientKeyStore.getClientkeyStore(passphrase);
         this.PASSPHRASE = passphrase;
+        this.alias = alias;
     }
 
     public void addCertificate(X509Certificate certificate) {
@@ -495,7 +496,7 @@ public class OnLineUserCertificateReKey {
     }
 
     public String getAlias(){
-        return this.Alias;
+        return this.alias;
     }
 
     private String getCSR() {
@@ -505,10 +506,10 @@ public class OnLineUserCertificateReKey {
                 String OU = _retrieveDataFromDN(dn, "OU=");
                 String L = _retrieveDataFromDN(dn, "L=");
                 String CN = _retrieveDataFromDN(dn, "CN=");
-                String ali = this.clientKeyStore.createNewKeyPair(null, OU, L, CN);
+                String ali = this.clientKeyStore.createNewKeyPair(alias, OU, L, CN);
                 PublicKey _publicKey = this.clientKeyStore.getPublicKey(ali);
                 PrivateKey _privateKey = this.clientKeyStore.getPrivateKey(ali);
-                this.Alias = ali;
+//                this.alias = ali;
                   this.PKCS10REQUEST = new PKCS10CertificationRequest(this.SIG_ALG, new X500Principal(getDN().toString()), _publicKey, new DERSet(), _privateKey);
             }
             StringWriter writer = new StringWriter();
