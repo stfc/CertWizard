@@ -86,6 +86,10 @@ public final class ClientKeyStore {
 
     }
 
+    /**
+     * Change the keystore password
+     * @param passphrase
+     */
     public void reStorePassword(char[] passphrase) {
         this.PASSPHRASE = passphrase;
         this.reStore();

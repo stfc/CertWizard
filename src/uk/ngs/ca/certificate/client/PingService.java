@@ -109,7 +109,7 @@ public final class PingService {
             String pingURL = SysProperty.getValue("uk.ngs.ca.request.pingservice.url");
             Client client = new Client(new Context(), Protocol.HTTPS);
             
-            client.setConnectTimeout(20000);
+            //client.setConnectTimeout(20000);
 
             Request request = new Request(Method.GET, new Reference(pingURL));
 

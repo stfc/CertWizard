@@ -303,7 +303,12 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
             cal.add(Calendar.MONTH, -1);
 
             this.rDue.setText(cal.getTime().toString());
-            this.rDue.setForeground(new RenewalDueColor());
+
+            Calendar todaysDate = Calendar.getInstance();
+            
+            if (todaysDate.after(cal))
+                this.rDue.setForeground(new RenewalDueColor());
+
         }
         //((TitledBorder)this.jPanel2.getBorder()).setTitle("Your Certificates and Requests ("+this.jComboBox1.getItemCount()+" entries)");
     }
@@ -503,7 +508,7 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
         } else if ("NEW".equals(state)) {
             return "Your certificate request has been submitted and is waiting for approval";
         } else if ("SUSPENDED".equals(state)) {
-            return "";
+            return "Your certificate revocation request has been submitted and is waiting to be processed";
         } else if ("RENEW".equals(state)) {
             return "Your renewal certificate request has been submitted and is waiting for approval";
         } else if ("APPROVED".equals(state)) {
@@ -1112,29 +1117,17 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
                 return;
             }
 
-            // Check new alias differs from the present one
-            if (sAliasNew.equalsIgnoreCase(sAliasOld))
-            {
-                JOptionPane.showMessageDialog(
-                    this,
-                    MessageFormat.format(RB.getString("FPortecle.RenameAliasIdentical.message"), sAliasOld),
-                    RB.getString("FPortecle.RenameEntry.Title"), JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
             // Check entry does not already exist in the keystore
             if (keyStore.containsAlias(sAliasNew)) {
 
-                String sMessage =
-                    MessageFormat.format(RB.getString("FPortecle.OverWriteEntry.message"), sAliasNew);
+                JOptionPane.showMessageDialog(
+                    this,
+                    MessageFormat.format("The keystore already contains an entry with the alias " + sAliasNew+ "\n"
+                    + "Please enter a unique alias", sAliasNew),
+                    RB.getString("FPortecle.RenameEntry.Title"), JOptionPane.ERROR_MESSAGE);
+                WaitDialog.hideDialog();
+                return;
 
-                int iSelected =
-                    JOptionPane.showConfirmDialog(this, sMessage,
-                        RB.getString("FPortecle.RenameEntry.Title"), JOptionPane.YES_NO_OPTION);
-                if (iSelected != JOptionPane.YES_OPTION)
-                {
-                        return;
-                }
             }
 
             // Create the new entry with the new name and copy the old entry across
@@ -1174,6 +1167,8 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
 
         } catch (Exception ex) {
             DThrowable.showAndWait(null, null, ex);
+        } finally {
+            WaitDialog.hideDialog();
         }
 
     }
@@ -1226,24 +1221,21 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
                 return null;
             }
 
-            // Check an entry with the selected does not already exist in the keystore
-            if (!keyStore.containsAlias(sAlias)) {
-                return sAlias;
-            }
-            String sMessage = MessageFormat.format(RB.getString("FPortecle.OverWriteEntry.message"), sAlias);
-
-            int iSelected =
-                    JOptionPane.showConfirmDialog(this, sMessage, "Confirm Alias",
-                    JOptionPane.YES_NO_CANCEL_OPTION);
-            switch (iSelected) {
-                case JOptionPane.YES_OPTION:
-                    return sAlias;
-                case JOptionPane.NO_OPTION:
-                    // keep looping
-                    break;
-                default:
-                    return null;
-            }
+            return sAlias;
+//            String sMessage = MessageFormat.format(RB.getString("FPortecle.OverWriteEntry.message"), sAlias);
+//
+//            int iSelected =
+//                    JOptionPane.showConfirmDialog(this, sMessage, "Confirm Alias",
+//                    JOptionPane.YES_NO_CANCEL_OPTION);
+//            switch (iSelected) {
+//                case JOptionPane.YES_OPTION:
+//                    return sAlias;
+//                case JOptionPane.NO_OPTION:
+//                    // keep looping
+//                    break;
+//                default:
+//                    return null;
+//            }
         }
     }
 
@@ -2005,12 +1997,41 @@ public class MainWindowPanel2 extends javax.swing.JPanel implements Observer {
     }//GEN-LAST:event_jComboBox1ItemStateChanged
 
     private void btnRefreshActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRefreshActionPerformed
-        // TODO add your handling code here:
+
+        //Fetch the alias of the selected certificate in order to select that entry again in the combo box
+        //after refresh completes
+        String alias = null;
+        if (this.jComboBox1.getSelectedIndex() == -1) {
+            JOptionPane.showMessageDialog(this, "There are no certificate in the keystore", "No certificate in the keystore!", JOptionPane.WARNING_MESSAGE);
+            return;
+        } else {
+            KeyStoreEntryWrapper selectedKSEW = (KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem();
+            // Get the entry
+            alias = selectedKSEW.getAlias();
+        }
+
         WaitDialog.showDialog("General");
         assert this.keyStoreCaWrapper.getClientKeyStore().getKeyStore() ==
                 ClientKeyStore.getClientkeyStore(PASSPHRASE).getKeyStore();
         this.reloadKeystoreUpdateGUI();
-        WaitDialog.hideDialog();
+
+        //select the same entry as what the user has previously selected.
+        String retrievedAlias = "";
+        KeyStoreEntryWrapper selectedKSEWComboBox = null;
+        for (int index = 0; index < this.jComboBox1.getItemCount(); index++) {
+            selectedKSEWComboBox = (KeyStoreEntryWrapper) this.jComboBox1.getItemAt(index);
+            // Get the entry
+            retrievedAlias = selectedKSEWComboBox.getAlias();
+
+            //if the retrieved Alias is the same one as user selected, select it.
+            if (retrievedAlias.equals(alias)) {
+                this.jComboBox1.setSelectedIndex(index);
+                WaitDialog.hideDialog();
+                return;
+            }
+        }
+
+        
     }//GEN-LAST:event_btnRefreshActionPerformed
 
     private void btnRefreshMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnRefreshMouseEntered

@@ -50,23 +50,19 @@
                               <EmptySpace type="separate" pref="74" max="32767" attributes="0"/>
                               <Component id="jLabel6" min="-2" max="-2" attributes="0"/>
                           </Group>
-                          <Component id="txtName" pref="267" max="32767" attributes="1"/>
-                          <Component id="txtEmail" pref="267" max="32767" attributes="1"/>
-                          <Component id="cmbSelectRA" alignment="0" pref="267" max="32767" attributes="1"/>
+                          <Component id="txtName" pref="285" max="32767" attributes="1"/>
+                          <Component id="txtEmail" pref="285" max="32767" attributes="1"/>
+                          <Component id="cmbSelectRA" alignment="0" pref="285" max="32767" attributes="1"/>
                       </Group>
-                      <EmptySpace max="-2" attributes="0"/>
                   </Group>
                   <Group type="102" alignment="1" attributes="0">
                       <Component id="btnApply" min="-2" max="-2" attributes="0"/>
                       <EmptySpace max="-2" attributes="0"/>
                       <Component id="btnCancel" min="-2" max="-2" attributes="0"/>
-                      <EmptySpace max="-2" attributes="0"/>
                   </Group>
-                  <Group type="102" alignment="1" attributes="0">
-                      <Component id="jScrollPane1" pref="400" max="32767" attributes="0"/>
-                      <EmptySpace max="-2" attributes="0"/>
-                  </Group>
+                  <Component id="jScrollPane1" alignment="1" pref="447" max="32767" attributes="0"/>
               </Group>
+              <EmptySpace max="-2" attributes="0"/>
           </Group>
       </Group>
     </DimensionLayout>

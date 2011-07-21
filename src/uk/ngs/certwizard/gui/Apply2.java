@@ -9,7 +9,10 @@ import javax.swing.JOptionPane;
 import java.awt.Color;
 import java.awt.Toolkit;
 import java.net.URL;
+import java.security.KeyStoreException;
 import java.util.Observer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
@@ -410,6 +413,13 @@ public class Apply2 extends javax.swing.JDialog {
                         messageTitle = "Request UnSuccessful";
                         this.onlineCSRCompletedOK = false;
                         System.out.println(onLineCertRequest.getMessage());
+                        //need to clear up the CSR Request created!
+                       try {
+                            ClientKeyStore.getClientkeyStore(passphrase).getKeyStore().deleteEntry(this.aliasTextField.getText());
+                        } catch (KeyStoreException ex) {
+                            Logger.getLogger(MainWindowPanel2.class.getName()).log(Level.SEVERE, null, ex);
+                            JOptionPane.showMessageDialog(this, "Unable to delete KeyStore entry. Please contact helpdesk and quote this message! " + ex.getMessage(), "Unable to clear up request", JOptionPane.ERROR_MESSAGE);
+                        }
                         JOptionPane.showMessageDialog(this, onLineCertRequest.getMessage(), messageTitle, JOptionPane.INFORMATION_MESSAGE);
                     }
                 }
