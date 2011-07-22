@@ -9,55 +9,49 @@ import javax.swing.JOptionPane;
 import java.awt.Color;
 import java.awt.Toolkit;
 import java.net.URL;
+import java.security.KeyStoreException;
+import java.util.Observer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
 import uk.ngs.ca.info.CAInfo;
-import uk.ngs.ca.common.SystemStatus;
-import uk.ngs.ca.certificate.OffLineUserCertificateRequest;
 import uk.ngs.ca.certificate.OnLineUserCertificateRequest;
 import uk.ngs.ca.common.MyPattern;
-import uk.ngs.ca.certificate.client.PingService;
+import uk.ngs.ca.common.ClientKeyStore;
 //import uk.ngs.ca.certificate.client.PingService;
 
 /**
  *
  * @author kjm22495
- * @deprecated will use Apply2 instead 
  */
-public class Apply extends javax.swing.JFrame {
+public class Apply extends javax.swing.JDialog {
 
-    String mainInfo = "Please enter all the information";
-    String readyInfo = "Your input is ready, please click Apply button to request certificate or click Cancel button to cancel";
-    //private char[] PASSPHRASE;
-    private OffLineUserCertificateRequest offLineCertRequest = null;
+    private final String mainInfo = "Please enter all the information";
+    private final String readyInfo = "Your input is ready, please click Apply button to request certificate or click Cancel button to cancel";
     private OnLineUserCertificateRequest onLineCertRequest = null;
     private String[] RAs;
-    //private MainWindowPanel mainWindowPanel = null;
+
+    private final Pattern emailPattern = Pattern.compile("[-\\.a-zA-Z0-9_]+@[-a-zA-Z0-9\\.]+\\.[a-z]+");
+    private boolean onlineCSRCompletedOK = false;
+    private Observer observer;
+    private char[] passphrase;
 
     /** Creates new form Apply */
-    public Apply( MainWindowPanel mainWindowPanel, char[] passphrase ){
-        //PASSPHRASE = passphrase;
-        //this.mainWindowPanel = mainWindowPanel;
+    public Apply(Observer observer, char[] passphrase) {
+        this.passphrase = passphrase;
         initComponents();
+        this.observer = observer;
 
-        if (SystemStatus.getInstance().getIsOnline()) {
+        onLineCertRequest = new OnLineUserCertificateRequest(passphrase);
+        //onLineCertRequest.addObserver(mainWindowPanel);
+        CAInfo caInfo = new CAInfo();
+        RAs = caInfo.getRAs();
 
-            onLineCertRequest = new OnLineUserCertificateRequest(passphrase);
-            onLineCertRequest.addObserver(mainWindowPanel);
-            CAInfo caInfo = new CAInfo();
-            RAs = caInfo.getRAs();
+        javax.swing.DefaultComboBoxModel m = new javax.swing.DefaultComboBoxModel(RAs);
+        cmbSelectRA.setModel(m);
 
-            javax.swing.DefaultComboBoxModel m = new javax.swing.DefaultComboBoxModel(RAs);
-            cmbSelectRA.setModel(m);
-        } else {
-            offLineCertRequest = new OffLineUserCertificateRequest(passphrase);
-            offLineCertRequest.addObserver(mainWindowPanel);
-            // offline, we can not call CAInfo, we can get the RAs from class
-            RAs = CAInfo.offLineRAs;
-            javax.swing.DefaultComboBoxModel m = new javax.swing.DefaultComboBoxModel(RAs);
-            cmbSelectRA.setModel(m);
-        }
         URL iconURL = Apply.class.getResource("/uk/ngs/ca/images/ngs-icon.png");
         if (iconURL != null) {
             this.setIconImage(Toolkit.getDefaultToolkit().getImage(iconURL));
@@ -65,6 +59,13 @@ public class Apply extends javax.swing.JFrame {
         this.getRootPane().setDefaultButton(btnApply);
         setInformation(mainInfo);
         jLabel6.setVisible(false);
+    }
+
+    /**
+     * @return true if the last online CSR completed ok, otherwise return false.
+     */
+    public boolean getLastCSRCompletedOK(){
+        return this.onlineCSRCompletedOK;
     }
 
     /** This method is called from within the constructor to
@@ -91,6 +92,8 @@ public class Apply extends javax.swing.JFrame {
         jScrollPane1 = new javax.swing.JScrollPane();
         jLabel5 = new javax.swing.JTextArea();
         jLabel7 = new javax.swing.JLabel();
+        jLabel8 = new javax.swing.JLabel();
+        aliasTextField = new javax.swing.JTextField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("Apply for certificate");
@@ -215,6 +218,16 @@ public class Apply extends javax.swing.JFrame {
         jLabel7.setText("Registration Authority");
         jLabel7.setName("jLabel7"); // NOI18N
 
+        jLabel8.setText("Alias (user friendly name)");
+        jLabel8.setName("jLabel8"); // NOI18N
+
+        aliasTextField.setName("aliasTextField"); // NOI18N
+        aliasTextField.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                aliasTextFieldActionPerformed(evt);
+            }
+        });
+
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -222,33 +235,32 @@ public class Apply extends javax.swing.JFrame {
             .add(layout.createSequentialGroup()
                 .addContainerGap()
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
-                        .add(jScrollPane1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 350, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .add(34, 34, 34))
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
-                        .add(btnApply)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(btnCancel)
-                        .addContainerGap())
                     .add(layout.createSequentialGroup()
                         .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                             .add(jLabel3)
                             .add(jLabel4)
                             .add(jLabel7)
                             .add(jLabel1)
-                            .add(jLabel2))
+                            .add(jLabel2)
+                            .add(jLabel8))
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                             .add(layout.createSequentialGroup()
                                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
+                                    .add(org.jdesktop.layout.GroupLayout.LEADING, txtPin, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 104, Short.MAX_VALUE)
                                     .add(org.jdesktop.layout.GroupLayout.LEADING, txtConfirm)
-                                    .add(org.jdesktop.layout.GroupLayout.LEADING, txtPin, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 104, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                                .add(18, 18, 18)
+                                    .add(org.jdesktop.layout.GroupLayout.LEADING, aliasTextField))
+                                .add(18, 74, Short.MAX_VALUE)
                                 .add(jLabel6))
-                            .add(txtName, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 267, Short.MAX_VALUE)
-                            .add(txtEmail, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 267, Short.MAX_VALUE)
-                            .add(cmbSelectRA, 0, 267, Short.MAX_VALUE))
-                        .addContainerGap())))
+                            .add(txtName, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 285, Short.MAX_VALUE)
+                            .add(txtEmail, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 285, Short.MAX_VALUE)
+                            .add(cmbSelectRA, 0, 285, Short.MAX_VALUE)))
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
+                        .add(btnApply)
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                        .add(btnCancel))
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 447, Short.MAX_VALUE))
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -274,13 +286,17 @@ public class Apply extends javax.swing.JFrame {
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(jLabel4)
                     .add(txtConfirm, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .add(35, 35, 35)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                    .add(aliasTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(jLabel8))
+                .add(18, 18, 18)
                 .add(jScrollPane1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(btnCancel)
                     .add(btnApply))
-                .addContainerGap(23, Short.MAX_VALUE))
+                .addContainerGap(14, Short.MAX_VALUE))
         );
 
         pack();
@@ -300,8 +316,8 @@ public class Apply extends javax.swing.JFrame {
     }*/
 
     private void btnApplyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnApplyActionPerformed
-
-        WaitDialog.showDialog("Apply");
+        this.onlineCSRCompletedOK = false;
+        //WaitDialog.showDialog("Apply");
         boolean complete = true;
         String text = "";
         String myCN = "";
@@ -319,6 +335,21 @@ public class Apply extends javax.swing.JFrame {
             text = text + "\n" + pattern.getErrorMessage();
         }
 
+        if(this.aliasTextField.getText().isEmpty()){
+            complete = false;
+            text = text + "\nEnter an alias";
+        }
+
+        // test to see if alias is already present
+        try {
+            if (ClientKeyStore.getClientkeyStore(passphrase).getKeyStore().containsAlias(
+                    this.aliasTextField.getText())) {
+                complete = false;
+                text = text + "\nAlias already exits - please enter another alias";
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
 
         if (this.txtEmail.getText().isEmpty()) {
             complete = false;
@@ -339,7 +370,6 @@ public class Apply extends javax.swing.JFrame {
             jLabel5.setForeground(Color.RED);
             setInformation(text);
         } else {
-            if ( SystemStatus.getInstance().getIsOnline() ) {
                 //The following checks if the CA Database as well as the CA Server is up or not.
 //                if( !isPing() ){
 //                    JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
@@ -352,6 +382,7 @@ public class Apply extends javax.swing.JFrame {
                 onLineCertRequest.setPIN1(new String(this.txtPin.getPassword()));
                 onLineCertRequest.setPIN2(new String(this.txtConfirm.getPassword()));
                 onLineCertRequest.setRA((String) this.cmbSelectRA.getSelectedItem());
+                onLineCertRequest.setAlias(this.aliasTextField.getText());
 
                 String messageTitle;
                 if( ! isValidCN( this.txtName.getText() )){
@@ -364,64 +395,37 @@ public class Apply extends javax.swing.JFrame {
                             + "\nPlease also ensure that it is in the form of name.surname@example.com or similar"
                             + "\nPlease try again.", messageTitle, JOptionPane.INFORMATION_MESSAGE);
                 }else{
-                    boolean isSuccess = onLineCertRequest.doOnLineCSR();
-                    if (isSuccess) {
+                    System.out.println("doing online CSR now");
+                    this.onlineCSRCompletedOK = onLineCertRequest.doOnLineCSR();
+                    if (onlineCSRCompletedOK) {
                         messageTitle = "Request Successful";
                         //notify mainwindow only success.
-                        onLineCertRequest.notifyObserver();
+                        //onLineCertRequest.notifyObserver();
+                        if(this.observer != null){
+                           this.observer.update(null, this);
+                        }
                         JOptionPane.showMessageDialog(this, onLineCertRequest.getMessage(), messageTitle, JOptionPane.INFORMATION_MESSAGE);
                         this.dispose();
                     } else {
                         messageTitle = "Request UnSuccessful";
+                        this.onlineCSRCompletedOK = false;
                         System.out.println(onLineCertRequest.getMessage());
-//                        String theTitle =
-//                        String theMessage =
+                        //need to clear up the CSR Request created!
+                       try {
+                            ClientKeyStore.getClientkeyStore(passphrase).getKeyStore().deleteEntry(this.aliasTextField.getText());
+                        } catch (KeyStoreException ex) {
+                            Logger.getLogger(MainWindowPanel.class.getName()).log(Level.SEVERE, null, ex);
+                            JOptionPane.showMessageDialog(this, "Unable to delete KeyStore entry. Please contact helpdesk and quote this message! " + ex.getMessage(), "Unable to clear up request", JOptionPane.ERROR_MESSAGE);
+                        }
                         JOptionPane.showMessageDialog(this, onLineCertRequest.getMessage(), messageTitle, JOptionPane.INFORMATION_MESSAGE);
                     }
                 }
-
-            } else {
-
-                offLineCertRequest.setEmail(this.txtEmail.getText());
-                offLineCertRequest.setName(this.txtName.getText());
-                offLineCertRequest.setPIN1(new String(this.txtPin.getPassword()));
-                offLineCertRequest.setPIN2(new String(this.txtConfirm.getPassword()));
-                offLineCertRequest.setRA((String) this.cmbSelectRA.getSelectedItem());
-
-                String messageTitle;
-                if( (! isValidCN( this.txtName.getText() ))){
-                    messageTitle = "Input problem";
-                    JOptionPane.showMessageDialog(this, "Your name input should be \"Firstname Lastname\", please try again.", messageTitle, JOptionPane.INFORMATION_MESSAGE);
-                }else if( (! isValidEmail( this.txtEmail.getText()) || this.txtEmail.getText().contains("'") || this.txtEmail.getText().contains(";"))){
-                    messageTitle = "Input problem";
-                    JOptionPane.showMessageDialog(this, "Your email input is not valid. "
-                            + "\nIt should not contain special characters ' and ;"
-                            + "\nPlease also ensure that it is in the form of name.surname@example.com or similar"
-                            + "\nPlease try again.", messageTitle, JOptionPane.INFORMATION_MESSAGE);
-                }else{
-                    boolean isSuccess = offLineCertRequest.doOffLineCSR();
-                    if (isSuccess) {
-                        messageTitle = "OffLine Request Successful";
-                        //to notify mainwindow onlt success
-                        offLineCertRequest.notifyObserver();
-                        JOptionPane.showMessageDialog(this, offLineCertRequest.getMessage(), messageTitle, JOptionPane.INFORMATION_MESSAGE);
-                        this.dispose();
-                    } else {
-                        messageTitle = "OffLine Request UnSuccessful";
-                        JOptionPane.showMessageDialog(this, offLineCertRequest.getMessage(), messageTitle, JOptionPane.INFORMATION_MESSAGE);
-                    }
-                }
-            }
         }
-        WaitDialog.hideDialog();
+        //WaitDialog.hideDialog();
     }//GEN-LAST:event_btnApplyActionPerformed
 
     private boolean isValidEmail(String email) {
-        //Pattern p = Pattern.compile(".+@.+\\.[a-z]+");
-        Pattern p = Pattern.compile("[-\\.a-zA-Z0-9_]+@[-a-zA-Z0-9\\.]+\\.[a-z]+");
-        //Pattern p = Pattern.compile("[a-zA-Z0-9_]+@[-a-zA-Z0-9\\.]+\\.[a-z]+");
-        //Match the given string with the pattern
-        Matcher m = p.matcher(email);
+        Matcher m = this.emailPattern.matcher(email);
         return m.matches();
     }
 
@@ -554,7 +558,13 @@ public class Apply extends javax.swing.JFrame {
     private void txtPinActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtPinActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_txtPinActionPerformed
+
+    private void aliasTextFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_aliasTextFieldActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_aliasTextFieldActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JTextField aliasTextField;
     private javax.swing.JButton btnApply;
     private javax.swing.JButton btnCancel;
     private javax.swing.JComboBox cmbSelectRA;
@@ -565,6 +575,7 @@ public class Apply extends javax.swing.JFrame {
     private javax.swing.JTextArea jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
+    private javax.swing.JLabel jLabel8;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JPasswordField txtConfirm;
     private javax.swing.JTextField txtEmail;

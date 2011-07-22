@@ -17,11 +17,9 @@ import java.io.IOException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.util.Arrays;
 import java.util.logging.Level;
 import org.apache.log4j.Logger;
 import org.bouncycastle.jce.provider.unlimited.PKCS12KeyStoreUnlimited;
-import uk.ngs.ca.certificate.management.KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE;
 import uk.ngs.ca.tools.property.SysProperty;
 
 /**

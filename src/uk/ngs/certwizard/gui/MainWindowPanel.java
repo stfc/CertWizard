@@ -1,270 +1,1239 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/*
- * MainWindowPanel.java
- *
- * Created on 20-Jul-2010, 17:41:14
- */
 package uk.ngs.certwizard.gui;
 
 import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Toolkit;
+import java.awt.Component;
 import java.io.File;
-//import java.util.ArrayList;
-import javax.swing.*;
-import javax.swing.border.TitledBorder;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.cert.X509Certificate;
-
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.security.Key;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.PrivateKey;
+import java.security.SecureRandom;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.*;
 
-import java.util.Observer;
+import java.util.Iterator;
 import java.util.Observable;
-//import java.util.Timer;
-
+import java.util.Observer;
+import java.util.ResourceBundle;
+import net.sf.portecle.DExport;
+import net.sf.portecle.DGetAlias;
+import net.sf.portecle.DImportKeyPair;
+import net.sf.portecle.DViewCertificate;
+import net.sf.portecle.FPortecle;
+import net.sf.portecle.FileChooserFactory;
+import net.sf.portecle.KeyStoreWrapper;
+import net.sf.portecle.crypto.CryptoException;
+import net.sf.portecle.crypto.KeyStoreType;
+import net.sf.portecle.crypto.KeyStoreUtil;
+import net.sf.portecle.crypto.X509CertUtil;
+import net.sf.portecle.gui.LastDir;
+import net.sf.portecle.gui.SwingHelper;
+import net.sf.portecle.gui.error.DThrowable;
+import net.sf.portecle.gui.password.DGetNewPassword;
+import net.sf.portecle.gui.password.DGetPassword;
+import org.bouncycastle.openssl.PEMReader;
+import org.bouncycastle.openssl.PEMWriter;
+import org.bouncycastle.openssl.PasswordFinder;
+import org.bouncycastle.util.encoders.Base64;
 import org.globus.common.CoGProperties;
-import org.globus.util.PEMUtils;
-import org.globus.util.Base64;
-import org.globus.util.Util;
-
 import org.globus.gsi.bc.BouncyCastleOpenSSLKey;
+import org.globus.util.PEMUtils;
+import org.globus.util.Util;
+import uk.ngs.ca.certificate.OnLineUserCertificateReKey;
 
 import uk.ngs.ca.common.SystemStatus;
-import uk.ngs.ca.certificate.management.OffLineCertificateInfo;
-import uk.ngs.ca.certificate.management.OnLineCertificateInfo;
-import uk.ngs.ca.common.ClientKeyStore;
 import uk.ngs.ca.certificate.client.CAMotd;
 import uk.ngs.ca.certificate.client.CertificateDownload;
 import uk.ngs.ca.certificate.client.PingService;
-import uk.ngs.ca.certificate.management.CertificateCSRInfo;
-import uk.ngs.ca.common.EncryptUtil;
+import uk.ngs.ca.certificate.client.RevokeRequest;
+import uk.ngs.ca.certificate.management.KeyStoreEntryWrapper;
+import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
+import uk.ngs.ca.common.ClientKeyStore;
 import uk.ngs.ca.tools.property.SysProperty;
 
 /**
+ * GUI for displaying the keyStore entries in the user's '$HOME/.ca/cakeystore.pkcs12' file.
+ * This class also provides functions for importing, exporting, deleting 
+ * requesting, requesting, renewing certificates.
  *
- * @author xw75
+ * @author David Meredith
  */
 public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
+    private ImageIcon[] images;
     private String stringMotD = "Message of the Day: \n\n\nWelcome to the new Certificate Wizard!";
-    //private ArrayList<Certificate> array;
+    private final CAMotd motd = new CAMotd();
     private char[] PASSPHRASE;
-    private OnLineCertificateInfo onLineCertInfo;
+    private ClientKeyStoreCaServiceWrapper keyStoreCaWrapper = null;
+    private String stringMotDOffline = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
 
-    private OffLineCertificateInfo offLineCertInfo;
-    private CertificateCSRInfo[] certificateCSRInfos = null;
 
-    //private CertWizardMain _certWizardMain = null;
-    private CAMotd motd;
+    /** The last directory accessed by the application */
+    private final LastDir m_lastDir = new LastDir();
+
+    /** Portecle Resource bundle base name */
+    private static final String RB_BASENAME = FPortecle.class.getPackage().getName() + "/resources";
+
+    /** Portecle Resource bundle */
+    public static final ResourceBundle RB = ResourceBundle.getBundle(RB_BASENAME);
 
 
     /** Creates new form MainWindowPanel */
     public MainWindowPanel(char[] passphrase, CertWizardMain _certWizardMain) {
+        this.PASSPHRASE = passphrase;
         String _passphrase = new String(passphrase);
-
+        WaitDialog.showDialog("Refresh");
         String _property = SysProperty.getValue("uk.ngs.ca.immegration.password.property");
         System.setProperty(_property, _passphrase);
-        PASSPHRASE = passphrase;
-
-        //this._certWizardMain = _certWizardMain;
-
+        
         initComponents();
+        loadImages();
+
+        try {
+            this.keyStoreCaWrapper = ClientKeyStoreCaServiceWrapper.getInstance(passphrase);
+        } catch (KeyStoreException ex) {
+            Logger.getLogger(MainWindowPanel.class.getName()).log(Level.SEVERE, null, ex);
+            // TODO still need to sort out exceptions and show an error dialog here with the problem
+        }
+
+
+        // do some assertions to check object references are equal. 
+        assert (ClientKeyStore.getClientkeyStore(this.PASSPHRASE).getKeyStore()
+                == this.keyStoreCaWrapper.getClientKeyStore().getKeyStore());
+
+
+        this.jComboBox1.setRenderer(new ComboBoxRenderer());
+        this.reloadKeystoreUpdateGUI();
 
         if (SystemStatus.getInstance().getIsOnline()) {
-            WaitDialog.showDialog("Refresh");
-            //setup timer for 10 minutes --ADDED REFRESH BUTTON INSTEAD
-//            long timeinmin = 1000*60*1;
-//            Timer timer = new Timer();
-//            RefreshOnLine refreshOnline = new RefreshOnLine(this) ;
-//            timer.schedule(refreshOnline, timeinmin, timeinmin);
-
-             
-            offLineInit();
-            onLineInit();
-            
-            motd = new CAMotd();
             stringMotD = motd.getText();
             setMOD(stringMotD);
-
             String certWizardVersion = SysProperty.getValue("ngsca.certwizard.versionNumber");
-//            Float certWizardVersionFloat = new Float(certWizardVersion);
-//            float certWizardVersionInt = Integer.parseInt(certWizardVersion);
-
             //Now fetch the latest version from the server. Required info is in DBCAInfo, ultimately
             //handled by the CAResource class.
             String latestVersion = motd.getLatestVersion();
-
-//            Float latestVersionFloat = new Float(latestVersion);
-
-            WaitDialog.hideDialog();
             if (!(certWizardVersion.equals(latestVersion))) {
                 JOptionPane.showMessageDialog(this, "A new version of the Certificate Wizard is available!\n"
                         + "Please go to www.ngs.ac.uk in order to obtain the latest version",
                         "New Version of Certificate Wizard", JOptionPane.INFORMATION_MESSAGE);
             }
-//            System.out.println("THE CERTIFICATE VERSION IS: "+ certWizardVersionFloat);
-//            System.out.println("THE LATEST VERSION IS: "+ latestVersion);
-
-
-        } else {
-            offLineInit();
-            motd = new CAMotd();
-            WaitDialog.hideDialog();
-            stringMotD = "You are working offline.\n\nPlease note that working offline only displays valid certificates. Please click Refresh if you want to access all pending certificates.";
-            //setRedMOD( MotD );
-            setRedMOD(stringMotD);
-            this.btnRefresh.setText("Connect");
         }
+        WaitDialog.hideDialog();
 
-        fillComboBox();
-        this.jPanel5.setVisible(false);
-
-    }
-
-    /*private void setupObservable(){
-        if (jComboBox1.getItemCount() != 0){
-            int index = jComboBox1.getSelectedIndex();
-                                
-            CertWizardObservable _observable = new CertWizardObservable();        
-            _observable.addObserver(this._certWizardMain);        
-            _observable.change(this.certificateCSRInfos[ index ]);
-        }
-        
-    }*/
-
-
-    private void onLineInit() {
-        if( !isOnlinePing() ){
-        //if( !SystemStatus.ISONLINE.get() ){
-            JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, "
-                    + "\nif you believe your computer is connected to the Internet, please report "
-                    + "\nto helpdesk", "Server Connection Fault",
-                    JOptionPane.INFORMATION_MESSAGE);
-            //WaitDialog.hideDialog();
-            //return;
-        } else {
-            onLineCertInfo = new OnLineCertificateInfo(PASSPHRASE);
-            this.certificateCSRInfos = onLineCertInfo.getCertCSRInfos();
-            this.btnNewCertificateRequest.setEnabled(true);
-            if ((this.certificateCSRInfos == null) || (this.certificateCSRInfos.length == 0)) {
-                this.btnExport.setEnabled(false);
-                this.btnRevoke.setEnabled(false);
-                this.btnRenew.setEnabled(false);
-                this.btnDelete.setEnabled(false);
-                this.btnInstall.setEnabled(false);
-            }
-            //this.setMOD("");
-
+        // if we have not certs, present a useful message
+        if(this.keyStoreCaWrapper.getKeyStoreEntryMap().isEmpty()){
+            JOptionPane.showMessageDialog(this, "You appear to have no certificates. Please either\n"
+                    + "a) Apply for a certificate with the 'Apply' button or\n"
+                    + "b) Import a certificate/key pair from file (this file can be exported from your web browser)");
         }
     }
 
-    private void offLineInit() {
-        offLineCertInfo = new OffLineCertificateInfo(PASSPHRASE);
-        this.btnNewCertificateRequest.setEnabled(false); //TEMPORARY ADDITION
-        //this.btnRefresh.setEnabled(false);
-        
-        if ((offLineCertInfo.getAllDNs() == null) || (offLineCertInfo.getAllDNs().length == 0)) {
-            this.btnExport.setEnabled(false);
-            this.btnRevoke.setEnabled(false);
-            this.btnRenew.setEnabled(false);
-            this.btnDelete.setEnabled(false);
-            this.btnInstall.setEnabled(false);    
-        }
-    }
+
 
     /**
-     * Attempt to connect online and update the GUI accordingly.
-     */
-    public void refreshOnLine(){
-        jComboBox1.removeAllItems();
-        if( !isOnlinePing() ){  // not online
-        //if( !SystemStatus.ISONLINE.get() ){ // not online
-            JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, "
-                    + "\nplease report to helpdesk or work under offline by restarting "
-                    + "CertWizard and select offline.", "Server Connection Fault",
-                    JOptionPane.INFORMATION_MESSAGE);
-            //WaitDialog.hideDialog();
-            //return;
-            //do an offline init if the online refresh fails
-
-            offLineInit();
-            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-            setRedMOD(stringMotD);
-            this.btnRefresh.setText("Connect");
-        } else {
-            onLineInit();
-            stringMotD = motd.getText();
-            setMOD(stringMotD);
-            this.btnRefresh.setText("Refresh");
-        }
-         fillComboBox();
-    }
-
-    /**
-     *
+     * The keystore is reloaded and the GUI is updated when invoked by another
+     * (e.g. observable) class.
+     * @param   o     the observable object.
+     * @param   arg   an argument passed to the <code>notifyObservers</code> method.
      */
     public void update(Observable observable, Object obj) {
+        this.reloadKeystoreUpdateGUI();
+    }
 
-        if ( SystemStatus.getInstance().getIsOnline() ) {
-            //keystore and certificateCSRInfo need to be refreshed in OnLineCertificayeInfo.
-            this.onLineCertInfo.refresh();
+    /** Load the images used in the GUI */
+    private void loadImages() {
+        //Load the pet images and create an array of indexes.
+        images = new ImageIcon[3];
+        images[0] = createImageIcon("/uk/ngs/ca/images/certificate_node.gif");
+        images[0].setDescription("Trusted certificate");
+        images[1] = createImageIcon("/uk/ngs/ca/images/key_node.gif");
+        images[1].setDescription("Key");
+        images[2] = createImageIcon("/uk/ngs/ca/images/keypair_node.gif");
+        images[2].setDescription("Key Pair (public and private keys)");
+    }
 
-            if( observable.getClass().getSimpleName().equals("OnLineUserCertificateRequest")
-                    || observable.getClass().getSimpleName().equals("ImportCertificate") ){
-                String alias = (String)obj;
-                ClientKeyStore clientKeyStore = ClientKeyStore.getClientkeyStore( this.PASSPHRASE );
-                PublicKey _publicKey = clientKeyStore.getPublicKey(alias);
-                CertificateCSRInfo _certCSRInfo = new CertificateCSRInfo( _publicKey );
+    /** Returns an ImageIcon, or null if the path was invalid. */
+    private ImageIcon createImageIcon(String path) {
+        java.net.URL imgURL = MainWindowPanel.class.getResource(path);
+        if (imgURL != null) {
+            return new ImageIcon(imgURL);
+        } else {
+            System.err.println("Couldn't find file: " + path);
+            return null;
+        }
+    }
 
-                this.onLineCertInfo.addCertificateCSRInfo(_certCSRInfo);
-                this.certificateCSRInfos = this.onLineCertInfo.getCertCSRInfos();
+    /**
+     * Reload the keyStore and update the GUI accordingly. Called when:
+     * <ol>
+     *  <li>refresh button</li>
+     *  <li>apply for cert (via Observer update function - TODO refactor to do it explicitly like renew/revoke)</li>
+     *  <li>renew cert</li>
+     *  <li>revoke cert</li>
+     *  <li>importing new cert/key pair from file</li>
+     * </ol>
+     */
+    private void reloadKeystoreUpdateGUI() {
+        try {
+            this.keyStoreCaWrapper.loadKeyStoreWithOnlineUpdate();
+        } catch (KeyStoreException ex) {
+            Logger.getLogger(MainWindowPanel.class.getName()).log(Level.SEVERE, null, ex);
+            JOptionPane.showMessageDialog(this, "Unable to load KeyStore: " + ex.getMessage(), "Unable to load KeyStore", JOptionPane.ERROR_MESSAGE);
+        }
+        this.updateGUI();
+    }
 
-            }else if( observable.getClass().getSimpleName().equals("OnLineCertificateInfo") ){
-                // Spaghetti code r us ! (See OnLineConfirmation.java)
-                String _message = (String)obj;
-                int _index = _message.indexOf("Renew:");
-                if( _index != -1 ){
-                    String _alias = _message.substring( 6 );
-                    ClientKeyStore clientKeyStore = ClientKeyStore.getClientkeyStore( this.PASSPHRASE );
-                    PublicKey _publicKey = clientKeyStore.getPublicKey(_alias);
-                    CertificateCSRInfo _certCSRInfo = new CertificateCSRInfo( _publicKey );
-                    this.onLineCertInfo.addCertificateCSRInfo(_certCSRInfo);
-                    this.certificateCSRInfos = this.onLineCertInfo.getCertCSRInfos();
-                }
-                _index = _message.indexOf("Revoke:");
-                if( _index != -1 ){                    
-                    String _publickey = _message.substring( 7 );
-                    for( int i = 0; i < this.certificateCSRInfos.length; i++ ){
-                        String _encodedpublickey = this.certificateCSRInfos[ i ].getPublickey();
-                        if( _publickey.equals(_encodedpublickey) ){
-                            System.out.println("update observerable");
-                            this.certificateCSRInfos[ i ].update(this.PASSPHRASE);
-                        }
-                    }
-                }
-                _index = _message.indexOf("Remove:");
-                if( _index != -1 ){
-                    String _sizeString = _message.substring( 7 );
-                    int _size = new Integer( _sizeString ).intValue();
-                    this.onLineCertInfo.deleteCertificateCSRInfo(_size);
-                    this.certificateCSRInfos = this.onLineCertInfo.getCertCSRInfos();
-                }
-            }else{
-//                onLineInit();
+    /**
+     * Update the entire main panel GUI (including combo and other GUI components)
+     * according to the current state of <code>this.keyStoreCaWrapper<code>
+     * (note, no reload of keystore !)
+     */
+    private void updateGUI() {
+        this.updateCombo();
+        this.updateGUIPanel();
+    }
+
+    /**
+     * Update combo based on current state of <code>this.keyStoreCaWrapper<code>
+     * (note, no reload of keystore !)
+     */
+    private void updateCombo() {
+        jComboBox1.removeAllItems();
+        Collection<KeyStoreEntryWrapper> keyStoreEntries = this.keyStoreCaWrapper.getKeyStoreEntryMap().values();
+        for (Iterator<KeyStoreEntryWrapper> it = keyStoreEntries.iterator(); it.hasNext();) {
+            this.jComboBox1.addItem(it.next());
+        }
+        if(this.jComboBox1.getItemCount() > 0){
+          this.jComboBox1.setSelectedIndex(0);
+        } else {
+            this.jComboBox1.setSelectedItem(null); 
+        }
+    }
+
+    /**
+     * Update other GUI components based on current state of <code>this.keyStoreCaWrapper<code>
+     * (note, no reload of keystore !)
+     */
+    private void updateGUIPanel() {
+        // nullify/clear the gui components first
+
+        Date vToDate  = null;
+
+        this.vFrom.setText("");
+        this.vTo.setText("");
+        this.subjectDnTextField.setText("");
+        this.issuerDnTextField.setText("");
+        this.caCertStatusTextField.setText("Unknown (offline or not issued by UK CA)");
+        // set to default color first
+        this.caCertStatusTextField.setForeground(this.getColorFromState(null));
+        this.aliasTextField.setText("");
+        this.certificateTypeLabel.setText("");
+        this.certificateTypeLabel.setIconTextGap(10);
+        this.certificateTypeLabel.setIcon(null);
+
+        // now udpate 
+        KeyStoreEntryWrapper selectedKeyStoreEntry = (KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem();
+        // could be null if we have an empty keystore !
+        if (this.jComboBox1.getSelectedIndex() != -1 && selectedKeyStoreEntry != null) {
+            this.subjectDnTextField.setText(selectedKeyStoreEntry.getX500PrincipalName());
+            this.issuerDnTextField.setText(selectedKeyStoreEntry.getIssuerName());
+            this.aliasTextField.setText(selectedKeyStoreEntry.getAlias());
+
+            if(KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_ENTRY.equals(selectedKeyStoreEntry.getEntryType())){
+                this.certificateTypeLabel.setText("Key");
+                this.certificateTypeLabel.setIcon(this.images[1]);
+            } else if(KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY.equals(selectedKeyStoreEntry.getEntryType())){
+                this.certificateTypeLabel.setText("Certificate + Private Key");
+                this.certificateTypeLabel.setIcon(this.images[2]);
+            } else if(KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.TRUST_CERT_ENTRY.equals(selectedKeyStoreEntry.getEntryType())){
+                this.certificateTypeLabel.setText("Trusted Third Party Certificate");
+                this.certificateTypeLabel.setIcon(this.images[0]);
             }
 
-        } else {
-            offLineInit();
+
+            if (selectedKeyStoreEntry.getNotBefore() != null) {
+                this.vFrom.setText(selectedKeyStoreEntry.getNotBefore().toString());
+            } else {
+                this.vFrom.setText("N/A");
+            }
+
+            if (selectedKeyStoreEntry.getNotAfter() != null) {
+                this.vTo.setText(selectedKeyStoreEntry.getNotAfter().toString());
+            } else {
+                this.vTo.setText("N/A");
+            }
+            
+            // If the CertificateCSRInfo member object of the selected
+            // keyStoreEntryWrapper is null, then we did not retrieve
+            // the CA server info for this cert (maybe offline or an unrecognized
+            // certificate not issued by our CA).
+            if (selectedKeyStoreEntry.getServerCertificateCSRInfo() != null) {
+                String state = selectedKeyStoreEntry.getServerCertificateCSRInfo().getStatus();
+                //labelText += selectedKeyStoreEntry.getServerCertificateCSRInfo().getOwner();
+                this.caCertStatusTextField.setText(state + " " + this.getExtraLabelTextFromState(state));
+                this.caCertStatusTextField.setForeground(this.getColorFromState(state));
+            }
+
+          //Remaining time
+
+            vToDate= selectedKeyStoreEntry.getNotAfter();
+            this.dRemaining.setText(getLifeDays(vToDate));
+
+            //Renewal Due
+
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(vToDate);
+            cal.add(Calendar.MONTH, -1);
+
+            this.rDue.setText(cal.getTime().toString());
+
+            Calendar todaysDate = Calendar.getInstance();
+            
+            if (todaysDate.after(cal))
+                this.rDue.setForeground(new RenewalDueColor());
+
         }
-        jComboBox1.removeAllItems();
-        fillComboBox();
+        //((TitledBorder)this.jPanel2.getBorder()).setTitle("Your Certificates and Requests ("+this.jComboBox1.getItemCount()+" entries)");
+    }
+
+    /**
+     * Method used by updateGUIPanel() method to calculate the number of days
+     * remaining until the selected certificate expires.
+     *
+     * @param date of "Valid To"
+     * @return number of days remaining until certificate expires
+     */
+    private String getLifeDays(Date date) {
+
+        long currentMillis = new Date().getTime();
+        long endMillis = date.getTime();
+        if (endMillis < currentMillis) { //This means it's expired
+            return "Expired";
+        }
+        long diffDays = (endMillis - currentMillis) / (24 * 60 * 60 * 1000);
+        //the live days would include the extra rekey days.
+        return new Long(diffDays).toString();
 
     }
+
+    /**
+     * Method to allow the user to change the keystore password.
+     *
+     */
+    private void doChangePasswdAction() {
+
+        //ask for the current password first.
+        DGetPassword dGetPassword =
+            new DGetPassword(null, "Enter the current Keystore Password");
+        dGetPassword.setLocationRelativeTo(this);
+        SwingHelper.showAndWait(dGetPassword);
+
+        char[] cPkcs12Password = dGetPassword.getPassword();
+
+        if (cPkcs12Password == null) {
+            return; //user hit cancel button
+        }
+
+        String sPkcs12Password = new String(cPkcs12Password);
+        String sCurrentPassword = new String(this.PASSPHRASE);
+        
+        if (!(sPkcs12Password.equals(sCurrentPassword)))
+        {
+            JOptionPane.showMessageDialog(this, "The current keystore password you've entered is incorrect",
+                    "Wrong Password", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+
+        // Get a new password for the new keystore password
+        DGetNewPassword dGetNewPassword =
+                new DGetNewPassword(null, RB.getString("FPortecle.SetKeyStorePassword.Title"));
+        dGetNewPassword.setLocationRelativeTo(this);
+        SwingHelper.showAndWait(dGetNewPassword);
+
+        char[] cPKCS12Password = dGetNewPassword.getPassword();
+
+        if (cPKCS12Password == null) {
+            return; //user hit cancel button
+        }
+
+        if (new String(cPKCS12Password).trim().equals("")) {
+            JOptionPane.showMessageDialog(this, "Please enter a password for certificate keystore.",
+                "No Password Entered", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        //set the new keystore password: set in passphrase.property as well as
+        //the variable PASSPHRASE. Finally call the reStorePassword method in
+        //ClientKeyStore to restore the keystore with the new password.
+
+        String _pswdProperty = SysProperty.getValue("uk.ngs.ca.passphrase.property");
+        String _pswd = new String(cPKCS12Password);
+        System.setProperty(_pswdProperty, _pswd);
+        this.PASSPHRASE = cPKCS12Password;
+
+        this.keyStoreCaWrapper.getClientKeyStore().reStorePassword(PASSPHRASE);
+
+        JOptionPane.showMessageDialog(this, "Key Store password has successfully been changed",
+        "Password Change Successful", JOptionPane.INFORMATION_MESSAGE);
+
+
+    }
+
+    /**
+     * Renderer class for KeyStoreEntryWrapper objects for the combo box.
+     */
+    class ComboBoxRenderer extends JLabel implements ListCellRenderer {
+
+        public ComboBoxRenderer() {
+            setOpaque(true);
+            //setHorizontalAlignment(CENTER);
+            //setVerticalAlignment(CENTER);
+        }
+
+        public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+            //Get the selected index. (The index param isn't always valid, so just use the value.)
+            //int selectedIndex = ((Integer)value).intValue();
+
+            if (isSelected) {
+                setBackground(list.getSelectionBackground());
+                setForeground(list.getSelectionForeground());
+            } else {
+                setBackground(list.getBackground());
+                setForeground(list.getForeground());
+            }
+                        
+            // Can assume that we are dealing with KeyStoreEntryWrapper objects.
+            KeyStoreEntryWrapper keyStoreEntry = (KeyStoreEntryWrapper) value;
+            // can be null if the keyStore is empty ! 
+            if (keyStoreEntry != null) {
+                String displayText = "[" + keyStoreEntry.getAlias() + "]  [" + keyStoreEntry.getX500PrincipalName() + "]";
+                this.setText(displayText);
+
+                // want to display the modified date too
+                //keyStoreEntry.getCreationDate();
+
+                // Display an approprate icon dependng on keystore entry type
+                if (KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_ENTRY.equals(keyStoreEntry.getEntryType())) {
+                    this.setIcon(images[1]);
+                } else if (KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.TRUST_CERT_ENTRY.equals(keyStoreEntry.getEntryType())) {
+                    this.setIcon(images[0]);
+                } else if (KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY.equals(keyStoreEntry.getEntryType())) {
+                    this.setIcon(images[2]);
+                } else {
+                    // could set an unknown default
+                }
+
+                // Set the server status colour (if known). This info will only
+                // be fetched if the info could be retrieved from the CA server.
+                if (keyStoreEntry.getServerCertificateCSRInfo() != null) {
+                    String state = keyStoreEntry.getServerCertificateCSRInfo().getStatus();
+                    this.setForeground(getColorFromState(state));
+                } else {
+                    this.setForeground(Color.DARK_GRAY);
+                }
+            } else {
+                this.setText("No Key Store Entries");
+                this.setIcon(null);
+            }
+            return this;
+        }
+    }
+
+    /**
+     * Return the appropriate display colour according to the given
+     * state string. If state is null or not recognised,
+     * then return <code>Color.DARK_GRAY</code> as default.
+     */
+    private Color getColorFromState(String state) {
+        if ("VALID".equals(state)) {
+            return new ValidCertColor();
+            // TODO also need to pass two dates to this method so that the
+            // ExpiredCertColor and ExpiredForeverCertColor can be returned.
+            // Passing null for these dates will be perfectly valid. 
+        } else if ("REVOKED".equals(state)) {
+            return new RevokedCertColor();
+        } else if ("NEW".equals(state)) {
+            // Your certificate request has been submitted and is waiting for approval.
+            return new PendingColor();
+        } else if ("SUSPENDED".equals(state)) {
+            return new SuspendCertColor();
+        } else if ("RENEW".equals(state)) {
+            // Your renewal certificate request has been submitted and is waiting for approval.
+            return new RenewalDueColor();
+        } else if ("APPROVED".equals(state)) {
+            // Your certificate has been approved by your RA and is waiting for CA signing.
+            return new SuspendCertColor();
+        } else if ("ARCHIVED".equals(state)) {
+            return new ValidCertColor();
+        } else if ("DELETED".equals(state)) {
+            return new RevokedCertColor();
+        } else if ("Expired".equals(state)) {
+            return new ExpiredCertColor();
+        } else {
+            return Color.DARK_GRAY;
+        }
+    }
+
+    /**
+     * Return any extra label text that is appropriate to the given state.
+     */
+    private String getExtraLabelTextFromState(String state) {
+        if ("VALID".equals(state)) {
+            return "";
+            // TODO also need to pass two dates to this method so that the
+            // ExpiredCertColor and ExpiredForeverCertColor can be returned.
+            // Passing null for these dates will be perfectly valid.
+        } else if ("REVOKED".equals(state)) {
+            return "";
+        } else if ("NEW".equals(state)) {
+            return "Your certificate request has been submitted and is waiting for approval";
+        } else if ("SUSPENDED".equals(state)) {
+            return "Your certificate revocation request has been submitted and is waiting to be processed";
+        } else if ("RENEW".equals(state)) {
+            return "Your renewal certificate request has been submitted and is waiting for approval";
+        } else if ("APPROVED".equals(state)) {
+            return "Your certificate has been approved by your RA and is waiting for CA signing";
+        } else if ("ARCHIVED".equals(state)) {
+            return "";
+        } else if ("DELETED".equals(state)) {
+            return "";
+        } else if ("Expired".equals(state)) {
+            return "";
+        } else {
+            return "";
+        }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // The next 3 methods (renew, revoke, new) all require contacting the
+    // CA service online
+    ///////////////////////////////////////////////////////////////////////////
+
+    /** Called by the Renew button  */
+    private void doRenewAction() {
+        if (this.jComboBox1.getSelectedIndex() == -1) {
+            JOptionPane.showMessageDialog(this, "Please select a certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        if (!isOnlinePing()) {
+            JOptionPane.showMessageDialog(this, "Cannot connect", "Server Connection Fault", JOptionPane.ERROR_MESSAGE);
+//            stringMotD = "You are working offline.\n\nThe certificate can not be renewed offline.";
+            setRedMOD(stringMotDOffline);
+            this.btnRefresh.setText("Connect");
+            return;
+        }
+        // Can only renew key_pairs types issued by our CA
+        KeyStoreEntryWrapper selectedKSEW = (KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem();
+        if (selectedKSEW != null
+                && KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY.equals(selectedKSEW.getEntryType())
+                && selectedKSEW.getServerCertificateCSRInfo() != null
+                && "VALID".equals(((KeyStoreEntryWrapper) selectedKSEW).getServerCertificateCSRInfo().getStatus())) {
+
+            int ok = JOptionPane.showConfirmDialog(this, "Are you sure you want to renew the selected certificate?", "Renew Certificate", JOptionPane.OK_CANCEL_OPTION);
+            if (JOptionPane.OK_OPTION == ok) {
+
+                //let the user alter the alias
+                KeyStore keyStore = this.keyStoreCaWrapper.getClientKeyStore().getKeyStore();
+                String sAlias = selectedKSEW.getAlias();
+
+                try {
+                    sAlias = getNewEntryAliasHelper(keyStore, sAlias, "FPortecle.KeyPairEntryAlias.Title", false);
+
+                    if (sAlias == null) {
+                        WaitDialog.hideDialog(); //user hit cancel
+                        return;
+                    }
+
+                    // Check alias entry does not already exist in the keystore
+                    if (keyStore.containsAlias(sAlias)) {
+
+                        JOptionPane.showMessageDialog(
+                            this,
+                            MessageFormat.format("The keystore already contains an entry with the alias " + sAlias+ "\n"
+                            + "Please enter a unique alias", sAlias),
+                            RB.getString("FPortecle.RenameEntry.Title"), JOptionPane.ERROR_MESSAGE);
+                        WaitDialog.hideDialog();
+                        return;
+
+                    }
+
+                } catch (KeyStoreException ex) {
+                    DThrowable.showAndWait(null, null, ex);
+                }
+
+                //submit the renewal request saving the alias in the combo box
+                WaitDialog.showDialog("Renew");
+                String cert_id = selectedKSEW.getServerCertificateCSRInfo().getId();
+                CertificateDownload certDownload = new CertificateDownload(cert_id);
+                OnLineUserCertificateReKey rekey = new OnLineUserCertificateReKey(PASSPHRASE,sAlias);
+                rekey.addCertificate(certDownload.getCertificate());
+                boolean isValidRekey = rekey.isValidReKey();
+                boolean submittedOk = rekey.doPosts();
+                // TODO: may be better just to reload the selected entry rather than refresh them all ?
+                this.reloadKeystoreUpdateGUI();
+                WaitDialog.hideDialog();
+                if (isValidRekey) {
+                    if (submittedOk) {
+                        JOptionPane.showMessageDialog(this, "The renewal request has been submitted", "Renewal request successful", JOptionPane.INFORMATION_MESSAGE);
+                    } else {
+                        String messageTitle = rekey.getErrorMessage();
+                        String moreMessage = rekey.getDetailErrorMessage();
+                        JOptionPane.showMessageDialog(this, moreMessage, messageTitle, JOptionPane.WARNING_MESSAGE);
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(this, "The selected certificate is not valid to renew", "wrong certificate", JOptionPane.WARNING_MESSAGE);
+                }
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "Only VALID certificates issued by the UK CA can be renewed",
+                    "No suitable certificate selected", JOptionPane.WARNING_MESSAGE);
+        }
+    }
+
+    /** Called by the Revoke button  */
+    private void doRevokeAction(){
+        if (this.jComboBox1.getSelectedIndex() == -1) {
+            JOptionPane.showMessageDialog(this, "Please select a certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        if (!isOnlinePing()) {
+            JOptionPane.showMessageDialog(this, "Cannot connect", "Server Connection Fault", JOptionPane.ERROR_MESSAGE);
+//            stringMotD = "You are working offline.\n\nThe certificate can not be revoked offline.";
+            setRedMOD(stringMotDOffline);
+            this.btnRefresh.setText("Connect");
+            return;
+        }
+        // Can only revoke key_pairs types issued by our CA
+        KeyStoreEntryWrapper selectedKSEW = (KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem();
+        if (selectedKSEW != null
+                && KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY.equals(selectedKSEW.getEntryType())
+                && selectedKSEW.getServerCertificateCSRInfo() != null
+                && "VALID".equals(((KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem()).getServerCertificateCSRInfo().getStatus())) {
+
+            int ok = JOptionPane.showConfirmDialog(this, "Are you sure you want to revoke the selected certificate?", "Revoke Certificate", JOptionPane.OK_CANCEL_OPTION);
+            if (JOptionPane.OK_OPTION == ok) {
+                String reason = "todo"; // TODO: use an inputDialog to get the reason as below
+                //JOptionPane.showInputDialog(this, "message", "reason for revokation", JO)
+                WaitDialog.showDialog("Revoke");
+                long cert_id = new Long(selectedKSEW.getServerCertificateCSRInfo().getId()).longValue();
+                RevokeRequest revokeRequest = new RevokeRequest(
+                        this.keyStoreCaWrapper.getClientKeyStore().getPrivateKey(selectedKSEW.getAlias()),
+                        cert_id, reason);
+                boolean revoked = revokeRequest.doPosts();  // do the revokation and block
+                // TODO: may be better just to reload the selected entry rather than refresh them all ?
+                this.reloadKeystoreUpdateGUI();
+                WaitDialog.hideDialog();
+                if (revoked) {
+                    JOptionPane.showMessageDialog(this, revokeRequest.getMessage(), "Certificate revoked", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(this, revokeRequest.getMessage(), "Problem revoking certificate", JOptionPane.INFORMATION_MESSAGE);
+                }
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "Only VALID certificates issued by the UK CA can be revoked",
+                    "No suitable certificate selected", JOptionPane.WARNING_MESSAGE);
+        }
+    }
+
+    /** Called by the Apply button  */
+    private void doNewCertificateAction() {
+        if (!this.isOnlinePing()) {
+            JOptionPane.showMessageDialog(this, "Cannot connect to the server, \n please check your network connection", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
+//            stringMotD = "You are working offline.\n\nYou must be online in order to apply for a new certificate.";
+            setRedMOD(stringMotDOffline);
+            return;
+        } else {
+            Apply apply = new Apply(this, PASSPHRASE);
+            apply.setModal(true);
+            apply.setVisible(true);
+        }
+    }
+
+
+    ///////////////////////////////////////////////////////////////////////////
+    // The next 5 methods (delete, viewDetails, export, install, import)
+    // are generic keystore actions that do not require the CA service.
+    ///////////////////////////////////////////////////////////////////////////
+
+
+    /** Called by the Delete button to delete selected keyStore entry (not revocation)  */
+    private void doDeleteAction() {
+        if (this.jComboBox1.getSelectedIndex() == -1) {
+            JOptionPane.showMessageDialog(this, "Please select a certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            int delete = JOptionPane.showConfirmDialog(this, "Are you sure you want to delete this KeyStore entry ?", "Delete KeyStore Entry", JOptionPane.OK_CANCEL_OPTION);
+            if (delete == JOptionPane.OK_OPTION) {
+                try {
+                     this.keyStoreCaWrapper.deleteEntry(((KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem()).getAlias());
+                     this.updateGUI();
+                } catch (KeyStoreException ex) {
+                    Logger.getLogger(MainWindowPanel.class.getName()).log(Level.SEVERE, null, ex);
+                    JOptionPane.showMessageDialog(this, "Unable to delete KeyStore entry: " + ex.getMessage(), "Unable to delete KeyStore entry", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }
+    }
+
+
+    /**
+     * Let the user see the certificate details of the selected keystore entry.
+     * Based on Portecle. 
+     * @see FPortecle#showSelectedEntry()
+     */
+    private void doViewCertificateDetailsAction() {
+        // check that a certificate is selected
+        if (this.jComboBox1.getSelectedIndex() == -1) {
+            JOptionPane.showMessageDialog(this, "Please select a certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        KeyStoreEntryWrapper selectedKSEW = (KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem();
+        KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE selectedType = selectedKSEW.getEntryType();
+        if (selectedType == null || selectedType.equals(selectedType.KEY_ENTRY)) {
+            JOptionPane.showMessageDialog(this, "Please select a certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        String sAlias = selectedKSEW.getAlias();
+        KeyStore keyStore = this.keyStoreCaWrapper.getClientKeyStore().getKeyStore();
+        try {
+            // Get the entry's certificates
+            X509Certificate[] certs;
+            if (keyStore.isKeyEntry(sAlias)) {
+                // If entry is a key pair
+                certs = X509CertUtil.convertCertificates(keyStore.getCertificateChain(sAlias));
+            } else {
+                // If entry is a trusted certificate
+                certs = new X509Certificate[1];
+                certs[0] = X509CertUtil.convertCertificate(keyStore.getCertificate(sAlias));
+            }
+
+            // Supply the certificates to the view certificate dialog
+	    DViewCertificate dViewCertificate =
+			    new DViewCertificate(null, MessageFormat.format(
+			        RB.getString("FPortecle.CertDetailsEntry.Title"), sAlias), certs);
+            dViewCertificate.setLocationRelativeTo(this);
+            SwingHelper.showAndWait(dViewCertificate);
+
+        } catch (Exception ex) {
+            DThrowable.showAndWait(null, null, ex);
+        }
+    }
+
+    /**
+     * Let the user export the selected entry.
+     * Based on Portecle.
+     * @see FPortecle#exportSelectedEntry()
+     *
+     * @return True if the export is successful, false otherwise
+     */
+    private boolean doExportAction() {
+        // check that a certificate is selected
+        if (this.jComboBox1.getSelectedIndex() == -1) {
+            JOptionPane.showMessageDialog(this, "Please select a certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
+            return false;
+        }
+        KeyStoreEntryWrapper selectedKSEW = (KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem();
+        KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE selectedType = selectedKSEW.getEntryType();
+        if (selectedType == null || selectedType.equals(selectedType.KEY_ENTRY)) {
+            JOptionPane.showMessageDialog(this, "Please select a certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
+            return false;
+        }
+        // Get the entry
+        String sAlias = selectedKSEW.getAlias();
+        try {
+            // Display the Generate Key Pair dialog to get the key
+            // pair generation parameters from the user. We create
+            // a new KeyStoreWrapper because this is required by
+            // the DExport constructor.
+            DExport dExport = new DExport(null,
+                    new KeyStoreWrapper(this.keyStoreCaWrapper.getClientKeyStore().getKeyStore()), sAlias);
+            dExport.setLocationRelativeTo(this);
+            SwingHelper.showAndWait(dExport);
+            if (!dExport.exportSelected()) {
+                return false; // User canceled the dialog
+            }
+
+            // Do export
+            boolean bSuccess = false;
+
+            // Export head certificate only
+            if (dExport.exportHead()) {
+                // Export PEM encoded format
+                if (dExport.exportPem()) {
+                    bSuccess = exportHeadCertOnlyPem(sAlias);
+                } // Export DER encoded format
+                else if (dExport.exportDer()) {
+                    bSuccess = exportHeadCertOnlyDER(sAlias);
+                } // Export PkiPath format
+                else if (dExport.exportPkiPath()) {
+                    bSuccess = exportHeadCertOnlyPkiPath(sAlias);
+                } // Export PKCS #7 format
+                else // if (dExport.exportPkcs7())
+                {
+                    bSuccess = exportHeadCertOnlyPkcs7(sAlias);
+                }
+            } // Complete certification path (PKCS #7 or PkiPath)
+            else if (dExport.exportChain()) {
+                if (dExport.exportPkiPath()) {
+                    //bSuccess = exportAllCertsPkiPath(sAlias);
+                } else // if (dExport.exportPkcs7())
+                {
+                    bSuccess = exportAllCertsPkcs7(sAlias);
+                }
+            } // Complete certification path and private key (PKCS #12)
+            else {
+                if (dExport.exportPem()) {
+                    bSuccess = exportPrivKeyCertChainPEM(sAlias);
+                } else // if (dExport.exportPkcs12())
+                {
+                    bSuccess = exportPrivKeyCertChainPKCS12(sAlias);
+                }
+            }
+
+            if (bSuccess) {
+                // Display success message
+		JOptionPane.showMessageDialog(this, RB.getString("FPortecle.ExportSuccessful.message"),
+	            RB.getString("FPortecle.Export.Title"), JOptionPane.INFORMATION_MESSAGE);
+            }
+        } catch (Exception ex) {
+            DThrowable.showAndWait(null, null, ex);
+            return false;
+        }
+        return true;
+    }
+
+    /** Install the selected cert as '$HOME/.globus/usercert.pem'
+     * and '$HOME/.globus/userkey.pem' for subsequent globus usage */
+    private void doInstallSelectedCertificateAction() {
+        // check that a certificate is selected
+        if (this.jComboBox1.getSelectedIndex() == -1) {
+            JOptionPane.showMessageDialog(this, "Please select a certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        KeyStoreEntryWrapper selectedKSEW = (KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem();
+        KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE selectedType = selectedKSEW.getEntryType();
+        if (selectedType == null || !selectedType.equals(selectedType.KEY_PAIR_ENTRY)) {
+            JOptionPane.showMessageDialog(this, "Please select a certificate and key pair!", "No certificate key pair selected", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        FileOutputStream certfos = null;
+        
+        try {
+            // prevent install of self signed certs (CSRs)
+            X509Certificate testValidCertificateToExport = (X509Certificate) this.keyStoreCaWrapper.getClientKeyStore().getKeyStore().getCertificate(selectedKSEW.getAlias());
+            if (testValidCertificateToExport.getIssuerDN().toString().equals(testValidCertificateToExport.getSubjectDN().toString())) {
+                JOptionPane.showMessageDialog(this, "You cannot install a self signed certficate \n");
+                return;
+            }
+
+            // check online status before installing 
+            if (selectedKSEW.getServerCertificateCSRInfo() == null) {
+                int ret = JOptionPane.showConfirmDialog(this, "You are either offline or this certificate cannot be validated by our CA\n"
+                        + "Are you sure you want to export this certificate ?");
+                if (ret != JOptionPane.YES_OPTION) {
+                    return;
+                }
+            } else {
+                if (!"VALID".equals(selectedKSEW.getServerCertificateCSRInfo().getStatus())) {
+                    int ret = JOptionPane.showConfirmDialog(this, "According to our CA this certificate is not VALID\n"
+                            + "Are you sure you want to export this certificate ?");
+                    if (ret != JOptionPane.YES_OPTION) {
+                        return;
+                    }
+                }
+            }
+
+            // ok, export the selected cert
+            // TODO: remove the dependency on org.globus.common.GoGProperties (we can do this ourselves - better to not depend on this)
+            CoGProperties props = CoGProperties.getDefault();
+            String certPemFile = props.getUserCertFile();
+            String keyPemFile = props.getUserKeyFile();
+            File fCertFile = new File(certPemFile);
+            File fKeyFile = new File(keyPemFile);
+            // check usercert.pem and userkey.pem do not already exist.
+            String overwriteWarning = "";
+            boolean oneExists = false;
+            if (fKeyFile.exists()) {
+                oneExists = true;
+                overwriteWarning += "Local Key file already exists: \n     [" + keyPemFile + "]\n\n";
+            }
+            if (fCertFile.exists()) {
+                oneExists = true;
+                overwriteWarning += "Local Certificate file already exists: \n    [" + certPemFile + "]\n";
+            }
+            if (oneExists) {
+                overwriteWarning += "\nAre you sure you want to overwrite these files ?";
+                int ret = JOptionPane.showConfirmDialog(this, overwriteWarning, "Certificate/Key Installation", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                if (JOptionPane.YES_OPTION != ret) {
+                    return;
+                }
+            }
+            // ok, here we can export the cert and key as pem files.
+
+
+            // first, delete files (if they already exist) 
+            fCertFile.delete();
+            fKeyFile.delete();
+            // get X509Cert and Private key of selected alias 
+            String alias = selectedKSEW.getAlias();
+            X509Certificate certificate = (X509Certificate) this.keyStoreCaWrapper.getClientKeyStore().getKeyStore().getCertificate(alias);
+            PrivateKey privateKey = (PrivateKey) this.keyStoreCaWrapper.getClientKeyStore().getKeyStore().getKey(alias, PASSPHRASE);
+            // Write the certificate 
+            // TODO - remove dependency on org.globus.util.PEMUtils (we can do this ourselves - better to not depend on this)
+            // TODO - remove dependency on org.globus.util.Util (we can do this ourselves - better to not depend on this)
+            certfos = new FileOutputStream(fCertFile);
+            PEMUtils.writeBase64(certfos, "-----BEGIN CERTIFICATE-----", Base64.encode(certificate.getEncoded()), "-----END CERTIFICATE-----");
+            Util.setFilePermissions(certPemFile, 444);
+
+            // Write the key - need to remove dependency on the bouncycastle here !
+            BouncyCastleOpenSSLKey bcosk = new BouncyCastleOpenSSLKey(privateKey);
+            bcosk.encrypt(new String(PASSPHRASE));
+            bcosk.writeTo(keyPemFile);
+            Util.setFilePermissions(keyPemFile, 400);
+
+            JOptionPane.showMessageDialog(this, "usercert.pem and userkey.pem exported OK to '$USER_HOME/.globus/'",
+                    "Export usercert.pem userkey.pem", JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            DThrowable.showAndWait(null, null, ex);
+        } finally {
+            try {
+                if (certfos != null) {
+                    certfos.close();
+                }
+            } catch (Exception ex) {/* do nothing */
+
+            }
+        }
+    }
+
+    /**
+     * Let the user import a key pair a PKCS #12 keystore or a PEM bundle.
+     * Based on Portecle.
+     * @see FPortecle#importKeyPair()
+     */
+    private void doImportCertificateAction() {
+        // Let the user choose a file to import from
+        File fKeyPairFile = chooseImportFileHelper();
+        if (fKeyPairFile == null){
+           return; // user cancelled
+        }
+
+        // Not a file?
+        if (!fKeyPairFile.isFile()) {
+            JOptionPane.showMessageDialog(this,
+                    MessageFormat.format(RB.getString("FPortecle.NotFile.message"), fKeyPairFile),
+                    RB.getString("FPortecle.ImportKeyPair.Title"), JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // log all the exceptions that may occur
+        ArrayList<Exception> exceptions = new ArrayList<Exception>();
+        KeyStore tempStore = null;
+        PEMReader reader = null;
+        try {
+            PasswordFinder passwordFinder = new PasswordFinder() {
+                private int passwordNumber = 1;
+                @Override
+                public char[] getPassword() {
+                    // Get the user to enter the private key password
+                    DGetPassword dGetPassword =
+                            new DGetPassword(null, MessageFormat.format(
+                            RB.getString("FPortecle.PrivateKeyPassword.Title"),
+                            new Object[]{String.valueOf(passwordNumber)}));
+                    dGetPassword.setLocationRelativeTo(getParent());
+                    SwingHelper.showAndWait(dGetPassword);
+                    char[] cPassword = dGetPassword.getPassword();
+                    passwordNumber++;
+                    return cPassword;
+                }
+            };
+
+            reader = new PEMReader(new FileReader(fKeyPairFile.getPath()), passwordFinder);
+            tempStore = KeyStoreUtil.loadEntries(reader);
+            if (tempStore.size() == 0) {
+                tempStore = null;
+            }
+        } catch (Exception e) {
+            exceptions.add(e);
+        } finally {
+            if (reader != null) { try { reader.close(); } catch (IOException e) { /* do nothing */}
+            }
+        }
+
+        // Treat as PKCS #12 keystore
+        if (tempStore == null) {
+
+            // Get the user to enter the PKCS #12 keystore's password
+            DGetPassword dGetPassword =
+                    new DGetPassword(null, RB.getString("FPortecle.Pkcs12Password.Title"));
+            dGetPassword.setLocationRelativeTo(this);
+            SwingHelper.showAndWait(dGetPassword);
+            char[] cPkcs12Password = dGetPassword.getPassword();
+            if (cPkcs12Password == null) {
+                return;
+            }
+
+            // Load the PKCS #12 keystore
+            // DM: important note, the KeyStoreUtil.java class has been modified
+            // so that it uses the unlimited strength pkcs12 provider so that
+            // unlimited length passwords can be used (circumvents manually
+            // installing the unlimited strength Jurisdiction policy files from
+            // oracle). 
+            try {
+                tempStore = KeyStoreUtil.loadKeyStore(fKeyPairFile, cPkcs12Password, KeyStoreType.PKCS12);
+            } catch (Exception e) {
+                exceptions.add(e);
+            }
+        }
+
+        if (tempStore == null && !exceptions.isEmpty()) {
+            int iSelected =
+                    SwingHelper.showConfirmDialog(this,
+                    MessageFormat.format(RB.getString("FPortecle.NoOpenKeyPairFile.message"), fKeyPairFile),
+                    RB.getString("FPortecle.ImportKeyPairFile.Title"));
+            if (iSelected == JOptionPane.YES_OPTION) {
+                for (Exception e : exceptions) {
+                    DThrowable.showAndWait(null, null, e);
+                }
+            }
+            return;
+        }
+
+        try {
+            // Display the import key pair dialog supplying the PKCS #12 keystore to it
+            DImportKeyPair dImportKeyPair = new DImportKeyPair(null, tempStore);
+            dImportKeyPair.setLocationRelativeTo(this);
+            SwingHelper.showAndWait(dImportKeyPair);
+
+            // Get the private key and certificate chain of the key pair
+            Key privateKey = dImportKeyPair.getPrivateKey();
+            Certificate[] certs = dImportKeyPair.getCertificateChain();
+
+            if (privateKey == null || certs == null) {
+                // User did not select a key pair for import
+                return;
+            }
+
+            // Get an alias for the new keystore entry
+            String sAlias = dImportKeyPair.getAlias();
+            if (sAlias == null) {
+                sAlias = X509CertUtil.getCertificateAlias(X509CertUtil.convertCertificate(certs[0]));
+            }
+            KeyStore keyStore = this.keyStoreCaWrapper.getClientKeyStore().getKeyStore();
+
+            sAlias = getNewEntryAliasHelper(keyStore, sAlias, "FPortecle.KeyPairEntryAlias.Title", false);
+            if (sAlias == null) {
+                return;
+            }
+
+            WaitDialog.showDialog("General");
+            // Delete old entry first
+            if (keyStore.containsAlias(sAlias)) {
+                keyStore.deleteEntry(sAlias);
+            }
+
+            // make sure...
+            assert keyStore == ClientKeyStore.getClientkeyStore(this.PASSPHRASE).getKeyStore();
+            // Place the private key and certificate chain into the keystore and update
+            keyStore.setKeyEntry(sAlias, privateKey, this.PASSPHRASE, certs);
+     
+            // Update the frame's components and title
+            this.reloadKeystoreUpdateGUI();
+            WaitDialog.hideDialog();
+            // Display success message
+           JOptionPane.showMessageDialog(this, RB.getString("FPortecle.KeyPairImportSuccessful.message"),
+			    RB.getString("FPortecle.ImportKeyPair.Title"), JOptionPane.INFORMATION_MESSAGE);
+           return;
+        } catch (Exception ex) {
+            DThrowable.showAndWait(null, null, ex);
+        }
+    }
+
+    /**
+     * Let the user change the alias for the selected keypair or trusted certificate entry.
+     * Based on Portecle.
+     * @see FPortecle#renameSelectedEntry()
+     */
+    private void doChangeAliasAction() {
+
+       if (this.jComboBox1.getSelectedIndex() == -1) {
+            JOptionPane.showMessageDialog(this, "Please select a certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        KeyStoreEntryWrapper selectedKSEW = (KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem();
+        KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE selectedType = selectedKSEW.getEntryType();
+        if (selectedType == null || selectedType.equals(selectedType.KEY_ENTRY)) {
+            JOptionPane.showMessageDialog(this, "Please select a certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        // Get the entry
+        String sAliasOld = selectedKSEW.getAlias();
+        KeyStore keyStore = this.keyStoreCaWrapper.getClientKeyStore().getKeyStore();
+
+
+        try {
+
+            //retrieve the new alias from the user
+            String sAliasNew = getNewEntryAliasHelper(keyStore, sAliasOld, "FPortecle.KeyPairEntryAlias.Title", false);
+
+            WaitDialog.showDialog("General");
+
+            if (sAliasNew == null) {
+                WaitDialog.hideDialog();
+                return;
+            }
+
+            if (sAliasNew.trim().equals("")) {
+                JOptionPane.showMessageDialog(this, "You cannot have empty alias name. Please enter a unique friendly name",
+                    "No Alias Entered", JOptionPane.ERROR_MESSAGE);
+                WaitDialog.hideDialog();
+                return;
+            }
+
+            // Check entry does not already exist in the keystore
+            if (keyStore.containsAlias(sAliasNew)) {
+
+                JOptionPane.showMessageDialog(
+                    this,
+                    MessageFormat.format("The keystore already contains an entry with the alias " + sAliasNew+ "\n"
+                    + "Please enter a unique alias", sAliasNew),
+                    RB.getString("FPortecle.RenameEntry.Title"), JOptionPane.ERROR_MESSAGE);
+                WaitDialog.hideDialog();
+                return;
+
+            }
+
+            // Create the new entry with the new name and copy the old entry across
+
+            // If the entry is a key pair...
+            if (keyStore.isKeyEntry(sAliasOld))
+            {
+
+                // Do the copy
+                Key key = keyStore.getKey(sAliasOld, this.PASSPHRASE);
+                Certificate[] certs = keyStore.getCertificateChain(sAliasOld);
+                keyStore.setKeyEntry(sAliasNew, key, this.PASSPHRASE, certs);
+
+            } else {
+                // ...if the entry is a trusted certificate
+                // Do the copy
+                Certificate cert = keyStore.getCertificate(sAliasOld);
+                keyStore.setCertificateEntry(sAliasNew, cert);
+            }
+
+            // Delete the old entry
+            keyStore.deleteEntry(sAliasOld);
+
+            // Update the frame's components and title
+            //this.reloadKeystoreUpdateGUI();
+            //this.updateCombo();
+            KeyStoreEntryWrapper changedKSEW = this.keyStoreCaWrapper.getKeyStoreEntryMap().get(sAliasOld);
+            changedKSEW.setAlias(sAliasNew);
+            this.keyStoreCaWrapper.getKeyStoreEntryMap().remove(sAliasOld);
+            this.keyStoreCaWrapper.getKeyStoreEntryMap().put(sAliasNew, changedKSEW);          
+            this.updateGUI();
+
+
+            WaitDialog.hideDialog();
+
+            return;
+
+        } catch (Exception ex) {
+            DThrowable.showAndWait(null, null, ex);
+        } finally {
+            WaitDialog.hideDialog();
+        }
+
+    }
+
+
+    /**
+     * Let the user choose a file to import from. Based on Portecle.
+     * @see FPortecle#chooseImportFile()
+     * @return The chosen file or null if none was chosen
+     */
+    private File chooseImportFileHelper() {
+        JFileChooser chooser = FileChooserFactory.getKeyPairFileChooser(null);
+        File fLastDir = m_lastDir.getLastDir();
+        if (fLastDir != null) {
+            chooser.setCurrentDirectory(fLastDir);
+        }
+        chooser.setDialogTitle(RB.getString("FPortecle.ImportKeyPairFile.Title"));
+        chooser.setMultiSelectionEnabled(false);
+        int iRtnValue = chooser.showDialog(this, RB.getString("FPortecle.ImportKeyPairFile.button"));
+        if (iRtnValue == JFileChooser.APPROVE_OPTION) {
+            return chooser.getSelectedFile();
+        }
+        return null;
+    }
+
+
+    /**
+     * Gets a new entry alias from user, handling overwrite issues.
+     * Based on Portecle.
+     * @see FPortecle#getNewEntryAlias(java.security.KeyStore, java.lang.String, java.lang.String, boolean)
+     *
+     * @param keyStore target keystore
+     * @param sAlias suggested alias
+     * @param dialogTitleKey message key for dialog titles
+     * @param selectAlias whether to pre-select alias text in text field
+     * @return alias for new entry, null if user cancels the operation
+     */
+    private String getNewEntryAliasHelper(KeyStore keyStore, String sAlias, String dialogTitleKey,
+            boolean selectAlias)
+            throws KeyStoreException {
+        while (true) {
+            // Get the alias for the new entry
+            DGetAlias dGetAlias =
+                    new DGetAlias(null, RB.getString(dialogTitleKey), sAlias.toLowerCase(), selectAlias);
+            dGetAlias.setLocationRelativeTo(this);
+            SwingHelper.showAndWait(dGetAlias);
+
+            sAlias = dGetAlias.getAlias();
+            if (sAlias == null) {
+                return null;
+            }
+
+            return sAlias;
+
+        }
+    }
+
+
+
+
+
+    /**
+     * Invoke PingService to test for connection and update this.refresh button
+     */
+    private boolean isOnlinePing() {
+        boolean online = PingService.getPingService().isPingService();
+        if (online) {
+            this.btnRefresh.setText("Refresh");
+        } else {
+            this.btnRefresh.setText("Connect");
+        }
+        return online;
+    }
+
+
 
     /** This method is called from within the constructor to
      * initialize the form.
@@ -275,6 +1244,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jRadioButton1 = new javax.swing.JRadioButton();
         jPanel1 = new javax.swing.JPanel();
         btnNewCertificateRequest = new javax.swing.JButton();
         btnImportCertificate = new javax.swing.JButton();
@@ -282,34 +1252,41 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         jComboBox1 = new javax.swing.JComboBox();
         pnlAllDetails = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
+        subjectDnTextField = new javax.swing.JTextField();
+        jLabel8 = new javax.swing.JLabel();
+        issuerDnTextField = new javax.swing.JTextField();
+        jLabel9 = new javax.swing.JLabel();
+        aliasTextField = new javax.swing.JTextField();
+        jLabel10 = new javax.swing.JLabel();
+        certificateTypeLabel = new javax.swing.JLabel();
+        caCertStatusTextField = new javax.swing.JTextField();
         jLabel2 = new javax.swing.JLabel();
-        DN = new javax.swing.JTextField();
-        email = new javax.swing.JTextField();
         jPanel4 = new javax.swing.JPanel();
-        jPanel5 = new javax.swing.JPanel();
-        lblRequestReceived = new javax.swing.JLabel();
-        lblRequestApproved = new javax.swing.JLabel();
-        lblCertificateGenerated = new javax.swing.JLabel();
-        pnlValidDates = new javax.swing.JPanel();
+        vFrom = new javax.swing.JTextField();
         jLabel3 = new javax.swing.JLabel();
         jLabel4 = new javax.swing.JLabel();
-        vFrom = new javax.swing.JTextField();
         vTo = new javax.swing.JTextField();
         jLabel5 = new javax.swing.JLabel();
         jLabel6 = new javax.swing.JLabel();
         dRemaining = new javax.swing.JTextField();
         rDue = new javax.swing.JTextField();
-        btnDelete = new javax.swing.JButton();
-        btnRevoke = new javax.swing.JButton();
-        btnExport = new javax.swing.JButton();
-        btnRenew = new javax.swing.JButton();
-        btnInstall = new javax.swing.JButton();
+        viewCertDetailsButton = new javax.swing.JButton();
         btnRefresh = new javax.swing.JButton();
+        btnInstall = new javax.swing.JButton();
+        btnRenew = new javax.swing.JButton();
+        btnExport = new javax.swing.JButton();
+        btnRevoke = new javax.swing.JButton();
+        btnDelete = new javax.swing.JButton();
+        btnChangeAlias = new javax.swing.JButton();
         jPanel3 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         TextMOD = new javax.swing.JTextArea();
         jLabel7 = new javax.swing.JLabel();
+        btnChangePasswd = new javax.swing.JButton();
 
+        jRadioButton1.setText("jRadioButton1");
+
+        setPreferredSize(new java.awt.Dimension(840, 458));
         addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseExited(java.awt.event.MouseEvent evt) {
                 formMouseExited(evt);
@@ -360,9 +1337,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             .add(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
                 .add(btnNewCertificateRequest)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 35, Short.MAX_VALUE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(btnImportCertificate)
-                .addContainerGap())
+                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -374,7 +1351,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 .addContainerGap(14, Short.MAX_VALUE))
         );
 
-        jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder("Your certificates and requests"));
+        jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder("Your Certificates and Requests  "));
 
         jComboBox1.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
@@ -397,91 +1374,58 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
         pnlAllDetails.setBorder(javax.swing.BorderFactory.createTitledBorder("Certificate Information"));
 
-        jLabel1.setText("DN:");
+        jLabel1.setText("Subject DN:");
 
-        jLabel2.setText("Email:");
+        subjectDnTextField.setEditable(false);
+        subjectDnTextField.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
+        subjectDnTextField.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                subjectDnTextFieldActionPerformed(evt);
+            }
+        });
 
-        DN.setEditable(false);
+        jLabel8.setText("Issuer DN:");
 
-        email.setEditable(false);
+        issuerDnTextField.setEditable(false);
+        issuerDnTextField.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
 
-        org.jdesktop.layout.GroupLayout pnlAllDetailsLayout = new org.jdesktop.layout.GroupLayout(pnlAllDetails);
-        pnlAllDetails.setLayout(pnlAllDetailsLayout);
-        pnlAllDetailsLayout.setHorizontalGroup(
-            pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(pnlAllDetailsLayout.createSequentialGroup()
-                .addContainerGap()
-                .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(jLabel1)
-                    .add(jLabel2))
-                .add(19, 19, 19)
-                .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
-                    .add(email)
-                    .add(DN, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 384, Short.MAX_VALUE))
-                .addContainerGap(140, Short.MAX_VALUE))
-        );
-        pnlAllDetailsLayout.setVerticalGroup(
-            pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(pnlAllDetailsLayout.createSequentialGroup()
-                .addContainerGap()
-                .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(DN, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(jLabel1))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(email, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(jLabel2))
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
+        jLabel9.setText("Alias:");
 
-        jPanel4.setBorder(javax.swing.BorderFactory.createTitledBorder("Certificate Status"));
+        aliasTextField.setEditable(false);
+        aliasTextField.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
 
-        lblRequestReceived.setIcon(new javax.swing.ImageIcon(getClass().getResource("/uk/ngs/ca/images/blank.png"))); // NOI18N
-        lblRequestReceived.setText("This request is restored in your local system. It will be submitted when online.");
+        jLabel10.setText("Type:");
 
-        lblRequestApproved.setIcon(new javax.swing.ImageIcon(getClass().getResource("/uk/ngs/ca/images/blank.png"))); // NOI18N
-        lblRequestApproved.setText("Your request has been approved and is waiting to be signed");
+        certificateTypeLabel.setText("CertificateType");
 
-        lblCertificateGenerated.setIcon(new javax.swing.ImageIcon(getClass().getResource("/uk/ngs/ca/images/blank.png"))); // NOI18N
-        lblCertificateGenerated.setText("Your Certificate has been signed and downloaded");
+        caCertStatusTextField.setEditable(false);
+        caCertStatusTextField.setFont(new java.awt.Font("Tahoma", 1, 11));
+        caCertStatusTextField.setText("Unknown (offline or certificate not recognized by UK CA)");
+        caCertStatusTextField.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
+        caCertStatusTextField.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                caCertStatusTextFieldActionPerformed(evt);
+            }
+        });
 
-        org.jdesktop.layout.GroupLayout jPanel5Layout = new org.jdesktop.layout.GroupLayout(jPanel5);
-        jPanel5.setLayout(jPanel5Layout);
-        jPanel5Layout.setHorizontalGroup(
-            jPanel5Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel5Layout.createSequentialGroup()
-                .addContainerGap()
-                .add(jPanel5Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, lblCertificateGenerated, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 543, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, lblRequestApproved, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 543, Short.MAX_VALUE)
-                    .add(lblRequestReceived, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 543, Short.MAX_VALUE))
-                .addContainerGap())
-        );
-        jPanel5Layout.setVerticalGroup(
-            jPanel5Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel5Layout.createSequentialGroup()
-                .addContainerGap()
-                .add(lblRequestReceived)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(lblRequestApproved)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .add(lblCertificateGenerated)
-                .addContainerGap())
-        );
+        jLabel2.setText("Status with CA:");
+
+        vFrom.setEditable(false);
+        vFrom.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
 
         jLabel3.setText("Valid From:");
 
         jLabel4.setText("Valid To:");
 
-        vFrom.setEditable(false);
-
         vTo.setEditable(false);
+        vTo.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
 
         jLabel5.setText("Days Remaining:");
 
         jLabel6.setText("Renewal Due:");
 
         dRemaining.setEditable(false);
+        dRemaining.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         dRemaining.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 dRemainingActionPerformed(evt);
@@ -489,52 +1433,12 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         });
 
         rDue.setEditable(false);
+        rDue.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         rDue.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 rDueActionPerformed(evt);
             }
         });
-
-        org.jdesktop.layout.GroupLayout pnlValidDatesLayout = new org.jdesktop.layout.GroupLayout(pnlValidDates);
-        pnlValidDates.setLayout(pnlValidDatesLayout);
-        pnlValidDatesLayout.setHorizontalGroup(
-            pnlValidDatesLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(pnlValidDatesLayout.createSequentialGroup()
-                .addContainerGap()
-                .add(pnlValidDatesLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(jLabel3)
-                    .add(jLabel4))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(pnlValidDatesLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
-                    .add(vFrom)
-                    .add(vTo, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 125, Short.MAX_VALUE))
-                .add(28, 28, 28)
-                .add(pnlValidDatesLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                    .add(jLabel6)
-                    .add(jLabel5))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
-                .add(pnlValidDatesLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
-                    .add(dRemaining)
-                    .add(rDue, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 119, Short.MAX_VALUE))
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-        pnlValidDatesLayout.setVerticalGroup(
-            pnlValidDatesLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(pnlValidDatesLayout.createSequentialGroup()
-                .addContainerGap()
-                .add(pnlValidDatesLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(jLabel3)
-                    .add(vFrom, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(dRemaining, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(jLabel5))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(pnlValidDatesLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(jLabel4)
-                    .add(vTo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(jLabel6)
-                    .add(rDue, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
 
         org.jdesktop.layout.GroupLayout jPanel4Layout = new org.jdesktop.layout.GroupLayout(jPanel4);
         jPanel4.setLayout(jPanel4Layout);
@@ -542,92 +1446,59 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel4Layout.createSequentialGroup()
                 .addContainerGap()
+                .add(jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
+                    .add(jPanel4Layout.createSequentialGroup()
+                        .add(jLabel3)
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
+                        .add(vFrom, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 119, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                    .add(jPanel4Layout.createSequentialGroup()
+                        .add(jLabel4)
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .add(vTo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
+                .add(18, 18, 18)
                 .add(jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, pnlValidDates, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(jPanel5, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addContainerGap())
+                    .add(jLabel5)
+                    .add(jLabel6))
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
+                .add(jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                    .add(rDue, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 119, Short.MAX_VALUE)
+                    .add(dRemaining, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 118, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
         );
+
+        jPanel4Layout.linkSize(new java.awt.Component[] {dRemaining, rDue, vFrom, vTo}, org.jdesktop.layout.GroupLayout.HORIZONTAL);
+
         jPanel4Layout.setVerticalGroup(
             jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel4Layout.createSequentialGroup()
-                .add(jPanel5, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addContainerGap()
+                .add(jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                    .add(jLabel3)
+                    .add(vFrom, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 23, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(jLabel5)
+                    .add(dRemaining, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(pnlValidDates, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addContainerGap())
+                .add(jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                    .add(jLabel4)
+                    .add(vTo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(jLabel6)
+                    .add(rDue, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
-        btnDelete.setText("Remove");
-        btnDelete.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                btnDeleteMouseEntered(evt);
-            }
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                btnDeleteMouseExited(evt);
-            }
-        });
-        btnDelete.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnDeleteActionPerformed(evt);
-            }
-        });
+        jPanel4Layout.linkSize(new java.awt.Component[] {dRemaining, rDue, vFrom, vTo}, org.jdesktop.layout.GroupLayout.VERTICAL);
 
-        btnRevoke.setText("Revoke");
-        btnRevoke.addMouseListener(new java.awt.event.MouseAdapter() {
+        viewCertDetailsButton.setText("< View Details");
+        viewCertDetailsButton.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
-                btnRevokeMouseEntered(evt);
+                viewCertDetailsButtonMouseEntered(evt);
             }
             public void mouseExited(java.awt.event.MouseEvent evt) {
-                btnRevokeMouseExited(evt);
+                viewCertDetailsButtonMouseExited(evt);
             }
         });
-        btnRevoke.addActionListener(new java.awt.event.ActionListener() {
+        viewCertDetailsButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnRevokeActionPerformed(evt);
-            }
-        });
-
-        btnExport.setText("Export");
-        btnExport.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                btnExportMouseEntered(evt);
-            }
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                btnExportMouseExited(evt);
-            }
-        });
-        btnExport.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnExportActionPerformed(evt);
-            }
-        });
-
-        btnRenew.setText("Renew");
-        btnRenew.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                btnRenewMouseEntered(evt);
-            }
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                btnRenewMouseExited(evt);
-            }
-        });
-        btnRenew.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnRenewActionPerformed(evt);
-            }
-        });
-
-        btnInstall.setText("Install");
-        btnInstall.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                btnInstallMouseEntered(evt);
-            }
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                btnInstallMouseExited(evt);
-            }
-        });
-        btnInstall.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnInstallActionPerformed(evt);
+                viewCertDetailsButtonActionPerformed(evt);
             }
         });
 
@@ -646,16 +1517,129 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             }
         });
 
-        org.jdesktop.layout.GroupLayout jPanel2Layout = new org.jdesktop.layout.GroupLayout(jPanel2);
-        jPanel2.setLayout(jPanel2Layout);
-        jPanel2Layout.setHorizontalGroup(
-            jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel2Layout.createSequentialGroup()
-                .addContainerGap()
-                .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(jPanel2Layout.createSequentialGroup()
+        btnInstall.setText("Install");
+        btnInstall.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnInstallMouseEntered(evt);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnInstallMouseExited(evt);
+            }
+        });
+        btnInstall.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnInstallActionPerformed(evt);
+            }
+        });
+
+        btnRenew.setText("Renew");
+        btnRenew.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnRenewMouseEntered(evt);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnRenewMouseExited(evt);
+            }
+        });
+        btnRenew.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnRenewActionPerformed(evt);
+            }
+        });
+
+        btnExport.setText("Export");
+        btnExport.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnExportMouseEntered(evt);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnExportMouseExited(evt);
+            }
+        });
+        btnExport.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnExportActionPerformed(evt);
+            }
+        });
+
+        btnRevoke.setText("Revoke");
+        btnRevoke.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnRevokeMouseEntered(evt);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnRevokeMouseExited(evt);
+            }
+        });
+        btnRevoke.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnRevokeActionPerformed(evt);
+            }
+        });
+
+        btnDelete.setText("Delete");
+        btnDelete.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnDeleteMouseEntered(evt);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnDeleteMouseExited(evt);
+            }
+        });
+        btnDelete.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnDeleteActionPerformed(evt);
+            }
+        });
+
+        btnChangeAlias.setText("< Change Alias");
+        btnChangeAlias.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnChangeAliasMouseEntered(evt);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnChangeAliasMouseExited(evt);
+            }
+        });
+        btnChangeAlias.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnChangeAliasActionPerformed(evt);
+            }
+        });
+
+        org.jdesktop.layout.GroupLayout pnlAllDetailsLayout = new org.jdesktop.layout.GroupLayout(pnlAllDetails);
+        pnlAllDetails.setLayout(pnlAllDetailsLayout);
+        pnlAllDetailsLayout.setHorizontalGroup(
+            pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(pnlAllDetailsLayout.createSequentialGroup()
+                .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                    .add(pnlAllDetailsLayout.createSequentialGroup()
+                        .addContainerGap()
+                        .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                            .add(jPanel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                            .add(pnlAllDetailsLayout.createSequentialGroup()
+                                .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                                    .add(jLabel1)
+                                    .add(jLabel8)
+                                    .add(jLabel10)
+                                    .add(jLabel2)
+                                    .add(jLabel9))
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                                    .add(org.jdesktop.layout.GroupLayout.LEADING, caCertStatusTextField, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 487, Short.MAX_VALUE)
+                                    .add(issuerDnTextField, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 487, Short.MAX_VALUE)
+                                    .add(subjectDnTextField, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 487, Short.MAX_VALUE)
+                                    .add(pnlAllDetailsLayout.createSequentialGroup()
+                                        .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                                            .add(certificateTypeLabel)
+                                            .add(aliasTextField, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 359, Short.MAX_VALUE))
+                                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                        .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
+                                            .add(btnChangeAlias, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                            .add(viewCertDetailsButton, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))))))
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, pnlAllDetailsLayout.createSequentialGroup()
                         .add(btnRefresh)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 173, Short.MAX_VALUE)
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 132, Short.MAX_VALUE)
                         .add(btnInstall)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(btnRenew)
@@ -664,30 +1648,70 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(btnRevoke)
                         .add(4, 4, 4)
-                        .add(btnDelete))
-                    .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
-                        .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel4, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .add(org.jdesktop.layout.GroupLayout.LEADING, pnlAllDetails, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .add(org.jdesktop.layout.GroupLayout.LEADING, jComboBox1, 0, 584, Short.MAX_VALUE)))
+                        .add(btnDelete)))
+                .addContainerGap())
+        );
+        pnlAllDetailsLayout.setVerticalGroup(
+            pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(pnlAllDetailsLayout.createSequentialGroup()
+                .addContainerGap()
+                .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                    .add(jLabel1)
+                    .add(subjectDnTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                    .add(issuerDnTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(jLabel8))
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                    .add(caCertStatusTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(jLabel2))
+                .add(7, 7, 7)
+                .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                    .add(aliasTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 22, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(jLabel9)
+                    .add(btnChangeAlias))
+                .add(19, 19, 19)
+                .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                    .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                        .add(jLabel10)
+                        .add(certificateTypeLabel))
+                    .add(viewCertDetailsButton))
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(jPanel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 70, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 36, Short.MAX_VALUE)
+                .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                    .add(btnRefresh)
+                    .add(btnInstall)
+                    .add(btnRenew)
+                    .add(btnExport)
+                    .add(btnRevoke)
+                    .add(btnDelete))
+                .addContainerGap())
+        );
+
+        pnlAllDetailsLayout.linkSize(new java.awt.Component[] {aliasTextField, caCertStatusTextField, issuerDnTextField, subjectDnTextField}, org.jdesktop.layout.GroupLayout.VERTICAL);
+
+        org.jdesktop.layout.GroupLayout jPanel2Layout = new org.jdesktop.layout.GroupLayout(jPanel2);
+        jPanel2.setLayout(jPanel2Layout);
+        jPanel2Layout.setHorizontalGroup(
+            jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel2Layout.createSequentialGroup()
+                .add(1, 1, 1)
+                .add(jComboBox1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 598, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(43, 43, 43))
+            .add(jPanel2Layout.createSequentialGroup()
+                .add(11, 11, 11)
+                .add(pnlAllDetails, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addContainerGap())
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel2Layout.createSequentialGroup()
-                .add(jComboBox1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 20, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(jComboBox1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 28, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(pnlAllDetails, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(jPanel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(btnRefresh)
-                    .add(btnRevoke)
-                    .add(btnExport)
-                    .add(btnRenew)
-                    .add(btnInstall)
-                    .add(btnDelete))
-                .addContainerGap(42, Short.MAX_VALUE))
+                .add(pnlAllDetails, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addContainerGap())
         );
 
         jPanel3.setBorder(javax.swing.BorderFactory.createTitledBorder("Information"));
@@ -702,19 +1726,31 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         jPanel3.setLayout(jPanel3Layout);
         jPanel3Layout.setHorizontalGroup(
             jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jPanel3Layout.createSequentialGroup()
-                .addContainerGap()
-                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 173, Short.MAX_VALUE)
-                .addContainerGap())
+            .add(org.jdesktop.layout.GroupLayout.TRAILING, jScrollPane1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 150, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
         );
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel3Layout.createSequentialGroup()
-                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 246, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 242, Short.MAX_VALUE)
+                .addContainerGap())
         );
 
         jLabel7.setIcon(new javax.swing.ImageIcon(getClass().getResource("/uk/ngs/ca/images/stfc-transparent.png"))); // NOI18N
+
+        btnChangePasswd.setText("Change Password");
+        btnChangePasswd.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnChangePasswdMouseEntered(evt);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnChangePasswdMouseExited(evt);
+            }
+        });
+        btnChangePasswd.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnChangePasswdActionPerformed(evt);
+            }
+        });
 
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(this);
         this.setLayout(layout);
@@ -723,464 +1759,73 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             .add(layout.createSequentialGroup()
                 .addContainerGap()
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(jPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .add(jLabel7, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 209, Short.MAX_VALUE)
-                    .add(jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(jPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap())
+                    .add(layout.createSequentialGroup()
+                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                            .add(jPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 181, Short.MAX_VALUE)
+                            .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
+                                .add(jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .add(jLabel7, 0, 0, Short.MAX_VALUE)))
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                        .add(jPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
+                        .add(btnChangePasswd)
+                        .addContainerGap())))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(layout.createSequentialGroup()
+            .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, layout.createSequentialGroup()
+                .add(btnChangePasswd)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
+                    .add(jPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .add(layout.createSequentialGroup()
                         .add(jLabel7, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 47, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(jPanel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .add(jPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
         );
     }// </editor-fold>//GEN-END:initComponents
 
-    private boolean isOnlinePing(){
-        boolean online = PingService.getPingService().isPingService();
-        if (online)
-            this.btnRefresh.setText("Refresh");
-        else
-            this.btnRefresh.setText("Connect");
-        //this._certWizardMain.update();
-        return online;
-    }
 
     private void jComboBox1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBox1ActionPerformed
-        // TODO add your handling code here:
-        
-        if (jComboBox1.getItemCount() == 0) {
-            this.DN.setText("");
-            this.vFrom.setText("");
-            this.vTo.setText("");
-            this.rDue.setText("");
-            this.dRemaining.setText("");
-            this.email.setText("");
-            return;
-        }
-
-        this.DN.requestFocus();
-        this.btnDelete.setEnabled(true);
-        this.btnExport.setEnabled(true);
-        this.btnRenew.setEnabled(true);
-        this.btnRevoke.setEnabled(true);
-        this.btnInstall.setEnabled(false);
-        this.jPanel4.setBorder(new TitledBorder("Certificate Status"));
-
-        this.pnlValidDates.setVisible(true);
-        this.jPanel5.setVisible(false);
-
-
-        int index = jComboBox1.getSelectedIndex();
-
-
-
-      if ( SystemStatus.getInstance().getIsOnline() ) {
-
-
-           //determine if online or offline, and process the combo box accordingly.
-           if( !isOnlinePing() ){
-
-                JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, "
-                        + "\nYou are now working offline, which means the pending requests will not appear\n"
-                        + "until you are connected to the Internet. Please hit the Connect button to re-connect",
-                        "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
-                //WaitDialog.hideDialog();
-
-                //return;
-                offLineInit();
-                jComboBox1.removeAllItems();
-                fillComboBox();
-                this.btnRefresh.setText("Connect");
-                stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-                setRedMOD(stringMotD);
-                return;
-
-            } else {
-                //update the selected item. This update will only be done if the ping check succeeds
-                // i.e. the detabase connection is available
-
-                Object[] _obj = (Object[])jComboBox1.getItemAt(index);
-                String my_status = _obj[ 2 ].toString();
-
-                //update the selected item.
-                System.out.println("combo action");
-                this.certificateCSRInfos[ index ].update( this.PASSPHRASE );
-
-
-                if( ! my_status.equals(this.certificateCSRInfos[ index ].getStatus())){
-                    jComboBox1.removeAllItems();
-                    fillComboBox();
-                    jComboBox1.setSelectedIndex(index);
-                }
-
-            }
-           
-        }
-
-            
-        if ( SystemStatus.getInstance().getIsOnline() ) {
-
-
-            //rest of the code to alter the details when an item in the combo box has been selected,
-            //based on the information stored in certificateCSRInfos variable
-
-            //if the request is deleted by server, then the item will be removed from cakeystore.pkcs12 and from this gui.
-            if( this.certificateCSRInfos[ index ].getStatus().equals("DELETED") ){
-                String _publickeyString = this.certificateCSRInfos[ index ].getPublickey();
-                ClientKeyStore _clientKeyStore = ClientKeyStore.getClientkeyStore( this.PASSPHRASE );
-                PublicKey _publickey = EncryptUtil.getPublicKey(_publickeyString);
-                PrivateKey _privatekey = _clientKeyStore.getPrivateKey(_publickey);
-                _clientKeyStore.removeKey(_privatekey);
-                this.onLineCertInfo.deleteCertificateCSRInfo(index);
-                this.certificateCSRInfos = this.onLineCertInfo.getCertCSRInfos();
-                jComboBox1.removeItemAt( index );
-                jComboBox1.removeAllItems();
-                fillComboBox();
-                index = 0;
-            }
-            this.DN.setText(this.certificateCSRInfos[ index ].getOwner());
-            this.vFrom.setText(this.certificateCSRInfos[ index ].getStartDate());
-            this.vTo.setText(this.certificateCSRInfos[ index ].getEndDate());
-            this.rDue.setText(this.certificateCSRInfos[ index ].getRenew());
-            this.dRemaining.setText(this.certificateCSRInfos[ index ].getLifeDays());
-            this.email.setText(this.certificateCSRInfos[ index ].getUserEmail());
-            String _status = this.certificateCSRInfos[ index ].getStatus();
-
-            if (_status.equals("REVOKED")) {
-                this.jComboBox1.setForeground(new RevokedCertColor());
-                this.btnExport.setEnabled(false);
-                this.btnRevoke.setEnabled(false);
-                this.btnRenew.setEnabled(false);
-                this.jPanel4.setBorder(new TitledBorder("Certificate Status: " + _status));
-            } else if (_status.equals("SUSPENDED")) {
-                this.jComboBox1.setForeground(new SuspendCertColor());
-                this.btnExport.setEnabled(false);
-                this.btnRevoke.setEnabled(false);
-                this.btnRenew.setEnabled(false);
-                this.jPanel4.setBorder(new TitledBorder("Certificate Status: " + _status));
-            } else if (_status.equals("NEW")) {
-                this.jComboBox1.setForeground(new PendingColor());
-                this.btnExport.setEnabled(false);
-                this.btnRevoke.setEnabled(false);
-                this.btnRenew.setEnabled(false);
-                lblRequestReceived.setIcon(new javax.swing.ImageIcon(getClass().getResource("/uk/ngs/ca/images/tick.png")));
-                lblRequestReceived.setText("Your certificate request has been submitted and is awaiting approval.");
-                lblRequestApproved.setVisible(false);
-                lblCertificateGenerated.setVisible(false);
-                
-                this.pnlValidDates.setVisible(false);
-                this.jPanel5.setSize(this.jPanel5.getWidth(), pnlValidDates.getHeight());
-                this.jPanel5.setVisible(true);
-
-            } else if (_status.equals("VALID")) {
-                this.btnInstall.setEnabled(true);
-                this.btnInstall.setForeground(Color.BLUE);
-                String _lifedays = this.certificateCSRInfos[ index ].getLifeDays();
-                int int_lifedays = new Integer( _lifedays ).intValue();
-                if( int_lifedays < 0 ){
-                    this.jPanel4.setBorder(new TitledBorder("Certificate Status: EXPIRED"));
-                    if( int_lifedays >= -30 ){
-                        this.jComboBox1.setForeground(new ExpiredCertColor());
-                    }else{
-                        this.jComboBox1.setForeground(new ExpiredForeverCertColor());
-                    }
-                }else{
-                    this.jPanel4.setBorder(new TitledBorder("Certificate Status: " + _status));
-                    this.jComboBox1.setForeground(new ValidCertColor());
-                }
-
-            } else if (_status.equals("RENEW")) {
-                this.jComboBox1.setForeground(new RenewalDueColor());
-                this.btnExport.setEnabled(false);
-                this.btnRevoke.setEnabled(false);
-                this.btnRenew.setEnabled(false);
-                lblRequestReceived.setIcon(new javax.swing.ImageIcon(getClass().getResource("/uk/ngs/ca/images/tick.png")));
-                lblRequestReceived.setText("Your renewal certificate request has been submitted and is waiting for the approval.");
-                lblRequestApproved.setVisible(false);
-                lblCertificateGenerated.setVisible(false);
-                this.pnlValidDates.setVisible(false);
-                this.jPanel5.setSize(this.jPanel5.getWidth(), pnlValidDates.getHeight());
-                this.jPanel5.setVisible(true);
-            } else if (_status.equals("APPROVED")) {
-                this.jComboBox1.setForeground(new SuspendCertColor());
-                this.btnExport.setEnabled(false);
-                this.btnRevoke.setEnabled(false);
-                this.btnRenew.setEnabled(false);
-                lblRequestReceived.setIcon(new javax.swing.ImageIcon(getClass().getResource("/uk/ngs/ca/images/tick.png")));
-                lblRequestReceived.setText("Your certificate has been approved by RA and is waiting for the signing from CA.");
-                lblRequestApproved.setVisible(false);
-                lblCertificateGenerated.setVisible(false);
-                this.pnlValidDates.setVisible(false);
-                this.jPanel5.setSize(this.jPanel5.getWidth(), pnlValidDates.getHeight());
-                this.jPanel5.setVisible(true);
-            } else if (_status.equals("ARCHIVED")) {
-                this.jComboBox1.setForeground(new ValidCertColor());
-                this.btnExport.setEnabled(false);
-                this.btnRevoke.setEnabled(false);
-                this.btnRenew.setEnabled(false);
-            } else if (_status.equals("DELETED")) {
-                this.jComboBox1.setForeground(new RevokedCertColor());
-                this.btnExport.setEnabled(false);
-                this.btnRevoke.setEnabled(false);
-                this.btnRenew.setEnabled(false);
-            } else {
-                this.jComboBox1.setForeground(new RevokedCertColor());
-                this.btnRenew.setEnabled(false);
-                this.btnExport.setEnabled(false);
-                this.btnRevoke.setEnabled(false);
-                this.pnlValidDates.setVisible(false);
-
-                this.jPanel5.setSize(this.jPanel5.getWidth(), pnlValidDates.getHeight());
-                this.jPanel5.setVisible(true);
-            }
-            //setup the Observable
-            //setupObservable();
-        } else {
-
-            //int indexOffline = jComboBox1.getSelectedIndex();
-            this.DN.setText(offLineCertInfo.getDN(index));
-            this.vFrom.setText(offLineCertInfo.getFormatStartDate(index));
-            this.vTo.setText(offLineCertInfo.getFormatEndDate(index));
-            this.rDue.setText(offLineCertInfo.getRenewDate(index));
-            this.dRemaining.setText(offLineCertInfo.getLifeDays(index));
-            this.email.setText(offLineCertInfo.getEmail(index));
-            String _status = offLineCertInfo.getStatus(index);
-            this.jPanel4.setBorder(new TitledBorder("Certificate Status: " + _status));
-
-
-            if (_status.equals("Expired")) {
-                this.jComboBox1.setForeground(new ExpiredCertColor());
-                this.btnExport.setEnabled(true);
-                this.btnDelete.setEnabled(true);
-                this.btnInstall.setEnabled(true);
-                this.btnRevoke.setEnabled(false);
-                this.btnRenew.setEnabled(false);
-                this.btnNewCertificateRequest.setEnabled(false);
-            } else if (_status.equals("Valid")) {
-                this.jComboBox1.setForeground(new ValidCertColor());
-                this.btnDelete.setEnabled(true);
-                this.btnRenew.setEnabled(false);
-                this.btnNewCertificateRequest.setEnabled(false);
-                this.btnRevoke.setEnabled(false);
-                this.btnInstall.setEnabled(true);
-            } else {
-                this.jComboBox1.setForeground(new PendingColor());
-                this.btnRenew.setEnabled(false);
-                this.btnExport.setEnabled(false);
-                this.btnRevoke.setEnabled(false);
-                this.btnNewCertificateRequest.setEnabled(false);
-                this.pnlValidDates.setVisible(false);
-
-                this.jPanel5.setSize(this.jPanel5.getWidth(), pnlValidDates.getHeight());
-                this.jPanel5.setVisible(true);
-
-                if (_status.equals("UnSubmitted")) {
-                    lblRequestReceived.setIcon(new javax.swing.ImageIcon(getClass().getResource("/uk/ngs/ca/images/tick.png")));
-                    lblRequestApproved.setIcon(new javax.swing.ImageIcon(getClass().getResource("/uk/ngs/ca/images/blank.png")));
-                    lblRequestApproved.setVisible(false);
-                    lblCertificateGenerated.setVisible(false);
-                }
-            }
-        }
-
-        
-        //WaitDialog.hideDialog();
+        // 
+        this.updateGUIPanel();
     }//GEN-LAST:event_jComboBox1ActionPerformed
 
-
     private void btnNewCertificateRequestActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNewCertificateRequestActionPerformed
-        // TODO add your handling code here:
-        if( SystemStatus.getInstance().getIsOnline() ){
-            if( !isOnlinePing() ){
-                JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
-//                offLineInit();
-                jComboBox1.removeAllItems();
-                fillComboBox();
-                stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-                setRedMOD(stringMotD);
-                this.btnRefresh.setText("Connect");
-                return;
-
-            }else{
-                new Apply(this, PASSPHRASE).setVisible(true);
-            }
-        }else{ 
-            new Apply(this, PASSPHRASE).setVisible(true);
-            
-        }
+        // 
+        this.doNewCertificateAction();
     }//GEN-LAST:event_btnNewCertificateRequestActionPerformed
 
     private void btnImportCertificateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnImportCertificateActionPerformed
-        // TODO add your handling code here:
-//        WaitDialog.showDialog();
-//        if( SystemStatus.getInstance().getIsOnline() ){
-
-            //we need to refresh the status in order to determine if the user is online or on offline mode.
-
-            isOnlinePing();
-
-
-
-//        }
-
-        JFileChooser importCert = new JFileChooser();
-        importCert.addChoosableFileFilter(new certFilter());
-        importCert.setMultiSelectionEnabled(false);
-        if (importCert.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-            File importFile = importCert.getSelectedFile();
-            ImportFilePassword importFilePassword = new ImportFilePassword(this, PASSPHRASE, importFile);
-
-            Dimension dimension = Toolkit.getDefaultToolkit().getScreenSize();
-            int x = (int) ((dimension.getWidth() - importFilePassword.getWidth()) / 2);
-            int y = (int) ((dimension.getHeight() - importFilePassword.getHeight()) / 2);
-            importFilePassword.setLocation(x, y);
-            importFilePassword.setVisible(true);
-
-//            new ImportFilePassword(this, PASSPHRASE, importFile).setVisible(true);
-        }
-//        WaitDialog.hideDialog();
+        // 
+        this.doImportCertificateAction();
     }//GEN-LAST:event_btnImportCertificateActionPerformed
 
     private void btnExportActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExportActionPerformed
-        // TODO add your handling code here:
-
-        int index = jComboBox1.getSelectedIndex();
-        X509Certificate cert = null;
-        PrivateKey privateKey = null;
-        ClientKeyStore keyStore = ClientKeyStore.getClientkeyStore(PASSPHRASE);
-        
-//        if ( SystemStatus.getInstance().getIsOnline() ) {
-//
-//            //check if connection is fine.
-//            if( !isOnlinePing() ){
-//                JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
-//
-//                return;
-//            }
-//
-//            String _id = this.certificateCSRInfos[ this.jComboBox1.getSelectedIndex() ].getId();
-//            CertificateDownload certDownload = new CertificateDownload( _id );
-//
-//            cert = certDownload.getCertificate();
-//            PublicKey publicKey = cert.getPublicKey();
-//            privateKey = keyStore.getPrivateKey(publicKey);
-//        } else {
-            cert = offLineCertInfo.getCertificate(index);
-            PublicKey publicKey = cert.getPublicKey();
-            privateKey = keyStore.getPrivateKey(publicKey);
-//        }
-        new ExportCertificate(cert, privateKey).setVisible(true);
-
+        // 
+        this.doExportAction();
     }//GEN-LAST:event_btnExportActionPerformed
 
     private void btnRenewActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRenewActionPerformed
-        // TODO add your handling code here:
-
-//        if ( SystemStatus.getInstance().getIsOnline() ) {
-            
-            //check if connection is fine.
-            if( !isOnlinePing() ){
-                JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
-//                offLineInit();
-                jComboBox1.removeAllItems();
-                fillComboBox();
-                stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-                setRedMOD(stringMotD);
-                this.btnRefresh.setText("Connect");
-                return;
-
-            }
-
-            if( ! this.certificateCSRInfos[ this.jComboBox1.getSelectedIndex() ].getStatus().equals("VALID")){
-                JOptionPane.showMessageDialog(this, "You haven't selected one valid certificate to renew!", "No suitable certificate selected", JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                if (this.jComboBox1.getSelectedIndex() != -1) {
-                    new OnLineConfirmation(this, "Renew", "Are you sure you want to renew the certificate with the following details?", this.jComboBox1.getSelectedIndex(), onLineCertInfo).setVisible(true);
-                } else {
-                    JOptionPane.showMessageDialog(this, "You haven't selected any certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
-                }
-            }
-
-//        } else {
-//            if (this.jComboBox1.getSelectedIndex() != -1) {
-//                new OffLineConfirmation(this, "Renew", "Are you sure you want to renew the certificate with the following details?", this.jComboBox1.getSelectedIndex(), offLineCertInfo).setVisible(true);
-//            } else {
-//                JOptionPane.showMessageDialog(this, "You haven't selected any certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
-//            }
-//        }
-
+        // 
+        this.doRenewAction();
     }//GEN-LAST:event_btnRenewActionPerformed
 
     private void btnRevokeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRevokeActionPerformed
-        // TODO add your handling code here:
-//        if ( SystemStatus.getInstance().getIsOnline() ) {
-
-            //check if connection is fine.
-            if( !isOnlinePing() ){
-                JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
-                // ok, can only do a revoke when we are online                jComboBox1.removeAllItems();
-                jComboBox1.removeAllItems();
-                fillComboBox();
-                stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-                setRedMOD(stringMotD);
-                this.btnRefresh.setText("Connect");
-                return;
-  
-            }
-
-            if( ! this.certificateCSRInfos[ this.jComboBox1.getSelectedIndex() ].getStatus().equals( "VALID")){
-                JOptionPane.showMessageDialog(this, "You haven't selected one valid certificate to revoke!", "No suitable certificate selected", JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                if (this.jComboBox1.getSelectedIndex() != -1) {
-                    new OnLineConfirmation(this, "Revoke", "Are you sure you want to revoke the certificate with the following details?",
-                            this.jComboBox1.getSelectedIndex(), onLineCertInfo).setVisible(true);
-                } else {
-                    JOptionPane.showMessageDialog(this, "You haven't selected any certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
-                }
-            }
-
-//        } else {
-//            JOptionPane.showMessageDialog(this, "The certificate can not be revoked by offline. Please do it online.", "No offline certificate revocation", JOptionPane.INFORMATION_MESSAGE);
-//        }
-        
+        // 
+        this.doRevokeAction();
     }//GEN-LAST:event_btnRevokeActionPerformed
 
     private void btnDeleteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDeleteActionPerformed
-        // TODO add your handling code here:
-        // force an invocation of the pingCheck so that the System online status is updated.
-        isOnlinePing();
-
-        if ( SystemStatus.getInstance().getIsOnline() ) {
-            
-            if (this.jComboBox1.getSelectedIndex() != -1) {
-                new OnLineConfirmation(this, "Remove", "Are you sure you want to remove the certificate with the following details?", this.jComboBox1.getSelectedIndex(), onLineCertInfo).setVisible(true);
-            } else {
-                JOptionPane.showMessageDialog(this, "You haven't selected any certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
-            }
-
-        } else {
-            if (this.jComboBox1.getSelectedIndex() != -1) {
-                new OffLineConfirmation(this, "Remove", "Are you sure you want to remove the certificate with the following details?", this.jComboBox1.getSelectedIndex(), offLineCertInfo).setVisible(true);
-            } else {
-                JOptionPane.showMessageDialog(this, "You haven't selected any certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
-            }
-        }
-        
+        //
+        this.doDeleteAction();
     }//GEN-LAST:event_btnDeleteActionPerformed
 
     private void btnNewCertificateRequestMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnNewCertificateRequestMouseEntered
-        // TODO add your handling code here:
+        // 
         setMOD("Request a new user certificate");
     }//GEN-LAST:event_btnNewCertificateRequestMouseEntered
 
@@ -1193,12 +1838,12 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     }//GEN-LAST:event_jPanel1MouseExited
 
     private void btnNewCertificateRequestMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnNewCertificateRequestMouseExited
-        // TODO add your handling code here:
-        if ( SystemStatus.getInstance().getIsOnline() ) {
+        // 
+        if (SystemStatus.getInstance().getIsOnline()) {
             setMOD(stringMotD);
-        }else{
-            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-            setRedMOD(stringMotD);
+        } else {
+//            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
+            setRedMOD(stringMotDOffline);
         }
     }//GEN-LAST:event_btnNewCertificateRequestMouseExited
 
@@ -1235,79 +1880,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     private void btnInstallActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnInstallActionPerformed
         // TODO add your handling code here:
-
-        CoGProperties props = CoGProperties.getDefault();
-        String certPemFile = props.getUserCertFile();
-        String keyPemFile = props.getUserKeyFile();
-
-        String message = "<html>Are you sure you want to install pem files in <br>[" + certPemFile + "] and [" + keyPemFile + "]?";
-
-        int index = jComboBox1.getSelectedIndex();
-        X509Certificate cert = null;
-        PrivateKey privateKey = null;
-        PublicKey publicKey = null;
-        ClientKeyStore keyStore = ClientKeyStore.getClientkeyStore(PASSPHRASE);
-
-//        if ( SystemStatus.getInstance().getIsOnline() ) {
-//            //check if connection is fine.
-//            if( !isOnlinePing() ){
-//                JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
-//                // why do we have to return here ? i may want to install my cert when i have no internet !
-//                return;
-//            }
-//
-//            String _id = this.certificateCSRInfos[ index ].getId();
-//            CertificateDownload certDownload = new CertificateDownload(_id);
-//            cert = certDownload.getCertificate();
-//
-//            publicKey = cert.getPublicKey();
-//            privateKey = keyStore.getPrivateKey(publicKey);
-//
-//            if( ! this.certificateCSRInfos[ index ].getStatus().equals("VALID")){
-//                JOptionPane.showMessageDialog(this, "You haven't selected one valid certificate!", "No suitable certificate selected", JOptionPane.INFORMATION_MESSAGE);
-//            } else {
-//                if (this.jComboBox1.getSelectedIndex() != -1) {
-//                    boolean isSuccess = isSuccessPemFiles( cert, privateKey );
-//                    if( isSuccess ){
-//                        String _message = "<html>Your certificate and private key were successfully installed to:<br>Private key: " + keyPemFile + "<br>Certificate: " + certPemFile;
-//                        JOptionPane.showMessageDialog(this, _message, "Successful Install", JOptionPane.INFORMATION_MESSAGE);
-//                        String _passphrase = new String(PASSPHRASE);
-//                        String _property = SysProperty.getValue("uk.ngs.ca.immegration.password.property");
-//                        System.setProperty(_property, _passphrase);
-//                    }else{
-//                        String _message = "<html>Your certificate and private key failed to install on:<br>Private key: " + keyPemFile + "\nCertificate: " + certPemFile;
-//                        JOptionPane.showMessageDialog(this, _message, "Failed Install", JOptionPane.INFORMATION_MESSAGE);
-//                    }
-//                } else {
-//                    JOptionPane.showMessageDialog(this, "You haven't selected any certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
-//                }
-//            }
-//
-//        } else {
-            cert = offLineCertInfo.getCertificate(index);
-            publicKey = cert.getPublicKey();
-            privateKey = keyStore.getPrivateKey(publicKey);
-
-            if (this.jComboBox1.getSelectedIndex() != -1) {
-                boolean isSuccess = isSuccessPemFiles( cert, privateKey );
-                if( isSuccess ){
-                    String _message = "<html>Your certificate and private key were successfully installed to:<br>Private key: " + keyPemFile + "<br>Certificate: " + certPemFile;
-                    JOptionPane.showMessageDialog(this, _message, "Successful Install", JOptionPane.INFORMATION_MESSAGE);
-                    String _passphrase = new String(PASSPHRASE);
-                    String _property = SysProperty.getValue("uk.ngs.ca.immegration.password.property");
-                    System.setProperty(_property, _passphrase);
-
-                }else{
-                    String _message = "<html>Your certificate and private key failed to install on:<br>Private key: " + keyPemFile + "Certificate: " + certPemFile;
-                    JOptionPane.showMessageDialog(this, _message, "Failed Install", JOptionPane.INFORMATION_MESSAGE);
-                }
-            } else {
-                JOptionPane.showMessageDialog(this, "You haven't selected any certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
-            }
-//        }
-
-
-
+        this.doInstallSelectedCertificateAction();
     }//GEN-LAST:event_btnInstallActionPerformed
 
     private void btnInstallMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnInstallMouseEntered
@@ -1319,72 +1892,46 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     private void btnInstallMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnInstallMouseExited
         // TODO add your handling code here:
-        if ( SystemStatus.getInstance().getIsOnline() ) {
-            setMOD(stringMotD);
-        }else{
-            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-            setRedMOD(stringMotD);
-        }
+        this.mouseExitedActionPerformed(evt);
     }//GEN-LAST:event_btnInstallMouseExited
 
     private void btnImportCertificateMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnImportCertificateMouseExited
         // TODO add your handling code here:
-        if ( SystemStatus.getInstance().getIsOnline() ) {
-            setMOD(stringMotD);
-        }else{
-            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-            setRedMOD(stringMotD);
-        }
+        this.mouseExitedActionPerformed(evt);
     }//GEN-LAST:event_btnImportCertificateMouseExited
+
+    private void mouseExitedActionPerformed(java.awt.event.MouseEvent evt) {
+        if (SystemStatus.getInstance().getIsOnline()) {
+            setMOD(stringMotD);
+        } else {
+//            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
+            setRedMOD(stringMotDOffline);
+        }
+    }
 
     private void jComboBox1MouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jComboBox1MouseExited
         // TODO add your handling code here:
-        if ( SystemStatus.getInstance().getIsOnline() ) {
-            setMOD(stringMotD);
-        }else{
-            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-            setRedMOD(stringMotD);
-        }
+        this.mouseExitedActionPerformed(evt);
     }//GEN-LAST:event_jComboBox1MouseExited
 
     private void btnRenewMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnRenewMouseExited
         // TODO add your handling code here:
-        if ( SystemStatus.getInstance().getIsOnline() ) {
-            setMOD(stringMotD);
-        }else{
-            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-            setRedMOD(stringMotD);
-        }
+        this.mouseExitedActionPerformed(evt);
     }//GEN-LAST:event_btnRenewMouseExited
 
     private void btnExportMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnExportMouseExited
         // TODO add your handling code here:
-        if ( SystemStatus.getInstance().getIsOnline() ) {
-            setMOD(stringMotD);
-        }else{
-            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-            setRedMOD(stringMotD);
-        }
+        this.mouseExitedActionPerformed(evt);
     }//GEN-LAST:event_btnExportMouseExited
 
     private void btnRevokeMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnRevokeMouseExited
         // TODO add your handling code here:
-        if ( SystemStatus.getInstance().getIsOnline() ) {
-            setMOD(stringMotD);
-        }else{
-            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-            setRedMOD(stringMotD);
-        }
+        this.mouseExitedActionPerformed(evt);
     }//GEN-LAST:event_btnRevokeMouseExited
 
     private void btnDeleteMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnDeleteMouseExited
         // TODO add your handling code here:
-        if ( SystemStatus.getInstance().getIsOnline() ) {
-            setMOD(stringMotD);
-        }else{
-            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-            setRedMOD(stringMotD);
-        }
+        this.mouseExitedActionPerformed(evt);
     }//GEN-LAST:event_btnDeleteMouseExited
 
     private void jComboBox1ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_jComboBox1ItemStateChanged
@@ -1392,249 +1939,807 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     }//GEN-LAST:event_jComboBox1ItemStateChanged
 
     private void btnRefreshActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRefreshActionPerformed
-        // TODO add your handling code here:
-        WaitDialog.showDialog("Refresh");
-//        int index = jComboBox1.getSelectedIndex();
-        this.refreshOnLine();
-//        jComboBox1.setSelectedIndex(index);
-        WaitDialog.hideDialog();
 
+        //Fetch the alias of the selected certificate in order to select that entry again in the combo box
+        //after refresh completes
+        String alias = null;
+        if (this.jComboBox1.getSelectedIndex() == -1) {
+            JOptionPane.showMessageDialog(this, "There are no certificate in the keystore", "No certificate in the keystore!", JOptionPane.WARNING_MESSAGE);
+            return;
+        } else {
+            KeyStoreEntryWrapper selectedKSEW = (KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem();
+            // Get the entry
+            alias = selectedKSEW.getAlias();
+        }
 
+        WaitDialog.showDialog("General");
+        assert this.keyStoreCaWrapper.getClientKeyStore().getKeyStore() ==
+                ClientKeyStore.getClientkeyStore(PASSPHRASE).getKeyStore();
+        this.reloadKeystoreUpdateGUI();
 
+        //select the same entry as what the user has previously selected.
+        String retrievedAlias = "";
+        KeyStoreEntryWrapper selectedKSEWComboBox = null;
+        for (int index = 0; index < this.jComboBox1.getItemCount(); index++) {
+            selectedKSEWComboBox = (KeyStoreEntryWrapper) this.jComboBox1.getItemAt(index);
+            // Get the entry
+            retrievedAlias = selectedKSEWComboBox.getAlias();
+
+            //if the retrieved Alias is the same one as user selected, select it.
+            if (retrievedAlias.equals(alias)) {
+                this.jComboBox1.setSelectedIndex(index);
+                WaitDialog.hideDialog();
+                return;
+            }
+        }
+
+        
     }//GEN-LAST:event_btnRefreshActionPerformed
 
     private void btnRefreshMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnRefreshMouseEntered
         // TODO add your handling code here:
-         setMOD("Retrieve certificate information from the CA Server and update the status of the certificates stored in the Certificate Wizard");
+        setMOD("Retrieve certificate information from the CA Server and update the status of the certificates stored in the Certificate Wizard");
     }//GEN-LAST:event_btnRefreshMouseEntered
 
     private void btnRefreshMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnRefreshMouseExited
         // TODO add your handling code here:
-        if ( SystemStatus.getInstance().getIsOnline() ) {
-            setMOD(stringMotD);
-        }else{
-            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
-            setRedMOD(stringMotD);
-
-        }
+        this.mouseExitedActionPerformed(evt);
     }//GEN-LAST:event_btnRefreshMouseExited
+
+    private void viewCertDetailsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_viewCertDetailsButtonActionPerformed
+        // TODO add your handling code here:
+        this.doViewCertificateDetailsAction();
+    }//GEN-LAST:event_viewCertDetailsButtonActionPerformed
 
     private void dRemainingActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_dRemainingActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_dRemainingActionPerformed
 
+    private void btnChangeAliasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnChangeAliasActionPerformed
+        // TODO add your handling code here:
+        this.doChangeAliasAction();
+    }//GEN-LAST:event_btnChangeAliasActionPerformed
+
+    private void caCertStatusTextFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_caCertStatusTextFieldActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_caCertStatusTextFieldActionPerformed
+
     private void rDueActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rDueActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_rDueActionPerformed
 
+    private void subjectDnTextFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_subjectDnTextFieldActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_subjectDnTextFieldActionPerformed
 
-    private boolean isSuccessPemFiles(X509Certificate certificate, PrivateKey privateKey){
-        CoGProperties props = CoGProperties.getDefault();
-        String certPemFile = props.getUserCertFile();
-        String keyPemFile = props.getUserKeyFile();
-        File fCertFile = new File( certPemFile );
-        File fKeyFile = new File( keyPemFile );
+    private void btnChangePasswdActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnChangePasswdActionPerformed
+        // TODO add your handling code here:
+        this.doChangePasswdAction();
+    }//GEN-LAST:event_btnChangePasswdActionPerformed
 
-        String overwriteWarning = "";
-        boolean oneExists = false;
-        if (fKeyFile.exists()) {
-            oneExists = true;
-            overwriteWarning += "Local Key file already exists: \n     [" + keyPemFile + "]\n\n";
-        }
-        if (fCertFile.exists()) {
-            oneExists = true;
-            overwriteWarning += "Local Certificate file already exists: \n    [" + certPemFile + "]\n";
-        }
-        if (oneExists) {
-            // test here for permissions.
-            overwriteWarning += "\nAre you sure you want to overwrite these files ?";
-            int ret = JOptionPane.showConfirmDialog( this, overwriteWarning, "Certificate/Key Installation", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-            // added CLOSED_OPTION so that clicking 'X' does the same as clicking 'No'.
-            if (JOptionPane.NO_OPTION == ret || JOptionPane.CLOSED_OPTION == ret) {
-                return false;
-            }
-            if( JOptionPane.YES_OPTION == ret ){
-                try{
-                    fCertFile.delete();
-                    fKeyFile.delete();
-                    FileOutputStream certfos = new FileOutputStream(fCertFile);
-                    PEMUtils.writeBase64(certfos, "-----BEGIN CERTIFICATE-----", Base64.encode(certificate.getEncoded()), "-----END CERTIFICATE-----");
-                    Util.setFilePermissions(certPemFile, 444);
-                    certfos.close();
+    private void btnChangePasswdMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnChangePasswdMouseEntered
+        // TODO add your handling code here:
+        setMOD("Change the global password used to protect your certificates in Certificate Wizard");
 
-                    // Output key - need to remove dependency on the bouncycastle here !
-                    BouncyCastleOpenSSLKey bcosk = new BouncyCastleOpenSSLKey(privateKey);
-                    bcosk.encrypt(new String(PASSPHRASE));
-                    bcosk.writeTo(keyPemFile);
-                    Util.setFilePermissions(keyPemFile, 400);
-                    return true;
-                }catch( Exception ep ){
-                    ep.printStackTrace();
-                    return false;
-                }
-            }
+    }//GEN-LAST:event_btnChangePasswdMouseEntered
 
-            return true;
-        }else{
-                 try{
-                    FileOutputStream certfos = new FileOutputStream(fCertFile);
-                    PEMUtils.writeBase64(certfos, "-----BEGIN CERTIFICATE-----", Base64.encode(certificate.getEncoded()), "-----END CERTIFICATE-----");
-                    Util.setFilePermissions(certPemFile, 444);
-                    certfos.close();
+    private void btnChangePasswdMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnChangePasswdMouseExited
+        // TODO add your handling code here:
+        this.mouseExitedActionPerformed(evt);
+    }//GEN-LAST:event_btnChangePasswdMouseExited
 
-                    // Output key - need to remove dependency on the bouncycastle here !
-                    BouncyCastleOpenSSLKey bcosk = new BouncyCastleOpenSSLKey(privateKey);
-                    bcosk.encrypt(new String(PASSPHRASE));
-                    bcosk.writeTo(keyPemFile);
-                    Util.setFilePermissions(keyPemFile, 400);
-                    return true;
-                }catch( Exception ep ){
-                    ep.printStackTrace();
-                    return false;
-                }
+    private void btnChangeAliasMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnChangeAliasMouseExited
+        // TODO add your handling code here:
+        this.mouseExitedActionPerformed(evt);
+    }//GEN-LAST:event_btnChangeAliasMouseExited
 
-        }
+    private void viewCertDetailsButtonMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_viewCertDetailsButtonMouseExited
+        // TODO add your handling code here:
+        this.mouseExitedActionPerformed(evt);
 
+    }//GEN-LAST:event_viewCertDetailsButtonMouseExited
 
-    }
+    private void btnChangeAliasMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnChangeAliasMouseEntered
+        // TODO add your handling code here:
+        setMOD("Change the user friendly name of the selected certificate");
+    }//GEN-LAST:event_btnChangeAliasMouseEntered
 
-    private void setRedMOD( String text ){
+    private void viewCertDetailsButtonMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_viewCertDetailsButtonMouseEntered
+        // TODO add your handling code here:
+        setMOD("View further details of the selected certificate");
+    }//GEN-LAST:event_viewCertDetailsButtonMouseEntered
+
+  
+    private void setRedMOD(String text) {
         TextMOD.setForeground(Color.RED);
         TextMOD.setText(text);
     }
-    
+
     private void setMOD(String text) {
         TextMOD.setForeground(Color.BLACK);
         TextMOD.setText(text);
     }
 
 
+    ////////////////////////////////////////////////////////////////////////////
+    // The next set of methods starting with export and choose are soley used
+    // for exporting keystore entries to different file formats. They are
+    // largely copied verbatum from Portecle. TODO: They could be refactored into
+    // a helper class to make this class smaller.
+    ////////////////////////////////////////////////////////////////////////////
+
+
     /**
-     * Add elements to this.jComboBox1 and set the renderer.
-     * If online populate this.jComboBox1 from this.certificateCSRInfos
-     * If offline populate populate from this.offLineCertInfo
+     * Export the private key and certificates of the keystore entry to a PKCS #12 keystore file.
+     * Based on Portecle.
+     * @see FPortecle#exportPrivKeyCertChainPKCS12(java.lang.String)
+     *
+     * @param sEntryAlias Entry alias
+     * @return True if the export is successful, false otherwise
      */
-    private void fillComboBox() {
-        if ( SystemStatus.getInstance().getIsOnline() ) {
+    private boolean exportPrivKeyCertChainPKCS12(String sEntryAlias) {
 
-            if( this.certificateCSRInfos != null ){
-                ListCellRenderer renderer = new ListItemRenderer();
-                for( int i = 0; i < this.certificateCSRInfos.length; i++ ){
-                    String _dn = this.certificateCSRInfos[ i ].getOwner();
-                    String _status = this.certificateCSRInfos[ i ].getStatus();
+        KeyStore keyStore = this.keyStoreCaWrapper.getClientKeyStore().getKeyStore();
+        char[] cPassword = this.PASSPHRASE;
 
-                    Object element[] = new Object[3];
-                    if (_status.equals("VALID")) {
-                        String _lifedays = this.certificateCSRInfos[ i ].getLifeDays();
-                        int int_lifedays = new Integer( _lifedays ).intValue();
-                        if( int_lifedays < 0 ){
-                            if( int_lifedays >= -30 ){
-                                element[ 0 ] =  new ExpiredCertColor();
-                            }else{
-                                element[ 0 ] = new ExpiredForeverCertColor();
-                            }
-                        }else{
-                            element[ 0 ] = new ValidCertColor();
-                        }
+        File fExportFile = null;
 
-                        element[ 1 ] = _dn;
-                        element[ 2 ] = _status;
-                    } else if (_status.equals("REVOKED")) {
-                        element[ 0 ] = new RevokedCertColor();
-                        element[ 1 ] = _dn;
-                        element[ 2 ] = _status;
-                    } else if (_status.equals("SUSPENDED")) {
-                        element[ 0 ] = new SuspendCertColor();
-                        element[ 1 ] = _dn;
-                        element[ 2 ] = _status;
-                    } else if (_status.equals("NEW")) {
-                        element[ 0 ] = new PendingColor();
-                        element[ 1 ] = _dn;
-                        element[ 2 ] = _status;
-                    } else if (_status.equals("RENEW")) {
-                        element[ 0 ] = new RenewalDueColor();
-                        element[ 1 ] = _dn;
-                        element[ 2 ] = _status;
-                    } else if (_status.equals("APPROVED")) {
-                        element[ 0 ] = new SuspendCertColor();
-                        element[ 1 ] = _dn;
-                        element[ 2 ] = _status;
-                    } else if (_status.equals("ARCHIVED")) {
-                        element[ 0 ] = new ValidCertColor();
-                        element[ 1 ] = _dn;
-                        element[ 2 ] = _status;
-                    } else if (_status.equals("DELETED")) {
-                        element[ 0 ] = new RevokedCertColor();
-                        element[ 1 ] = _dn;
-                        element[ 2 ] = _status;
-                    } else {
-                        element[ 0 ] = new RevokedCertColor();
-                        element[ 1 ] = _dn;
-                        element[ 2 ] = _status;
-                    }
-                    jComboBox1.addItem(element);
-                }
-                jComboBox1.setRenderer(renderer);
+        try {
+            // Get the private key and certificate chain from the entry
+            Key privKey = keyStore.getKey(sEntryAlias, cPassword);
+            Certificate[] certs = keyStore.getCertificateChain(sEntryAlias);
+
+            // Update the keystore wrapper
+            // DM: commented this out - not sure if its necessary ?
+            //m_keyStoreWrap.setEntryPassword(sEntryAlias, cPassword);
+
+            // Create a new PKCS #12 keystore
+            KeyStore pkcs12 = KeyStoreUtil.createKeyStore(KeyStoreType.PKCS12);
+
+            // Place the private key and certificate chain into the PKCS #12 keystore under the same alias as
+            // it has in the loaded keystore
+            pkcs12.setKeyEntry(sEntryAlias, privKey, new char[0], certs);
+
+            // Get a new password for the PKCS #12 keystore
+            DGetNewPassword dGetNewPassword =
+                    new DGetNewPassword(null, RB.getString("FPortecle.Pkcs12Password.Title"));
+            dGetNewPassword.setLocationRelativeTo(this);
+            SwingHelper.showAndWait(dGetNewPassword);
+
+            char[] cPKCS12Password = dGetNewPassword.getPassword();
+
+            if (cPKCS12Password == null) {
+                return false;
             }
-        } else {
-            String[] DNs = offLineCertInfo.getAllDNs();
-            if (DNs != null) {
-                ListCellRenderer renderer = new ListItemRenderer();
 
-                for (int i = 0; i < DNs.length; i++) {
-                    String _dn = offLineCertInfo.getDN(i);
-                    String _status = offLineCertInfo.getStatus(i);
-                    Object element[] = new Object[2];
-                    if (_status.equals("Expired")) {
-                        element[ 0] = new ExpiredCertColor();
-                        element[ 1] = _dn;
-                    } else if (_status.equals("Valid")) {
-                        element[ 0] = new ValidCertColor();
-                        element[ 1] = _dn;
-                    } else if (_status.equals("REVOKED")) {
-                        element[ 0 ] = new RevokedCertColor();
-                        element[ 1 ] = _dn;
-                       
-                    } else if (_status.equals("SUSPENDED")) {
-                        element[ 0 ] = new SuspendCertColor();
-                        element[ 1 ] = _dn;
-                        
-                    } else if (_status.equals("NEW")) {
-                        element[ 0 ] = new PendingColor();
-                        element[ 1 ] = _dn;
-                       
-                    } else if (_status.equals("RENEW")) {
-                        element[ 0 ] = new RenewalDueColor();
-                        element[ 1 ] = _dn;
-                        
-                    } else if (_status.equals("APPROVED")) {
-                        element[ 0 ] = new SuspendCertColor();
-                        element[ 1 ] = _dn;
-                        
-                    } else if (_status.equals("ARCHIVED")) {
-                        element[ 0 ] = new ValidCertColor();
-                        element[ 1 ] = _dn;
-                       
-                    } else if (_status.equals("DELETED")) {
-                        element[ 0 ] = new RevokedCertColor();
-                        element[ 1 ] = _dn;
-                        
-                    } else {
-                        element[ 0] = new PendingColor();
-                        element[ 1] = _dn;
-                    }
-
-                    jComboBox1.addItem(element);
-                }
-                jComboBox1.setRenderer(renderer);
+            String basename = null;
+            if (certs.length > 0 && certs[0] instanceof X509Certificate) {
+                basename = X509CertUtil.getCertificateAlias((X509Certificate) certs[0]);
             }
+            if (basename == null || basename.isEmpty()) {
+                basename = sEntryAlias;
+            }
+
+            // Let the user choose the export PKCS #12 file
+            fExportFile = chooseExportPKCS12File(basename);
+            if (fExportFile == null) {
+                return false;
+            }
+
+            if (!confirmOverwrite(fExportFile, "Overwrite")) {
+                return false;
+            }
+
+            // Store the keystore to disk
+            KeyStoreUtil.saveKeyStore(pkcs12, fExportFile, cPKCS12Password);
+
+            m_lastDir.updateLastDir(fExportFile);
+
+            return true;
+        } catch (FileNotFoundException ex) {
+            String sMessage =
+                    MessageFormat.format(RB.getString("FPortecle.NoWriteFile.message"), fExportFile.getName());
+            JOptionPane.showMessageDialog(this, sMessage, "File not found", JOptionPane.WARNING_MESSAGE);
+            return false;
+        } catch (IOException ex) {
+            DThrowable.showAndWait(null, null, ex);
+            return false;
+        } catch (GeneralSecurityException ex) {
+            DThrowable.showAndWait(null, null, ex);
+            return false;
+        } catch (CryptoException ex) {
+            DThrowable.showAndWait(null, null, ex);
+            return false;
         }
-
     }
 
+    /**
+     * Export the private key and certificates of the keystore entry to a PEM encoded "OpenSSL" format bundle.
+     * Based on Portecle.
+     * @see FPortecle#exportPrivKeyCertChainPEM(java.lang.String)
+     *
+     * @param sEntryAlias Entry alias
+     * @return True if the export is successful, false otherwise
+     */
+    private boolean exportPrivKeyCertChainPEM(String sEntryAlias) {
+
+        KeyStore keyStore = this.keyStoreCaWrapper.getClientKeyStore().getKeyStore();
+        char[] cPassword = this.PASSPHRASE;
+
+        File fExportFile = null;
+        PEMWriter pw = null;
+
+        try {
+            // Get the private key and certificate chain from the entry
+            Key privKey = keyStore.getKey(sEntryAlias, cPassword);
+            Certificate[] certs = keyStore.getCertificateChain(sEntryAlias);
+
+            // Get a new password to encrypt the private key with
+            DGetNewPassword dGetNewPassword =
+                    new DGetNewPassword(null, RB.getString("FPortecle.PrivateKeyExportPassword.Title"));
+            dGetNewPassword.setLocationRelativeTo(this);
+            SwingHelper.showAndWait(dGetNewPassword);
+
+            char[] password = dGetNewPassword.getPassword();
+            if (password == null) {
+                return false;
+            }
+
+            String basename = null;
+            if (certs.length > 0 && certs[0] instanceof X509Certificate) {
+                basename = X509CertUtil.getCertificateAlias((X509Certificate) certs[0]);
+            }
+            if (basename == null || basename.isEmpty()) {
+                basename = sEntryAlias;
+            }
+
+            // Let the user choose the PEM export file
+            fExportFile = chooseExportPEMFile(basename);
+            if (fExportFile == null) {
+                return false;
+            }
+
+            if (!confirmOverwrite(fExportFile, "Overwrite")) {
+                return false;
+            }
+
+            // Do the export
+            pw = new PEMWriter(new FileWriter(fExportFile));
+
+            if (password.length == 0) {
+                pw.writeObject(privKey);
+            } else {
+                // TODO: make algorithm configurable/ask user?
+                String algorithm = "DES-EDE3-CBC";
+                SecureRandom rand = SecureRandom.getInstance("SHA1PRNG");
+                pw.writeObject(privKey, algorithm, password, rand);
+            }
+
+            for (Certificate cert : certs) {
+                pw.writeObject(cert);
+            }
+            pw.flush();
+
+            m_lastDir.updateLastDir(fExportFile);
+
+            return true;
+        } catch (FileNotFoundException ex) {
+            String sMessage =
+                    MessageFormat.format(RB.getString("FPortecle.NoWriteFile.message"), fExportFile.getName());
+            JOptionPane.showMessageDialog(this, sMessage, "File not found", JOptionPane.WARNING_MESSAGE);
+            return false;
+        } catch (IOException ex) {
+            DThrowable.showAndWait(null, null, ex);
+            return false;
+        } catch (GeneralSecurityException ex) {
+            DThrowable.showAndWait(null, null, ex);
+            return false;
+        } finally {
+            if (pw != null) {
+                try {
+                    pw.close();
+                } catch (IOException ex) {
+                    DThrowable.showAndWait(null, null, ex);
+                }
+            }
+        }
+    }
+
+    /**
+     * Export all of the certificates of the keystore entry to a PKCS #7 file.
+     * Based on Portecle.
+     * @see FPortecle#exportAllCertsPkcs7(java.lang.String)
+     *
+     * @param sEntryAlias Entry alias
+     * @return True if the export is successful, false otherwise
+     */
+    private boolean exportAllCertsPkcs7(String sEntryAlias) {
+        // Get the certificates
+        //KeyStore keyStore = m_keyStoreWrap.getKeyStore();
+        KeyStore keyStore = this.keyStoreCaWrapper.getClientKeyStore().getKeyStore();
+        X509Certificate[] certChain = null;
+        try {
+            certChain = X509CertUtil.convertCertificates(keyStore.getCertificateChain(sEntryAlias));
+        } catch (KeyStoreException ex) {
+            DThrowable.showAndWait(null, null, ex);
+            return false;
+        } catch (CryptoException ex) {
+            DThrowable.showAndWait(null, null, ex);
+            return false;
+        }
+
+        String basename = null;
+        if (certChain.length > 0) {
+            basename = X509CertUtil.getCertificateAlias(certChain[0]);
+        }
+        if (basename == null || basename.isEmpty()) {
+            basename = sEntryAlias;
+        }
+
+        // Let the user choose the export PKCS #7 file
+        File fExportFile = chooseExportPKCS7File(basename);
+        if (fExportFile == null) {
+            return false;
+        }
+
+        if (!confirmOverwrite(fExportFile, "Overwrite")) {
+            return false;
+        }
+
+        FileOutputStream fos = null;
+        try {
+            // Do the export
+            byte[] bEncoded = X509CertUtil.getCertsEncodedPkcs7(certChain);
+            fos = new FileOutputStream(fExportFile);
+            fos.write(bEncoded);
+            m_lastDir.updateLastDir(fExportFile);
+            return true;
+        } catch (FileNotFoundException ex) {
+            String sMessage =
+                    MessageFormat.format(RB.getString("FPortecle.NoWriteFile.message"), fExportFile.getName());
+            JOptionPane.showMessageDialog(null, sMessage, "File not found", JOptionPane.WARNING_MESSAGE);
+            return false;
+        } catch (IOException ex) {
+            DThrowable.showAndWait(null, null, ex);
+            return false;
+        } catch (CryptoException ex) {
+            DThrowable.showAndWait(null, null, ex);
+            return false;
+        } finally {
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (IOException e) {
+                    DThrowable.showAndWait(null, null, e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Export the head certificate of the keystore entry to a PKCS #7 file.
+     * Based on Portecle
+     * @see FPortecle#exportHeadCertOnlyPkcs7(java.lang.String)
+     *
+     * @param sEntryAlias Entry alias
+     * @return True if the export is successful, false otherwise
+     */
+    private boolean exportHeadCertOnlyPkcs7(String sEntryAlias) {
+        X509Certificate cert = null;
+        try {
+            // Get the head certificate
+            cert = getHeadCert(sEntryAlias);
+        } catch (CryptoException ex) {
+            DThrowable.showAndWait(null, null, ex);
+            return false;
+        }
+
+        String basename = X509CertUtil.getCertificateAlias(cert);
+        if (basename.isEmpty()) {
+            basename = sEntryAlias;
+        }
+
+        // Let the user choose the export PKCS #7 file
+        File fExportFile = chooseExportPKCS7File(basename);
+        if (fExportFile == null) {
+            return false;
+        }
+
+        if (!confirmOverwrite(fExportFile, "Overwrite")) {
+            return false;
+        }
+
+        FileOutputStream fos = null;
+        try {
+            // Do the export
+            byte[] bEncoded = X509CertUtil.getCertEncodedPkcs7(cert);
+            fos = new FileOutputStream(fExportFile);
+            fos.write(bEncoded);
+
+            m_lastDir.updateLastDir(fExportFile);
+
+            return true;
+        } catch (FileNotFoundException ex) {
+            String sMessage =
+                    MessageFormat.format(RB.getString("FPortecle.NoWriteFile.message"), fExportFile.getName());
+            JOptionPane.showMessageDialog(null, sMessage, "File not found", JOptionPane.WARNING_MESSAGE);
+            return false;
+        } catch (IOException ex) {
+            DThrowable.showAndWait(null, null, ex);
+            return false;
+        } catch (CryptoException ex) {
+            DThrowable.showAndWait(null, null, ex);
+            return false;
+        } finally {
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (IOException e) {
+                    DThrowable.showAndWait(null, null, e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Export the head certificate of the keystore entry in a PEM encoding.
+     * Based on Portecle.
+     * @see FPortecle#exportHeadCertOnlyPem(java.lang.String)
+     *
+     * @param sEntryAlias Entry alias
+     * @return True if the export is successful, false otherwise
+     */
+    private boolean exportHeadCertOnlyPem(String sEntryAlias) {
+        X509Certificate cert = null;
+        try {
+            cert = getHeadCert(sEntryAlias);
+        } catch (CryptoException ex) {
+            DThrowable.showAndWait(null, null, ex);
+            return false;
+        }
+
+        String basename = X509CertUtil.getCertificateAlias(cert);
+        if (basename.isEmpty()) {
+            basename = sEntryAlias;
+        }
+
+        // Let the user choose the export certificate file
+        File fExportFile = chooseExportCertFile(basename);
+        if (fExportFile == null) {
+            return false;
+        }
+
+        if (!confirmOverwrite(fExportFile, "Overwrite")) {
+            return false;
+        }
+
+        PEMWriter pw = null;
+        try {
+            pw = new PEMWriter(new FileWriter(fExportFile));
+            pw.writeObject(cert);
+            m_lastDir.updateLastDir(fExportFile);
+            return true;
+        } catch (FileNotFoundException ex) {
+            String sMessage =
+                    MessageFormat.format(RB.getString("FPortecle.NoWriteFile.message"), fExportFile.getName());
+            JOptionPane.showMessageDialog(this, sMessage, "File not found", JOptionPane.WARNING_MESSAGE);
+            return false;
+        } catch (IOException ex) {
+            DThrowable.showAndWait(null, null, ex);
+            return false;
+        } finally {
+            if (pw != null) {
+                try {
+                    pw.close();
+                } catch (IOException ex) {
+                    DThrowable.showAndWait(null, null, ex);
+                }
+            }
+        }
+    }
+
+    /**
+     * Export the head certificate of the keystore entry in a DER encoding.
+     * Based on Portecle.
+     * @see FPortecle#exportHeadCertOnlyDER(java.lang.String)
+     *
+     * @param sEntryAlias Entry alias
+     * @return True if the export is successful, false otherwise
+     */
+    private boolean exportHeadCertOnlyDER(String sEntryAlias) {
+        X509Certificate cert = null;
+        try {
+            // Get the head certificate
+            cert = getHeadCert(sEntryAlias);
+        } catch (CryptoException ex) {
+            DThrowable.showAndWait(null, null, ex);
+            return false;
+        }
+
+        String basename = X509CertUtil.getCertificateAlias(cert);
+        if (basename.isEmpty()) {
+            basename = sEntryAlias;
+        }
+
+        // Let the user choose the export certificate file
+        File fExportFile = chooseExportCertFile(basename);
+        if (fExportFile == null) {
+            return false;
+        }
+
+        if (!confirmOverwrite(fExportFile, "Overwrite")) {
+            return false;
+        }
+
+        FileOutputStream fos = null;
+        try {
+            // Do the export
+            byte[] bEncoded = X509CertUtil.getCertEncodedDer(cert);
+            fos = new FileOutputStream(fExportFile);
+            fos.write(bEncoded);
+
+            m_lastDir.updateLastDir(fExportFile);
+
+            return true;
+        } catch (FileNotFoundException ex) {
+            String sMessage =
+                    MessageFormat.format(RB.getString("FPortecle.NoWriteFile.message"), fExportFile.getName());
+            JOptionPane.showMessageDialog(this, sMessage, "File not found", JOptionPane.WARNING_MESSAGE);
+            return false;
+        } catch (IOException ex) {
+            DThrowable.showAndWait(null, null, ex);
+            return false;
+        } catch (CryptoException ex) {
+            DThrowable.showAndWait(null, null, ex);
+            return false;
+        } finally {
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (IOException ex) {
+                    DThrowable.showAndWait(null, null, ex);
+                }
+            }
+        }
+    }
+
+    /**
+     * Export the head certificate of the keystore entry to a PkiPath file.
+     * Based on Portecle.
+     * @see FPortecle#exportHeadCertOnlyPkiPath(java.lang.String)
+     *
+     * @param sEntryAlias Entry alias
+     * @return True if the export is successful, false otherwise
+     */
+    private boolean exportHeadCertOnlyPkiPath(String sEntryAlias) {
+        X509Certificate cert = null;
+        try {
+            // Get the head certificate
+            cert = getHeadCert(sEntryAlias);
+        } catch (CryptoException ex) {
+            DThrowable.showAndWait(null, null, ex);
+            return false;
+        }
+
+        String basename = X509CertUtil.getCertificateAlias(cert);
+        if (basename.isEmpty()) {
+            basename = sEntryAlias;
+        }
+
+        // Let the user choose the export PkiPath file
+        File fExportFile = chooseExportPkiPathFile(basename);
+        if (fExportFile == null) {
+            return false;
+        }
+
+        if (!confirmOverwrite(fExportFile, "Overwrite")) {
+            return false;
+        }
+
+        FileOutputStream fos = null;
+        try {
+            // Do the export
+            byte[] bEncoded = X509CertUtil.getCertEncodedPkiPath(cert);
+            fos = new FileOutputStream(fExportFile);
+            fos.write(bEncoded);
+
+            m_lastDir.updateLastDir(fExportFile);
+
+            return true;
+        } catch (FileNotFoundException ex) {
+            String sMessage =
+                    MessageFormat.format(RB.getString("FPortecle.NoWriteFile.message"), fExportFile.getName());
+            JOptionPane.showMessageDialog(this, sMessage, "File not found", JOptionPane.WARNING_MESSAGE);
+            return false;
+        } catch (IOException ex) {
+            DThrowable.showAndWait(null, null, ex);
+            return false;
+        } catch (CryptoException ex) {
+            DThrowable.showAndWait(null, null, ex);
+            return false;
+        } finally {
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (IOException e) {
+                    DThrowable.showAndWait(null, null, e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Let the user choose a PKCS #12 file to export to.
+     * Based on Portecle.
+     * @see FPortecle#chooseExportPKCS12File(java.lang.String)
+     *
+     * @param basename default filename (without extension)
+     * @return The chosen file or null if none was chosen
+     */
+    private File chooseExportPKCS12File(String basename) {
+        JFileChooser chooser = FileChooserFactory.getPkcs12FileChooser(basename);
+        File fLastDir = m_lastDir.getLastDir();
+        if (fLastDir != null) {
+            chooser.setCurrentDirectory(fLastDir);
+        }
+        chooser.setDialogTitle(RB.getString("FPortecle.ExportKeyCertificates.Title"));
+        chooser.setMultiSelectionEnabled(false);
+        int iRtnValue = chooser.showDialog(this, RB.getString("FPortecle.Export.button"));
+        if (iRtnValue == JFileChooser.APPROVE_OPTION) {
+            return chooser.getSelectedFile();
+        }
+        return null;
+    }
+
+    /**
+     * Let the user choose a PKCS #7 file to export to.
+     * Based on Portecle.
+     * @see FPortecle#chooseExportPKCS7File(java.lang.String)
+     *
+     * @param basename default filename (without extension)
+     * @return The chosen file or null if none was chosen
+     */
+    private File chooseExportPKCS7File(String basename) {
+        JFileChooser chooser = FileChooserFactory.getPkcs7FileChooser(basename);
+        File fLastDir = m_lastDir.getLastDir();
+        if (fLastDir != null) {
+            chooser.setCurrentDirectory(fLastDir);
+        }
+        chooser.setDialogTitle(RB.getString("FPortecle.ExportCertificates.Title"));
+        chooser.setMultiSelectionEnabled(false);
+        int iRtnValue = chooser.showDialog(this, RB.getString("FPortecle.Export.button"));
+        if (iRtnValue == JFileChooser.APPROVE_OPTION) {
+            return chooser.getSelectedFile();
+        }
+        return null;
+    }
+
+    /**
+     * Let the user choose a PEM file to export to.
+     * Based on Portecle.
+     * @see FPortecle#chooseExportPEMFile(java.lang.String)
+     *
+     * @param basename default filename (without extension)
+     * @return The chosen file or null if none was chosen
+     */
+    private File chooseExportPEMFile(String basename) {
+        JFileChooser chooser = FileChooserFactory.getPEMFileChooser(basename);
+        File fLastDir = m_lastDir.getLastDir();
+        if (fLastDir != null) {
+            chooser.setCurrentDirectory(fLastDir);
+        }
+        chooser.setDialogTitle(RB.getString("FPortecle.ExportKeyCertificates.Title"));
+        chooser.setMultiSelectionEnabled(false);
+        int iRtnValue = chooser.showDialog(this, RB.getString("FPortecle.Export.button"));
+        if (iRtnValue == JFileChooser.APPROVE_OPTION) {
+            return chooser.getSelectedFile();
+        }
+        return null;
+    }
+
+    /**
+     * Let the user choose a PkiPath file to export to.
+     * Based on Portecle.
+     * @see FPortecle#chooseExportPkiPathFile(java.lang.String)
+     *
+     * @param basename default filename (without extension)
+     * @return The chosen file or null if none was chosen
+     */
+    private File chooseExportPkiPathFile(String basename) {
+        JFileChooser chooser = FileChooserFactory.getPkiPathFileChooser(basename);
+        File fLastDir = m_lastDir.getLastDir();
+        if (fLastDir != null) {
+            chooser.setCurrentDirectory(fLastDir);
+        }
+        chooser.setDialogTitle(RB.getString("FPortecle.ExportCertificates.Title"));
+        chooser.setMultiSelectionEnabled(false);
+        int iRtnValue = chooser.showDialog(this, RB.getString("FPortecle.Export.button"));
+        if (iRtnValue == JFileChooser.APPROVE_OPTION) {
+            return chooser.getSelectedFile();
+        }
+        return null;
+    }
+
+    /**
+     * Let the user choose a certificate file to export to.
+     * Based on Portecle.
+     * @see FPortecle#chooseExportCertFile(java.lang.String)
+     *
+     * @param basename default filename (without extension)
+     * @return The chosen file or null if none was chosen
+     */
+    private File chooseExportCertFile(String basename) {
+        JFileChooser chooser = FileChooserFactory.getX509FileChooser(basename);
+        File fLastDir = m_lastDir.getLastDir();
+        if (fLastDir != null) {
+            chooser.setCurrentDirectory(fLastDir);
+        }
+        chooser.setDialogTitle(RB.getString("FPortecle.ExportCertificate.Title"));
+        chooser.setMultiSelectionEnabled(false);
+        int iRtnValue = chooser.showDialog(this, RB.getString("FPortecle.Export.button"));
+        if (iRtnValue == JFileChooser.APPROVE_OPTION) {
+            return chooser.getSelectedFile();
+        }
+        return null;
+    }
+
+    /**
+     * File overwrite confirmation dialog.
+     * Based on Portecle.
+     * @see FPortecle#confirmOverwrite(java.io.File, java.lang.String)
+     *
+     * @param file the file possibly being overwritten
+     * @param title window title
+     * @return true if the write operation should continue
+     */
+    private boolean confirmOverwrite(File file, String title) {
+        if (file.isFile()) {
+            String sMessage =
+                    MessageFormat.format(RB.getString("FPortecle.OverWriteFile.message"), file.getName());
+            int iSelected = JOptionPane.showConfirmDialog(this, sMessage, title, JOptionPane.YES_NO_OPTION);
+            return iSelected == JOptionPane.YES_OPTION;
+        }
+        return true;
+    }
+
+    /**
+     * Get the keystore entry's head certificate.
+     * Based on Portecle.
+     * @see FPortecle#getHeadCert(java.lang.String)
+     *
+     * @param sEntryAlias Entry alias
+     * @return The keystore entry's head certificate
+     * @throws CryptoException Problem getting head certificate
+     */
+    private X509Certificate getHeadCert(String sEntryAlias)
+            throws CryptoException {
+        try {
+            // Get keystore
+            KeyStore keyStore = this.keyStoreCaWrapper.getClientKeyStore().getKeyStore();
+            // Get the entry's head certificate
+            X509Certificate cert;
+            if (keyStore.isKeyEntry(sEntryAlias)) {
+                cert =
+                        X509CertUtil.orderX509CertChain(X509CertUtil.convertCertificates(keyStore.getCertificateChain(sEntryAlias)))[0];
+            } else {
+                cert = X509CertUtil.convertCertificate(keyStore.getCertificate(sEntryAlias));
+            }
+            return cert;
+        } catch (KeyStoreException ex) {
+            String sMessage =
+                    MessageFormat.format(RB.getString("FPortecle.NoAccessEntry.message"), sEntryAlias);
+            throw new CryptoException(sMessage, ex);
+        }
+    }
+
+
+
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JTextField DN;
     private javax.swing.JTextArea TextMOD;
+    private javax.swing.JTextField aliasTextField;
+    private javax.swing.JButton btnChangeAlias;
+    private javax.swing.JButton btnChangePasswd;
     private javax.swing.JButton btnDelete;
     private javax.swing.JButton btnExport;
     private javax.swing.JButton btnImportCertificate;
@@ -1643,31 +2748,32 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private javax.swing.JButton btnRefresh;
     private javax.swing.JButton btnRenew;
     private javax.swing.JButton btnRevoke;
+    private javax.swing.JTextField caCertStatusTextField;
+    private javax.swing.JLabel certificateTypeLabel;
     private javax.swing.JTextField dRemaining;
-    private javax.swing.JTextField email;
+    private javax.swing.JTextField issuerDnTextField;
     private javax.swing.JComboBox jComboBox1;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
+    private javax.swing.JLabel jLabel8;
+    private javax.swing.JLabel jLabel9;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
-    private javax.swing.JPanel jPanel5;
+    private javax.swing.JRadioButton jRadioButton1;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JLabel lblCertificateGenerated;
-    private javax.swing.JLabel lblRequestApproved;
-    private javax.swing.JLabel lblRequestReceived;
     private javax.swing.JPanel pnlAllDetails;
-    private javax.swing.JPanel pnlValidDates;
     private javax.swing.JTextField rDue;
+    private javax.swing.JTextField subjectDnTextField;
     private javax.swing.JTextField vFrom;
     private javax.swing.JTextField vTo;
+    private javax.swing.JButton viewCertDetailsButton;
     // End of variables declaration//GEN-END:variables
-
-
 }
