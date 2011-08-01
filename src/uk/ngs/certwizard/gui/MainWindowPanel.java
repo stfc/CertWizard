@@ -195,6 +195,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             JOptionPane.showMessageDialog(this, "Unable to load KeyStore: " + ex.getMessage(), "Unable to load KeyStore", JOptionPane.ERROR_MESSAGE);
         }
         this.updateGUI();
+
     }
 
     /**
@@ -807,8 +808,11 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
             if (bSuccess) {
                 // Display success message
-		JOptionPane.showMessageDialog(this, RB.getString("FPortecle.ExportSuccessful.message"),
-	            RB.getString("FPortecle.Export.Title"), JOptionPane.INFORMATION_MESSAGE);
+		JOptionPane.showMessageDialog(this, "Your certificate has been exported successfully.\n"
+                                                    + "Please ensure that you make a backup of this\n"
+                                                    + "certificate somewhere away from your computer.\n"
+                                                    + "E.g. USB dongle, CD/DVD\n",
+                                                    RB.getString("FPortecle.Export.Title"), JOptionPane.INFORMATION_MESSAGE);
             }
         } catch (Exception ex) {
             DThrowable.showAndWait(null, null, ex);
@@ -1461,11 +1465,12 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                     .add(jLabel6))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                 .add(jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(rDue, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 119, Short.MAX_VALUE)
-                    .add(dRemaining, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 118, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
+                    .add(rDue, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 133, Short.MAX_VALUE)
+                    .add(dRemaining, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 133, Short.MAX_VALUE))
+                .addContainerGap())
         );
 
-        jPanel4Layout.linkSize(new java.awt.Component[] {dRemaining, rDue, vFrom, vTo}, org.jdesktop.layout.GroupLayout.HORIZONTAL);
+        jPanel4Layout.linkSize(new java.awt.Component[] {vFrom, vTo}, org.jdesktop.layout.GroupLayout.HORIZONTAL);
 
         jPanel4Layout.setVerticalGroup(
             jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -1612,12 +1617,14 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         pnlAllDetailsLayout.setHorizontalGroup(
             pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(pnlAllDetailsLayout.createSequentialGroup()
+                .addContainerGap()
                 .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(pnlAllDetailsLayout.createSequentialGroup()
-                        .addContainerGap()
-                        .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                            .add(jPanel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                            .add(pnlAllDetailsLayout.createSequentialGroup()
+                        .add(jPanel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                        .addContainerGap())
+                    .add(pnlAllDetailsLayout.createSequentialGroup()
+                        .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                            .add(org.jdesktop.layout.GroupLayout.LEADING, pnlAllDetailsLayout.createSequentialGroup()
                                 .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                                     .add(jLabel1)
                                     .add(jLabel8)
@@ -1626,30 +1633,31 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                                     .add(jLabel9))
                                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                                 .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                                    .add(org.jdesktop.layout.GroupLayout.LEADING, caCertStatusTextField, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 487, Short.MAX_VALUE)
-                                    .add(issuerDnTextField, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 487, Short.MAX_VALUE)
-                                    .add(subjectDnTextField, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 487, Short.MAX_VALUE)
-                                    .add(pnlAllDetailsLayout.createSequentialGroup()
+                                    .add(org.jdesktop.layout.GroupLayout.LEADING, pnlAllDetailsLayout.createSequentialGroup()
                                         .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                                             .add(certificateTypeLabel)
-                                            .add(aliasTextField, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 359, Short.MAX_VALUE))
+                                            .add(aliasTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 277, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                        .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
-                                            .add(btnChangeAlias, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                            .add(viewCertDetailsButton, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))))))
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, pnlAllDetailsLayout.createSequentialGroup()
-                        .add(btnRefresh)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 132, Short.MAX_VALUE)
-                        .add(btnInstall)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(btnRenew)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(btnExport)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(btnRevoke)
-                        .add(4, 4, 4)
-                        .add(btnDelete)))
-                .addContainerGap())
+                                        .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                                            .add(btnChangeAlias, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 155, Short.MAX_VALUE)
+                                            .add(viewCertDetailsButton, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 155, Short.MAX_VALUE)))
+                                    .add(org.jdesktop.layout.GroupLayout.LEADING, pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
+                                        .add(org.jdesktop.layout.GroupLayout.LEADING, caCertStatusTextField)
+                                        .add(org.jdesktop.layout.GroupLayout.LEADING, issuerDnTextField)
+                                        .add(org.jdesktop.layout.GroupLayout.LEADING, subjectDnTextField, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 439, Short.MAX_VALUE))))
+                            .add(pnlAllDetailsLayout.createSequentialGroup()
+                                .add(btnRefresh)
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 69, Short.MAX_VALUE)
+                                .add(btnInstall)
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                .add(btnRenew)
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                .add(btnExport)
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                .add(btnRevoke)
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                .add(btnDelete)))
+                        .add(45, 45, 45))))
         );
         pnlAllDetailsLayout.setVerticalGroup(
             pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -1667,27 +1675,30 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                     .add(caCertStatusTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                     .add(jLabel2))
                 .add(7, 7, 7)
-                .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(aliasTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 22, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(jLabel9)
-                    .add(btnChangeAlias))
-                .add(19, 19, 19)
                 .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                        .add(jLabel10)
-                        .add(certificateTypeLabel))
-                    .add(viewCertDetailsButton))
+                    .add(pnlAllDetailsLayout.createSequentialGroup()
+                        .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                            .add(aliasTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 22, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                            .add(jLabel9))
+                        .add(19, 19, 19)
+                        .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                            .add(jLabel10)
+                            .add(certificateTypeLabel)))
+                    .add(pnlAllDetailsLayout.createSequentialGroup()
+                        .add(btnChangeAlias)
+                        .add(19, 19, 19)
+                        .add(viewCertDetailsButton)))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jPanel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 70, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 36, Short.MAX_VALUE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                 .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(btnRefresh)
-                    .add(btnInstall)
-                    .add(btnRenew)
-                    .add(btnExport)
+                    .add(btnDelete)
                     .add(btnRevoke)
-                    .add(btnDelete))
-                .addContainerGap())
+                    .add(btnExport)
+                    .add(btnRenew)
+                    .add(btnInstall))
+                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         pnlAllDetailsLayout.linkSize(new java.awt.Component[] {aliasTextField, caCertStatusTextField, issuerDnTextField, subjectDnTextField}, org.jdesktop.layout.GroupLayout.VERTICAL);
@@ -1697,21 +1708,22 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         jPanel2Layout.setHorizontalGroup(
             jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel2Layout.createSequentialGroup()
-                .add(1, 1, 1)
-                .add(jComboBox1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 598, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .add(43, 43, 43))
-            .add(jPanel2Layout.createSequentialGroup()
-                .add(11, 11, 11)
-                .add(pnlAllDetails, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addContainerGap())
+                .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                    .add(jPanel2Layout.createSequentialGroup()
+                        .add(11, 11, 11)
+                        .add(pnlAllDetails, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 575, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                    .add(jPanel2Layout.createSequentialGroup()
+                        .addContainerGap()
+                        .add(jComboBox1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 551, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel2Layout.createSequentialGroup()
                 .add(jComboBox1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 28, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(pnlAllDetails, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addContainerGap())
+                .add(pnlAllDetails, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(15, Short.MAX_VALUE))
         );
 
         jPanel3.setBorder(javax.swing.BorderFactory.createTitledBorder("Information"));
@@ -1726,13 +1738,16 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         jPanel3.setLayout(jPanel3Layout);
         jPanel3Layout.setHorizontalGroup(
             jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(org.jdesktop.layout.GroupLayout.TRAILING, jScrollPane1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 150, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+            .add(jPanel3Layout.createSequentialGroup()
+                .addContainerGap()
+                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 150, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel3Layout.createSequentialGroup()
-                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 242, Short.MAX_VALUE)
-                .addContainerGap())
+                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 221, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         jLabel7.setIcon(new javax.swing.ImageIcon(getClass().getResource("/uk/ngs/ca/images/stfc-transparent.png"))); // NOI18N
@@ -1761,30 +1776,32 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(layout.createSequentialGroup()
                         .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                            .add(jPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 181, Short.MAX_VALUE)
                             .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
                                 .add(jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .add(jLabel7, 0, 0, Short.MAX_VALUE)))
+                                .add(jLabel7, 0, 0, Short.MAX_VALUE))
+                            .add(jPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(jPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .add(jPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                        .add(46, 46, 46))
                     .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
                         .add(btnChangePasswd)
-                        .addContainerGap())))
+                        .add(86, 86, 86))))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
                 .add(btnChangePasswd)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
-                    .add(jPanel2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(layout.createSequentialGroup()
                         .add(jLabel7, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 47, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(jPanel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+                        .add(jPanel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                    .add(jPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -1864,7 +1881,8 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     private void btnExportMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnExportMouseEntered
         // TODO add your handling code here:
-        setMOD("Export the selected certificate to a file for back up, or for use in other tools (exports a .p12 file).");
+        setMOD("Export the selected certificate to a file for back up, or for use in other tools."
+                + "You will be prompted to create a password to protect your exported certificate");
     }//GEN-LAST:event_btnExportMouseEntered
 
     private void btnRevokeMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnRevokeMouseEntered
@@ -1957,9 +1975,11 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 ClientKeyStore.getClientkeyStore(PASSPHRASE).getKeyStore();
         this.reloadKeystoreUpdateGUI();
 
+
         //select the same entry as what the user has previously selected.
         String retrievedAlias = "";
         KeyStoreEntryWrapper selectedKSEWComboBox = null;
+
         for (int index = 0; index < this.jComboBox1.getItemCount(); index++) {
             selectedKSEWComboBox = (KeyStoreEntryWrapper) this.jComboBox1.getItemAt(index);
             // Get the entry
@@ -1972,6 +1992,31 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 return;
             }
         }
+
+//        boolean tickBoxSelected = Boolean.parseBoolean(SysProperty.getValue("ngsca.certwizard.downloadedTickboxDoNotShow"));
+//
+//        System.out.println("USERS DECISION: "+ tickBoxSelected);
+//
+//        //if the tick box was not previously selected by the user, show notification that
+//        //certificates have been downloaded
+//        if (!tickBoxSelected) {
+//            JCheckBox checkbox = new JCheckBox("Do not show this message again.");
+//            String message = "Your certificate list has now been refreshed.\n"
+//                    + "Any approved and signed certificate requests which have been\n"
+//                    + "downloaded from the CA Server will appear as 'VALID' under\n"
+//                    + "'Status with CA' field in Certificate Information.";
+//
+//            Object[] params = {message, checkbox};
+//            JOptionPane.showMessageDialog(this, params, "Certificate list refresh complete", JOptionPane.INFORMATION_MESSAGE);
+//            boolean dontShow = checkbox.isSelected();
+//
+//            if (dontShow) {
+//                SysProperty.alterProperties("ngsca.certwizard.downloadedTickboxDoNotShow", "true");
+//
+//            }
+//
+//         }
+
 
         
     }//GEN-LAST:event_btnRefreshActionPerformed
@@ -2019,7 +2064,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     private void btnChangePasswdMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnChangePasswdMouseEntered
         // TODO add your handling code here:
-        setMOD("Change the global password used to protect your certificates in Certificate Wizard");
+        setMOD("Change the Certificate Wizard global password used to protect all your certificates in Certificate Wizard");
 
     }//GEN-LAST:event_btnChangePasswdMouseEntered
 

@@ -10,8 +10,11 @@
  */
 package uk.ngs.certwizard.gui;
 
+import help_panel_html.LoadHtmlResource;
+import java.io.IOException;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
 import uk.ngs.ca.common.ClientKeyStore;
 
 import uk.ngs.ca.common.SystemStatus;
@@ -22,7 +25,7 @@ import uk.ngs.ca.tools.property.SysProperty;
  *
  * @author xw75
  */
-public class PasswordPanel extends javax.swing.JPanel {
+public class PasswordPanel extends javax.swing.JPanel  {
 
     String message = "";
     String messageTitle = "";
@@ -34,31 +37,39 @@ public class PasswordPanel extends javax.swing.JPanel {
 
     private CertWizardMain _certWizardMain = null;
 
+
     /** Creates new form Password */
     public PasswordPanel(CertWizardMain _certWizardMain) {
+
+                
+        this.sysStatus = SystemStatus.getInstance(); 
+        this.isExistKeyStore = this.sysStatus.isExistKeyStore();
 
         initComponents();
 
 //        this.setFocusable(true);
 //        txtPassword.requestFocusInWindow();
-        
+
         this._certWizardMain = _certWizardMain;
         getCertPanel = this._certWizardMain.getCertificatePanel();
 
-        //this.sysStatus = new SystemStatus();
-        this.sysStatus = SystemStatus.getInstance(); 
-        this.isExistKeyStore = this.sysStatus.isExistKeyStore();
+
         if ( this.isExistKeyStore ) {
             jLabel3.setVisible(false);
             txtConfirmPassword.setVisible(false);
-            messageLabel.setText("<html>Please enter your password.</html>");
+//            messageLabel.setText("<html>Please enter your password.</html>");
         } else {
             jLabel3.setVisible(true);
             txtConfirmPassword.setVisible(true);
-            messageLabel.setText("<html>Please enter and confirm a new password.</html>");
+//            messageLabel.setText("<html>Please enter and confirm a new password.</html>");
         }
         okButton.setEnabled(false);
 
+        String keyStoreFile = SysProperty.getValue("ngsca.key.keystore.file");
+        String keyStorePath = System.getProperty("user.home");
+        keyStorePath = keyStorePath + System.getProperty("file.separator") + ".ca";
+        keyStorePath = keyStorePath + System.getProperty("file.separator") + keyStoreFile;
+        jLabel2.setText(keyStorePath);
     }
 
     /*public PasswordPanel(String message, String messageTitle) {
@@ -77,11 +88,14 @@ public class PasswordPanel extends javax.swing.JPanel {
     private void initComponents() {
 
         jLabel1 = new javax.swing.JLabel();
-        messageLabel = new javax.swing.JLabel();
         txtPassword = new javax.swing.JPasswordField();
         okButton = new javax.swing.JButton();
         jLabel3 = new javax.swing.JLabel();
         txtConfirmPassword = new javax.swing.JPasswordField();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        jTextPane1 = new javax.swing.JTextPane();
+        jLabel2 = new javax.swing.JLabel();
+        jLabel4 = new javax.swing.JLabel();
 
         jLabel1.setText("Password:");
 
@@ -116,44 +130,75 @@ public class PasswordPanel extends javax.swing.JPanel {
             }
         });
 
+        jScrollPane1.setViewportView(jTextPane1);
+        try {
+            java.net.URL url;
+            LoadHtmlResource lhtml = new LoadHtmlResource();
+            if ( this.isExistKeyStore ) {
+                url = lhtml.getHtmlFile("/help_panel_html/passwordPanel.html");
+            } else {
+                url = lhtml.getHtmlFile("/help_panel_html/passwordPanelNew.html");
+            }
+
+            jTextPane1.setPage(url);
+
+        } catch (IOException ex) {
+            System.err.println("Could not find file: " + "/help_panel_html/welcome.html");
+            ex.printStackTrace();
+        }
+
+        jLabel2.setText("jLabel2");
+
+        jLabel4.setText("Keystore:");
+
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, layout.createSequentialGroup()
-                        .add(21, 21, 21)
+            .add(layout.createSequentialGroup()
+                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                    .add(layout.createSequentialGroup()
+                        .addContainerGap()
+                        .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 826, Short.MAX_VALUE))
+                    .add(layout.createSequentialGroup()
+                        .add(194, 194, 194)
                         .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                             .add(jLabel1)
-                            .add(jLabel3))
-                        .add(48, 48, 48)
-                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                            .add(okButton)
-                            .add(org.jdesktop.layout.GroupLayout.LEADING, layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                                .add(txtConfirmPassword, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 239, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                .add(org.jdesktop.layout.GroupLayout.LEADING, txtPassword, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 239, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))))
-                    .add(org.jdesktop.layout.GroupLayout.LEADING, layout.createSequentialGroup()
-                        .addContainerGap()
-                        .add(messageLabel, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 356, Short.MAX_VALUE)))
+                            .add(jLabel3)
+                            .add(jLabel4))
+                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                            .add(layout.createSequentialGroup()
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                                    .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
+                                        .add(okButton)
+                                        .add(org.jdesktop.layout.GroupLayout.LEADING, txtConfirmPassword, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 239, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                                    .add(txtPassword, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 239, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
+                            .add(layout.createSequentialGroup()
+                                .add(15, 15, 15)
+                                .add(jLabel2)))))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(layout.createSequentialGroup()
+            .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
-                .add(messageLabel, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 80, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .add(18, 18, 18)
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(txtPassword, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(jLabel1))
+                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 245, Short.MAX_VALUE)
+                .add(28, 28, 28)
+                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                    .add(jLabel1)
+                    .add(txtPassword, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(jLabel3)
                     .add(txtConfirmPassword, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                 .add(okButton)
-                .addContainerGap(183, Short.MAX_VALUE))
+                .add(18, 18, 18)
+                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                    .add(jLabel4)
+                    .add(jLabel2))
+                .add(44, 44, 44))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -264,8 +309,11 @@ public class PasswordPanel extends javax.swing.JPanel {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
-    private javax.swing.JLabel messageLabel;
+    private javax.swing.JLabel jLabel4;
+    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JTextPane jTextPane1;
     private javax.swing.JButton okButton;
     private javax.swing.JPasswordField txtConfirmPassword;
     private javax.swing.JPasswordField txtPassword;

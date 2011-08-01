@@ -18,6 +18,7 @@ import java.util.regex.Matcher;
 
 import uk.ngs.ca.info.CAInfo;
 import uk.ngs.ca.certificate.OnLineUserCertificateRequest;
+import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
 import uk.ngs.ca.common.MyPattern;
 import uk.ngs.ca.common.ClientKeyStore;
 //import uk.ngs.ca.certificate.client.PingService;
@@ -412,7 +413,10 @@ public class Apply extends javax.swing.JDialog {
                         System.out.println(onLineCertRequest.getMessage());
                         //need to clear up the CSR Request created!
                        try {
-                            ClientKeyStore.getClientkeyStore(passphrase).getKeyStore().deleteEntry(this.aliasTextField.getText());
+                           ClientKeyStoreCaServiceWrapper keyStoreCaWrapper = ClientKeyStoreCaServiceWrapper.getInstance(passphrase);
+                           keyStoreCaWrapper.deleteEntry(this.aliasTextField.getText());
+                           
+//                            ClientKeyStore.getClientkeyStore(passphrase).getKeyStore().deleteEntry(this.aliasTextField.getText());
                         } catch (KeyStoreException ex) {
                             Logger.getLogger(MainWindowPanel.class.getName()).log(Level.SEVERE, null, ex);
                             JOptionPane.showMessageDialog(this, "Unable to delete KeyStore entry. Please contact helpdesk and quote this message! " + ex.getMessage(), "Unable to clear up request", JOptionPane.ERROR_MESSAGE);

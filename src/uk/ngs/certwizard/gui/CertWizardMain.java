@@ -50,7 +50,7 @@ public class CertWizardMain { //implements Observer {
 
         String title = SysProperty.getValue("ngsca.certwizard.version");
         frame = new JFrame( title );
-
+        frame.setResizable(false);
         if (!checkGlobusDirectory()) {
             System.exit(0);
         }

@@ -61,6 +61,7 @@ public class ClientKeyStoreCaServiceWrapper {
     /** Class is a singleton, so hold internal reference */
     private static ClientKeyStoreCaServiceWrapper instance = null;
 
+
     /**
      * Get a shared singleton <code>KeyStoreWrapper</code> instance
      * @param passphrase for the '$HOME/.ca/cakeystore.pkcs12' keystore file.
@@ -154,6 +155,7 @@ public class ClientKeyStoreCaServiceWrapper {
             this.initAllCertCSRInfos_WithOnlineCheck();
             // update any self-signed CSR certs with the CA issued certs. Only
             // need to reStore keyStore if we did actually update a cert.
+
             if(this.updateValidCAIssuedCerts()){
                 // If either a self-signed CSR cert or a VALID CA issued cert
                 // was updated/replaced with a new/updated CA issued certificate
@@ -171,6 +173,7 @@ public class ClientKeyStoreCaServiceWrapper {
     public ClientKeyStore getClientKeyStore(){
         return this.clientKeyStore;
     }
+
 
     /**
      * Get the KeyStore entries as a map.
@@ -245,8 +248,8 @@ public class ClientKeyStoreCaServiceWrapper {
                       ||  cert.getIssuerDN().toString().equals(  SysProperty.getValue("ngsca.issuer.dn") ))  ) {
                     return;
                 }
-                //ngsca.issuer.dn= "C=UK,O=eScienceDev,OU=NGS,CN=DevelopmentCA"
-
+//                //ngsca.issuer.dn= "C=UK,O=eScienceDev,OU=NGS,CN=DevelopmentCA"
+//                String oldStatus = keyStoreEntryWrapper.getServerCertificateCSRInfo().getStatus();
 
                 // Query CA server and determine if it has a record of this public key
                 PublicKey keystorePublicKey = cert.getPublicKey();
@@ -384,7 +387,15 @@ public class ClientKeyStoreCaServiceWrapper {
                         }
                     }
                 }
-            //} // end of while
+//            //} // end of while
+                
+//            String newStatus = keyStoreEntryWrapper.getServerCertificateCSRInfo().getStatus();
+//
+////            System.out.println("==========OLD STATUS: "+oldStatus);
+//            System.out.println("==========NEW STATUS: "+newStatus);
+////            if (oldStatus.equals("APPROVED") && newStatus.equals("VALID")) {
+////                certificateDownloaded = true;
+//            }
 
         } catch (Exception ep) {
             ep.printStackTrace();
@@ -416,11 +427,12 @@ public class ClientKeyStoreCaServiceWrapper {
             if (keyStoreEntryWrapper.getEntryType().equals(KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY)
                     && keyStoreEntryWrapper.getServerCertificateCSRInfo() != null
                     && "VALID".equals(keyStoreEntryWrapper.getServerCertificateCSRInfo().getStatus())) {
-
-
+                
                 // Download the cert from server by passing the id (dont think this
                 // returns a cert chain)
                 X509Certificate downloadedCert = (new CertificateDownload(keyStoreEntryWrapper.getServerCertificateCSRInfo().getId())).getCertificate();
+
+
                 if (downloadedCert == null) {
                     continue; // maybe we temporarily lost connection, so continue.
                 } else {
@@ -440,6 +452,8 @@ public class ClientKeyStoreCaServiceWrapper {
                             // According to javadoc, "If the given alias already exists, the keystore information
                             // associated with it is overridden by the given key (and possibly certificate chain)".
                             System.out.println("Replacing: [" + keyStoreEntryWrapper.getAlias() + "] with downloaded cert");
+
+
                             this.clientKeyStore.getKeyStore().deleteEntry(keyStoreEntryWrapper.getAlias());
                             this.clientKeyStore.getKeyStore().setKeyEntry(keyStoreEntryWrapper.getAlias(), privateKey, mKeystorePASSPHRASE, chain);
                             // ok, we have have replaced this cert, so we need to
@@ -450,7 +464,7 @@ public class ClientKeyStoreCaServiceWrapper {
                             keyStoreEntryWrapper.setIssuerName(chain[0].getIssuerX500Principal().toString());
                             keyStoreEntryWrapper.setNotAfter(chain[0].getNotAfter());
                             keyStoreEntryWrapper.setNotBefore(chain[0].getNotBefore());
-                            updated = true;
+                            updated = true; 
                         }
                     } catch (Exception ex) {
                         Logger.getLogger(ClientKeyStoreCaServiceWrapper.class.getName()).log(Level.SEVERE, null, ex);

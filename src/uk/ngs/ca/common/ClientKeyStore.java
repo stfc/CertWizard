@@ -93,6 +93,13 @@ public final class ClientKeyStore {
         this.reStore();
     }
 
+    /**
+     * Method that returns the directory to keystore
+     * @return keystore directory as a String
+     */
+    public String returnKeystoreDir() {
+        return this.key_KeyStoreFilePath;
+    }
 
     /**
      * Load <code>this.keyStore</code> from file if it exists otherwise touch

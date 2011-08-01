@@ -1,0 +1,105 @@
+/* 
+    Document   : css1
+    Created on : 13-Mar-2009, 16:33:13
+    Author     : djm76
+    Description:
+        Purpose of the stylesheet follows.
+*/
+
+/* 
+   TODO customize this sample style
+   Syntax recommendation http://www.w3.org/TR/REC-CSS2/
+*/
+
+root { 
+    display: block;
+}
+
+body {
+    color: black;
+    font-family: Arial,Helvetica,sans-serif;
+    font-size: 10px;
+}
+
+.underline {
+    text-decoration: underline;
+}
+
+
+.blue_underline {  
+    color: #0033cc;
+    text-decoration: underline;
+}
+
+
+.h2 {    
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.standard_bold {
+	font-family : verdana, Geneva, Arial, Helvetica, sans-serif;
+	font-size: 10px;
+	color: #000000;
+    font-weight: bold;
+}
+
+.standard_bold_red {
+	font-family : verdana, Geneva, Arial, Helvetica, sans-serif;
+	font-size: 10px;
+	color: red;
+    font-weight: bold;
+}
+
+.myHeader1 {
+
+    font-family: Arial,Helvetica,sans-serif;
+    font-size: 10px;
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+.myHeader2 {
+
+    font-size: 12px;
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+
+.myHeader2noUnderline {
+
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.myHeader3 {
+
+    font-size: 11px;
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+.button {
+
+    background-color: #cccccc;
+    border-top-style: outset;
+    border-bottom-style: outset;
+    border-left-style: outset;
+    border-right-style: outset;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    padding-left: 3px;
+    padding-right: 3px;
+    margin-top: 2px;
+    margin-bottom: 2px;
+    margin-left: 2px;
+    margin-right: 2px;
+    font-family: Arial,Helvetica,sans-serif;
+}
+
+.xmlFormat{
+	font-family : verdana, Geneva, Arial, Helvetica, sans-serif;
+	font-size: 11px;
+	color: #003399;
+}

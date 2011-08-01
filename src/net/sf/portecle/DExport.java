@@ -100,6 +100,8 @@ public class DExport
 		m_keyStoreWrap = keyStore;
 		m_sEntryAlias = sEntryAlias;
 		initComponents();
+                m_jrbPrivKeyCertChain.setSelected(true);
+                m_jrbPKCS12.setSelected(true);
 	}
 
 	/**

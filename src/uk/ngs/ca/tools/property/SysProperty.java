@@ -5,6 +5,7 @@
 package uk.ngs.ca.tools.property;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.File;
@@ -18,6 +19,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Properties;
+import java.util.logging.Level;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
@@ -359,6 +361,24 @@ public class SysProperty {
         }
         return message;
     }*/
+
+    public static void alterProperties(String key, String value) {
+        
+        String _property = SysProperty.getValue(key);
+        properties.setProperty(_property, value);
+        try {
+            FileOutputStream out = new FileOutputStream(PROP_FILE);
+            properties.store(out, _property);
+            out.close();
+
+        } catch (FileNotFoundException ex) {
+            myLogger.error("[SysProperty] Could not find the properties file!");
+        } catch (IOException ex2) {
+            myLogger.error("[SysProperty] Error writing to the file.");   
+        }
+        SysProperty.init(); //in order to read the properties file again with the
+                            //newest modifications.
+    }
 
     private static void init() {
         myLogger.debug("[SysProperty] init...");
