@@ -18,6 +18,7 @@ import java.util.regex.Matcher;
 
 import uk.ngs.ca.info.CAInfo;
 import uk.ngs.ca.certificate.OnLineUserCertificateRequest;
+import uk.ngs.ca.certificate.client.PingService;
 import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
 import uk.ngs.ca.common.MyPattern;
 import uk.ngs.ca.common.ClientKeyStore;
@@ -371,13 +372,17 @@ public class Apply extends javax.swing.JDialog {
             jLabel5.setForeground(Color.RED);
             setInformation(text);
         } else {
-                //The following checks if the CA Database as well as the CA Server is up or not.
-//                if( !isPing() ){
-//                    JOptionPane.showMessageDialog(this, "There is a problem connecting with the server, \nplease report to helpdesk or work under offline by restarting CertWizard and select offline.", "Server Connection Fault", JOptionPane.INFORMATION_MESSAGE);
-//                    WaitDialog.hideDialog();
-//                    this.dispose();
-//                    return;
-//                }
+
+                if (!(PingService.getPingService().isPingService())) {
+                    JOptionPane.showMessageDialog(this, "Cannot connect to the CA Server. Please ensure that you are connected to the Internet.\n"
+                            + "If you are connected to the Internet but still unable to connect to the CA Server, please check your firewall\n"
+                            + "settings and ensure you allow Java to access to the Internet. If problem still persists, please contact\n"
+                            + "the helpdesk at support@grid-support.ac.uk.", "Server Connection Fault", JOptionPane.ERROR_MESSAGE);
+
+
+                    return;
+                }
+
                 onLineCertRequest.setEmail(this.txtEmail.getText());
                 onLineCertRequest.setName(myCN);
                 onLineCertRequest.setPIN1(new String(this.txtPin.getPassword()));

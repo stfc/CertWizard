@@ -37,7 +37,7 @@ public class MyPattern {
         if (lengthCN >= 2) {
             return true;
         } else {
-            errorMessage = "Your CN is not properly. You must provide at least one given name and a surname.";
+            errorMessage = "The information entered in Name field is not valid. You must provide at least one given name and a surname separated by space";
             return false;
         }
     }
