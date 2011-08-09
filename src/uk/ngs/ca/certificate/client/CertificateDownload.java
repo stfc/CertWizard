@@ -42,6 +42,8 @@ public class CertificateDownload {
             String certURL = SysProperty.getValue("uk.ngs.ca.request.certificate.url");
             certURL = certURL + "/" + certID;
             Client c = new Client(Protocol.HTTPS);
+            c.setConnectTimeout(SysProperty.getTimeoutMilliSecs());  // in milliseconds (8 secs). TODO: should be editable and stored in .properties file 
+
             Request request = new Request(Method.GET, new Reference(certURL));
 
             Form form = new Form();

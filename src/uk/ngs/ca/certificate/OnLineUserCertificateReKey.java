@@ -192,6 +192,8 @@ public class OnLineUserCertificateReKey {
 
     public boolean doPosts() {
         Client client = new Client(Protocol.HTTPS);
+        client.setConnectTimeout(SysProperty.getTimeoutMilliSecs());  // in milliseconds (8 secs). TODO: should be editable and stored in .properties file 
+
         Representation representation = getRepresentation();
         Request request = new Request(Method.POST, new Reference(CSRURL), representation);
         request = setupHeaders(request);
@@ -233,6 +235,8 @@ public class OnLineUserCertificateReKey {
                 form.add("realm", _realmP.getValue());
                 form.add("response", _response);
                 client = new Client(Protocol.HTTPS);
+                client.setConnectTimeout(SysProperty.getTimeoutMilliSecs());  // in milliseconds (8 secs). TODO: should be editable and stored in .properties file 
+
                 representation = getRepresentation();
                 request = new Request(Method.POST, new Reference(CSRURL), representation);
                 request.getAttributes().put("org.restlet.http.headers", form);
@@ -335,6 +339,7 @@ public class OnLineUserCertificateReKey {
         String requestID = null;
 
         Client c = new Client(Protocol.HTTPS);
+        c.setConnectTimeout(SysProperty.getTimeoutMilliSecs());  // in milliseconds (8 secs). TODO: should be editable and stored in .properties file 
 
         Request request = new Request(Method.POST, new Reference(CSRURL), getRepresentation());
 

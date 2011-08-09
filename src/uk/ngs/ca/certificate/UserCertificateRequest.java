@@ -118,6 +118,8 @@ public class UserCertificateRequest {
     public boolean doLaunch() {
 
         Client c = new Client(Protocol.HTTPS);
+        c.setConnectTimeout(SysProperty.getTimeoutMilliSecs());  // in milliseconds (8 secs). TODO: should be editable and stored in .properties file 
+
         Request request = new Request(Method.POST, new Reference(CSRURL), getRepresentation());
 
         request = setupHeaders(request);

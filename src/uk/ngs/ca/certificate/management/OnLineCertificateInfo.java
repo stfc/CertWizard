@@ -640,6 +640,7 @@ public class OnLineCertificateInfo extends Observable {
 
     private Response doCSRRequest(Representation representation) {
         Client c = new Client(Protocol.HTTPS);
+        c.setConnectTimeout(SysProperty.getTimeoutMilliSecs());  // in milliseconds (8 secs). TODO: should be editable and stored in .properties file 
         Request request = new Request(Method.POST, new Reference(SysProperty.getValue("uk.ngs.ca.request.csr.url")), representation);
         Form form = new Form();
         form.add("LocalHost", uk.ngs.ca.common.ClientHostName.getHostName());

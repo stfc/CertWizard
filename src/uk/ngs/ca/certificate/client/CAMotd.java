@@ -41,6 +41,8 @@ public class CAMotd {
         try {
             String csrURL = SysProperty.getValue("uk.ngs.ca.request.ca.motd.text.url");
             Client c = new Client(Protocol.HTTPS);
+            c.setConnectTimeout(SysProperty.getTimeoutMilliSecs());  // in milliseconds (8 secs). TODO: should be editable and stored in .properties file 
+
             Request request = new Request(Method.GET, new Reference(csrURL));
 
             Form form = new Form();

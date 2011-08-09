@@ -79,6 +79,8 @@ public class RevokeRequest {
     
     public boolean doPosts() {
         Client client = new Client(Protocol.HTTPS);
+        client.setConnectTimeout(SysProperty.getTimeoutMilliSecs());  // in milliseconds (8 secs). TODO: should be editable and stored in .properties file 
+
         Request request = new Request(Method.POST, new Reference(REVOKEURL), getRepresentation());
         Form form = new Form();
         form.add("PPPK", "this is pppk");

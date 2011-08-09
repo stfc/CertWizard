@@ -225,7 +225,10 @@ public class CertWizardMain { //implements Observer {
         
         // Run ping check in a new thread so we don't block while it tries to connect.
         Timer timer = new Timer();
-        timer.schedule(new runPingCheck(), 0); // no delay required.
+        // execute once with no delay required.
+        timer.schedule(new runPingCheck(), 0); 
+        // repeat every n millisecs with no delay (GUI will automatically update if the connection is lost).
+        //timer.schedule(new runPingCheck(), 0, 10000); 
         
     }
     

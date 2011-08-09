@@ -59,6 +59,15 @@ public class SysProperty {
     private static Properties properties = new Properties();
     private static final String FILEPATH = ".ca";
 
+    
+    /**
+     * Get the timeout in millisecs for the http(s) connection.
+     * @return 
+     */
+    public static int getTimeoutMilliSecs(){
+        return 8000; 
+    }
+        
     /**
      *  Returns property value
      * @param key property key

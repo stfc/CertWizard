@@ -48,8 +48,9 @@ public class ResourcesPublicKey {
             // call CA server and ask 'do you know about a certficate with this hash'
             String resourceURL = SysProperty.getValue("uk.ngs.ca.request.resource.publickey");
             resourceURL = resourceURL + "/" + this.encodedPublicKey;
-            //System.out.println("dave:::::::::::::"+resourceURL);
             Client c = new Client(Protocol.HTTPS);
+            c.setConnectTimeout(SysProperty.getTimeoutMilliSecs());  // in milliseconds (8 secs). TODO: should be editable and stored in .properties file 
+
 
             Request request = new Request(Method.GET, new Reference(resourceURL));
 
