@@ -70,7 +70,7 @@ public class OnlineStatus extends javax.swing.JPanel implements Observer {
 
     private void connectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_connectButtonActionPerformed
         //System.setProperty("http.proxyHost", "wwwcache.dl.ac.uk");
-        this.doPingCheck();
+        this.doPingCheckActionPerformed();
     }//GEN-LAST:event_connectButtonActionPerformed
 
 
@@ -85,7 +85,7 @@ public class OnlineStatus extends javax.swing.JPanel implements Observer {
      * Attempt a ping check and update our global state. This will block
      * until completed which avoids re-clicking while trying to connect.
      */
-    private void doPingCheck(){
+    private void doPingCheckActionPerformed(){
         // calling isPingService will call SystemStatus.setIsOnline(bool) which
         // will subsequently invoke update below if the state changes.
         PingService.getPingService().isPingService();

@@ -1000,8 +1000,8 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             bcosk.writeTo(keyPemFile);
             Util.setFilePermissions(keyPemFile, 400);
 
-            JOptionPane.showMessageDialog(this, "usercert.pem and userkey.pem exported OK to '$USER_HOME/.globus/'",
-                    "Export usercert.pem userkey.pem", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "[usercert.pem] and [userkey.pem] installed OK to '$USER_HOME/.globus/'",
+                    "Install usercert.pem userkey.pem", JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception ex) {
             ex.printStackTrace();
             DThrowable.showAndWait(null, null, ex);
