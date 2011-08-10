@@ -1,10 +1,13 @@
 package uk.ngs.certwizard.gui;
 
 import java.awt.Color;
+import java.util.Date;
 import java.util.Observable;
 import java.util.Observer;
+import javax.swing.JOptionPane;
 import uk.ngs.ca.certificate.client.PingService;
 import uk.ngs.ca.common.SystemStatus;
+import uk.ngs.ca.tools.property.SysProperty;
 
 /**
  * Display the current online status of the tool according to the application's 
@@ -14,12 +17,16 @@ import uk.ngs.ca.common.SystemStatus;
  */
 public class OnlineStatus extends javax.swing.JPanel implements Observer {
 
+    private Date lastOnline = new Date(); 
+    
     /** Creates new form OnlineStatus */
     public OnlineStatus() {
         initComponents();
-        this.connectButton.setVisible(false);
+        //this.connectButton.setVisible(false);
     }
 
+    
+    
     /** This method is called from within the constructor to
      * initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is
@@ -32,10 +39,13 @@ public class OnlineStatus extends javax.swing.JPanel implements Observer {
         connectButton = new javax.swing.JButton();
         onlineLabel = new javax.swing.JLabel();
         jLabel1 = new javax.swing.JLabel();
+        timeoutTextField = new javax.swing.JTextField();
+        jLabel2 = new javax.swing.JLabel();
 
         setToolTipText("Online CA status indicates whether the tool can contact the UK Certification Authority Server");
 
-        connectButton.setText("Connect");
+        connectButton.setText("Try again");
+        connectButton.setToolTipText("Attempt to ping the CA server with the specified connection timeout period. ");
         connectButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 connectButtonActionPerformed(evt);
@@ -47,16 +57,34 @@ public class OnlineStatus extends javax.swing.JPanel implements Observer {
 
         jLabel1.setText("Online CA Status:");
 
+        timeoutTextField.setText("8");
+        timeoutTextField.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                timeoutTextFieldActionPerformed(evt);
+            }
+        });
+        timeoutTextField.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                timeoutTextFieldFocusLost(evt);
+            }
+        });
+
+        jLabel2.setText("Connection timeout (secs)");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addGap(12, 12, 12)
+                .addContainerGap()
                 .addComponent(jLabel1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(onlineLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 429, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(onlineLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 401, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jLabel2)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(timeoutTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(connectButton))
         );
         layout.setVerticalGroup(
@@ -64,7 +92,9 @@ public class OnlineStatus extends javax.swing.JPanel implements Observer {
             .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                 .addComponent(connectButton)
                 .addComponent(jLabel1)
-                .addComponent(onlineLabel))
+                .addComponent(onlineLabel)
+                .addComponent(timeoutTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jLabel2))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -73,13 +103,40 @@ public class OnlineStatus extends javax.swing.JPanel implements Observer {
         this.doPingCheckActionPerformed();
     }//GEN-LAST:event_connectButtonActionPerformed
 
+private void timeoutTextFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_timeoutTextFieldActionPerformed
+// TODO add your handling code here:
+    this.doChangeTimeout();
+}//GEN-LAST:event_timeoutTextFieldActionPerformed
+
+private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_timeoutTextFieldFocusLost
+// TODO add your handling code here:
+    this.doChangeTimeout();
+}//GEN-LAST:event_timeoutTextFieldFocusLost
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton connectButton;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel onlineLabel;
+    private javax.swing.JTextField timeoutTextField;
     // End of variables declaration//GEN-END:variables
 
+    
+    /**
+     * change the timeout value 
+     */
+    private void doChangeTimeout(){
+        try {
+            String timeoutMilliSecs = this.timeoutTextField.getText(); 
+            int timeout = Integer.parseInt(timeoutMilliSecs);
+            SysProperty.setTimeoutMilliSecs(timeout*1000); 
+        } catch(NumberFormatException ex){
+               JOptionPane.showMessageDialog(this, "Invalid timeout value. Please specify a number (timout in seconds)",
+                    "Invalid timeout", JOptionPane.ERROR_MESSAGE);
+               this.timeoutTextField.setText(String.valueOf(SysProperty.getTimeoutMilliSecs()/1000));
+        }
+    }
 
     /**
      * Attempt a ping check and update our global state. This will block
@@ -89,6 +146,7 @@ public class OnlineStatus extends javax.swing.JPanel implements Observer {
         // calling isPingService will call SystemStatus.setIsOnline(bool) which
         // will subsequently invoke update below if the state changes.
         PingService.getPingService().isPingService();
+        this.update(null, null);
     }
 
 
@@ -99,13 +157,14 @@ public class OnlineStatus extends javax.swing.JPanel implements Observer {
     public void update(Observable o, Object arg) {
         //System.out.println("update called");
         if ( SystemStatus.getInstance().getIsOnline() ) {
-            this.onlineLabel.setText("Online");
+            lastOnline = new Date(); 
+            this.onlineLabel.setText("Last online check at:  "+lastOnline.toString());
             this.onlineLabel.setForeground(new Color(0, 153, 0));
-            this.connectButton.setText("Reconnect");
+            //this.connectButton.setText("Refresh");
         } else {
             this.onlineLabel.setText("Cannot Contact CA Server - Please check your network connection.");
             this.onlineLabel.setForeground(Color.RED);
-            this.connectButton.setText("Connect");
+            //this.connectButton.setText("Try again");
         }
     }
 

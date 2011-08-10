@@ -20,11 +20,15 @@
     <DimensionLayout dim="0">
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" alignment="1" attributes="0">
-              <EmptySpace min="-2" pref="12" max="-2" attributes="0"/>
+              <EmptySpace min="-2" max="-2" attributes="0"/>
               <Component id="jLabel1" min="-2" max="-2" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
-              <Component id="onlineLabel" min="-2" pref="429" max="-2" attributes="0"/>
+              <Component id="onlineLabel" min="-2" pref="401" max="-2" attributes="0"/>
               <EmptySpace max="32767" attributes="0"/>
+              <Component id="jLabel2" min="-2" max="-2" attributes="0"/>
+              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+              <Component id="timeoutTextField" min="-2" pref="22" max="-2" attributes="0"/>
+              <EmptySpace max="-2" attributes="0"/>
               <Component id="connectButton" min="-2" max="-2" attributes="0"/>
           </Group>
       </Group>
@@ -35,6 +39,8 @@
               <Component id="connectButton" alignment="3" min="-2" max="-2" attributes="0"/>
               <Component id="jLabel1" alignment="3" min="-2" max="-2" attributes="0"/>
               <Component id="onlineLabel" alignment="3" min="-2" max="-2" attributes="0"/>
+              <Component id="timeoutTextField" alignment="3" min="-2" max="-2" attributes="0"/>
+              <Component id="jLabel2" alignment="3" min="-2" max="-2" attributes="0"/>
           </Group>
       </Group>
     </DimensionLayout>
@@ -42,7 +48,8 @@
   <SubComponents>
     <Component class="javax.swing.JButton" name="connectButton">
       <Properties>
-        <Property name="text" type="java.lang.String" value="Connect"/>
+        <Property name="text" type="java.lang.String" value="Try again"/>
+        <Property name="toolTipText" type="java.lang.String" value="Attempt to ping the CA server with the specified connection timeout period. "/>
       </Properties>
       <Events>
         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="connectButtonActionPerformed"/>
@@ -59,6 +66,20 @@
     <Component class="javax.swing.JLabel" name="jLabel1">
       <Properties>
         <Property name="text" type="java.lang.String" value="Online CA Status:"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JTextField" name="timeoutTextField">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="8"/>
+      </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="timeoutTextFieldActionPerformed"/>
+        <EventHandler event="focusLost" listener="java.awt.event.FocusListener" parameters="java.awt.event.FocusEvent" handler="timeoutTextFieldFocusLost"/>
+      </Events>
+    </Component>
+    <Component class="javax.swing.JLabel" name="jLabel2">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Connection timeout (secs)"/>
       </Properties>
     </Component>
   </SubComponents>
