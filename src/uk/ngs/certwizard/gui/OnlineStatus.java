@@ -130,6 +130,7 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
         try {
             String timeoutMilliSecs = this.timeoutTextField.getText(); 
             int timeout = Integer.parseInt(timeoutMilliSecs);
+            if(timeout <= 0) throw new NumberFormatException(); 
             SysProperty.setTimeoutMilliSecs(timeout*1000); 
         } catch(NumberFormatException ex){
                JOptionPane.showMessageDialog(this, "Invalid timeout value. Please specify a number (timout in seconds)",
