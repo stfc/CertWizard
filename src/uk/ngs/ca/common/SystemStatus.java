@@ -35,11 +35,11 @@ public class SystemStatus extends Observable {
      * @param online
      */
     public synchronized void setIsOnline(boolean online){
-        if (online != this.isOnline) {
+        //if (online != this.isOnline) {
             this.isOnline = online;
             setChanged();
             notifyObservers();
-        }
+        //}
     }
 
 
