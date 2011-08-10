@@ -31,8 +31,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.Element;
 import uk.ngs.ca.certificate.client.CertificateDownload;
 import uk.ngs.ca.certificate.client.PingService;
-import uk.ngs.ca.common.CAKeyPair;
-import uk.ngs.ca.common.SystemStatus;
 import uk.ngs.ca.tools.property.SysProperty;
 
 /**
@@ -451,7 +449,7 @@ public class ClientKeyStoreCaServiceWrapper {
                             // user cert? - what about the eSci CA and root certs in the chain ?
                             // According to javadoc, "If the given alias already exists, the keystore information
                             // associated with it is overridden by the given key (and possibly certificate chain)".
-                            System.out.println("Replacing: [" + keyStoreEntryWrapper.getAlias() + "] with downloaded cert");
+                            System.out.println("Refreshing: [" + keyStoreEntryWrapper.getAlias() + "] with downloaded cert");
 
 
                             this.clientKeyStore.getKeyStore().deleteEntry(keyStoreEntryWrapper.getAlias());
