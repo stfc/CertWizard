@@ -44,7 +44,7 @@ public class OnlineStatus extends javax.swing.JPanel implements Observer {
 
         setToolTipText("Online CA status indicates whether the tool can contact the UK Certification Authority Server");
 
-        connectButton.setText("Try again");
+        connectButton.setText("Retry");
         connectButton.setToolTipText("Attempt to ping the CA server with the specified connection timeout period. ");
         connectButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {

@@ -48,7 +48,7 @@
   <SubComponents>
     <Component class="javax.swing.JButton" name="connectButton">
       <Properties>
-        <Property name="text" type="java.lang.String" value="Try again"/>
+        <Property name="text" type="java.lang.String" value="Retry"/>
         <Property name="toolTipText" type="java.lang.String" value="Attempt to ping the CA server with the specified connection timeout period. "/>
       </Properties>
       <Events>
