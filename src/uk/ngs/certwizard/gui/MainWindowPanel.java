@@ -246,7 +246,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         this.issuerDnTextField.setText("");
         this.rDue.setText("");
         this.dRemaining.setText("");
-        this.caCertStatusTextField.setText("Unknown");
+        this.caCertStatusTextField.setText("Unknown (offline or certificate not recognized by UK CA)");
         // set to default color first
         this.caCertStatusTextField.setForeground(this.getColorFromState(null));
         this.aliasTextField.setText("");
@@ -314,7 +314,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             if (selectedKeyStoreEntry.getServerCertificateCSRInfo() != null) {
                 String state = selectedKeyStoreEntry.getServerCertificateCSRInfo().getStatus();
                 //labelText += selectedKeyStoreEntry.getServerCertificateCSRInfo().getOwner();
-                this.caCertStatusTextField.setText(state);
+                this.caCertStatusTextField.setText(state + " " + this.getExtraLabelTextFromState(state));
                 this.caCertStatusTextField.setForeground(this.getColorFromState(state));
             }
 
@@ -430,68 +430,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     }
 
-    private void doMoreStatusInfoAction() {
-        if (this.caCertStatusTextField.getText().equals("Unknown")) {
-           JOptionPane.showMessageDialog(this, "Either there is no connection established to the CA server,\n "
-                   + "or the selected certificate is not recognized by UK E-Science CA.",
-                "Further Status Information", JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-
-        if (this.caCertStatusTextField.getText().equals("VALID")) {
-           JOptionPane.showMessageDialog(this, "This certificate is a valid UK E-Science certificate.",
-                "Further Status Information", JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-
-        if (this.caCertStatusTextField.getText().equals("REVOKED")) {
-           JOptionPane.showMessageDialog(this, "This certificate has been revoked by UK E-Science\n"
-                   + "and it is no longer usable.",
-                "Further Status Information", JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-
-        if (this.caCertStatusTextField.getText().equals("NEW")) {
-           JOptionPane.showMessageDialog(this, "Your certificate request has been submitted and is waiting for approval\n",
-                "Further Status Information", JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-
-        if (this.caCertStatusTextField.getText().equals("SUSPENDED")) {
-           JOptionPane.showMessageDialog(this, "Your certificate revocation request has been submitted either by you or\n"
-                   + "by your RA and is waiting to be processed\n",
-                "Further Status Information", JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-
-        if (this.caCertStatusTextField.getText().equals("RENEW")) {
-           JOptionPane.showMessageDialog(this,"Your certificate renewal request has been submitted and is waiting for approval",
-                "Further Status Information", JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-
-        if (this.caCertStatusTextField.getText().equals("APPROVED")) {
-           JOptionPane.showMessageDialog(this,"Your certificate has been approved by your RA and is waiting for CA signing",
-                "Further Status Information", JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-
-        if (this.caCertStatusTextField.getText().equals("Expired")) {
-           JOptionPane.showMessageDialog(this,"Your certificate is expired and it is no longer usable.",
-                "Further Status Information", JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-
-        if (this.caCertStatusTextField.getText().equals("DELETED")) {
-           JOptionPane.showMessageDialog(this,"Your new or renewal request has been deleted by your RA Operator\n"
-                   + "If you are unaware of this please contact your RA, alternatively contact the helpdesk\n"
-                   + "at support@grid-support.ac.uk",
-                "Further Status Information", JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-        
-    }
-
     /**
      * Renderer class for KeyStoreEntryWrapper objects for the combo box.
      */
@@ -587,35 +525,35 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         }
     }
 
-//    /**
-//     * Return any extra label text that is appropriate to the given state.
-//     */
-//    private String getExtraLabelTextFromState(String state) {
-//        if ("VALID".equals(state)) {
-//            return "";
-//            // TODO also need to pass two dates to this method so that the
-//            // ExpiredCertColor and ExpiredForeverCertColor can be returned.
-//            // Passing null for these dates will be perfectly valid.
-//        } else if ("REVOKED".equals(state)) {
-//            return "";
-//        } else if ("NEW".equals(state)) {
-//            return "Your certificate request has been submitted and is waiting for approval";
-//        } else if ("SUSPENDED".equals(state)) {
-//            return "Your certificate revocation request has been submitted and is waiting to be processed";
-//        } else if ("RENEW".equals(state)) {
-//            return "Your renewal certificate request has been submitted and is waiting for approval";
-//        } else if ("APPROVED".equals(state)) {
-//            return "Your certificate has been approved by your RA and is waiting for CA signing";
-//        } else if ("ARCHIVED".equals(state)) {
-//            return "";
-//        } else if ("DELETED".equals(state)) {
-//            return "";
-//        } else if ("Expired".equals(state)) {
-//            return "";
-//        } else {
-//            return "";
-//        }
-//    }
+    /**
+     * Return any extra label text that is appropriate to the given state.
+     */
+    private String getExtraLabelTextFromState(String state) {
+        if ("VALID".equals(state)) {
+            return "";
+            // TODO also need to pass two dates to this method so that the
+            // ExpiredCertColor and ExpiredForeverCertColor can be returned.
+            // Passing null for these dates will be perfectly valid.
+        } else if ("REVOKED".equals(state)) {
+            return "";
+        } else if ("NEW".equals(state)) {
+            return "(Your certificate request is waiting for approval)";
+        } else if ("SUSPENDED".equals(state)) {
+            return "(Your certificate revocation request is waiting to be processed)";
+        } else if ("RENEW".equals(state)) {
+            return "(Your renewal certificate is waiting for approval)";
+        } else if ("APPROVED".equals(state)) {
+            return "(Your certificate is now waiting for CA signing)";
+        } else if ("ARCHIVED".equals(state)) {
+            return "";
+        } else if ("DELETED".equals(state)) {
+            return "";
+        } else if ("Expired".equals(state)) {
+            return "";
+        } else {
+            return "";
+        }
+    }
 
     ///////////////////////////////////////////////////////////////////////////
     // The next 3 methods (renew, revoke, new) all require contacting the
@@ -1390,7 +1328,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         btnRevoke = new javax.swing.JButton();
         btnDelete = new javax.swing.JButton();
         btnChangeAlias = new javax.swing.JButton();
-        moreStatusInfo = new javax.swing.JButton();
         jPanel3 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         TextMOD = new javax.swing.JTextArea();
@@ -1580,8 +1517,8 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                     .add(jLabel6))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jPanel4Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                    .add(dRemaining, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 141, Short.MAX_VALUE)
-                    .add(rDue, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 141, Short.MAX_VALUE))
+                    .add(dRemaining, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 146, Short.MAX_VALUE)
+                    .add(rDue, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 146, Short.MAX_VALUE))
                 .addContainerGap())
         );
         jPanel4Layout.setVerticalGroup(
@@ -1738,22 +1675,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             }
         });
 
-        moreStatusInfo.setIcon(new javax.swing.ImageIcon(getClass().getResource("/help_panel_html/images/info_small.jpeg"))); // NOI18N
-        moreStatusInfo.setText("    More Info");
-        moreStatusInfo.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                moreStatusInfoMouseEntered(evt);
-            }
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                moreStatusInfoMouseExited(evt);
-            }
-        });
-        moreStatusInfo.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                moreStatusInfoActionPerformed(evt);
-            }
-        });
-
         org.jdesktop.layout.GroupLayout pnlAllDetailsLayout = new org.jdesktop.layout.GroupLayout(pnlAllDetails);
         pnlAllDetails.setLayout(pnlAllDetailsLayout);
         pnlAllDetailsLayout.setHorizontalGroup(
@@ -1790,14 +1711,13 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                                     .add(pnlAllDetailsLayout.createSequentialGroup()
                                         .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
                                             .add(certificateTypeLabel)
-                                            .add(aliasTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 240, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                            .add(caCertStatusTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 240, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                                            .add(aliasTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 240, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                                         .add(16, 16, 16)
                                         .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                                            .add(moreStatusInfo, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                             .add(viewCertDetailsButton, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 121, Short.MAX_VALUE)
                                             .add(btnChangeAlias, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                                    .add(subjectDnTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 390, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))))))
+                                    .add(subjectDnTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 390, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                    .add(caCertStatusTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 390, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))))))
                 .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         pnlAllDetailsLayout.setVerticalGroup(
@@ -1816,8 +1736,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                     .add(pnlAllDetailsLayout.createSequentialGroup()
                         .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                             .add(caCertStatusTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 22, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                            .add(jLabel2)
-                            .add(moreStatusInfo))
+                            .add(jLabel2))
                         .add(13, 13, 13)
                         .add(jLabel9)
                         .add(18, 18, 18)
@@ -2184,25 +2103,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         setMOD("View further details of the selected certificate. If you have imported and selected a certificate chain, "
                 + "you will be able to view details of the individual certificates contained in the certificate chain.");
     }//GEN-LAST:event_viewCertDetailsButtonMouseEntered
-
-    private void moreStatusInfoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_moreStatusInfoActionPerformed
-        // TODO add your handling code here:
-        this.doMoreStatusInfoAction();
-    }//GEN-LAST:event_moreStatusInfoActionPerformed
-
-    private void moreStatusInfoMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_moreStatusInfoMouseExited
-        // TODO add your handling code here:
-        this.mouseExitedActionPerformed(evt);
-
-
-    }//GEN-LAST:event_moreStatusInfoMouseExited
-
-    private void moreStatusInfoMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_moreStatusInfoMouseEntered
-        // TODO add your handling code here:
-        setMOD("Get further details of the status of the selected certificate from the CA Server. "
-                + "Please note that updated certificate status information can only be retrieved by hitting"
-                + "Refresh button while remaining connected to the CA Server");
-    }//GEN-LAST:event_moreStatusInfoMouseEntered
 
     private void vFromActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_vFromActionPerformed
         // TODO add your handling code here:
@@ -2928,7 +2828,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private javax.swing.JPanel jPanel4;
     private javax.swing.JRadioButton jRadioButton1;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JButton moreStatusInfo;
     private javax.swing.JPanel pnlAllDetails;
     private javax.swing.JTextField rDue;
     private javax.swing.JTextField subjectDnTextField;
