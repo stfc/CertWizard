@@ -174,7 +174,7 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
             //this.connectButton.setText("Refresh");
         } else {
             if(pingRunning.get()){
-              this.onlineLabel.setText("Trying Contact CA Server - Please check your network connection.");  
+              this.onlineLabel.setText("Trying to Contact CA Server - Please check your network connection.");  
             } else {
               this.onlineLabel.setText("Could not Contact CA Server - Please check your network connection.");
             }
@@ -195,8 +195,7 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
             // A ping thread is not running, so execute PingCheckTask as new thread 
             //Thread ping = new Thread(new PingCheckTask()); 
             //ping.start();         
-            executor.execute( new PingCheckTask() );
-            
+            executor.execute( new PingCheckTask() );           
         }
     }
 
@@ -205,6 +204,7 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
         
         @Override
         public void run(){
+            update(null, null); 
             try {
                 pingRunning.set(true);
                 // simply call isPingService which will itself call SystemStatus.setIsOnline(bool)
@@ -213,6 +213,7 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
             } finally {
                 pingRunning.set(false);
             }
+            update(null, null); 
         }
         
     }
