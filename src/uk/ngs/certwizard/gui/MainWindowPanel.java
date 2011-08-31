@@ -100,13 +100,15 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     public MainWindowPanel(char[] passphrase, CertWizardMain _certWizardMain) {
         this.PASSPHRASE = passphrase;
         String _passphrase = new String(passphrase);
-        WaitDialog.showDialog("Refresh");
+            
         String _property = SysProperty.getValue("uk.ngs.ca.immegration.password.property");
         System.setProperty(_property, _passphrase);
         
         initComponents();
         loadImages();
 
+        WaitDialog.showDialog("General");
+        
         try {
             this.keyStoreCaWrapper = ClientKeyStoreCaServiceWrapper.getInstance(passphrase);
         } catch (KeyStoreException ex) {
@@ -145,6 +147,16 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             JOptionPane.showMessageDialog(this, "You appear to have no certificates. Please either\n"
                     + "a) Apply for a certificate with the 'Apply' button or\n"
                     + "b) Import a certificate/key pair from file (this file can be exported from your web browser)");
+        } else {
+            // set to the first visible cert/key entry (rather than showing e.g. trust root certs). 
+            for (int index = 0; index < this.jComboBox1.getItemCount(); index++) {
+                KeyStoreEntryWrapper selectedKSEWComboBox = (KeyStoreEntryWrapper) this.jComboBox1.getItemAt(index);
+                if(KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY.equals(selectedKSEWComboBox.getEntryType())){
+                    this.jComboBox1.setSelectedIndex(index);
+                    break; 
+                }
+            }
+       
         }
     }
 
@@ -1098,6 +1110,16 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             // Update the frame's components and title
             this.reloadKeystoreUpdateGUI();
             WaitDialog.hideDialog();
+            
+            // Set to the combo to the newly imported entry. 
+            for (int index = 0; index < this.jComboBox1.getItemCount(); index++) {
+                KeyStoreEntryWrapper selectedKSEWComboBox = (KeyStoreEntryWrapper) this.jComboBox1.getItemAt(index);
+                if(sAlias.equals(selectedKSEWComboBox.getAlias())){
+                    this.jComboBox1.setSelectedIndex(index);
+                    break; 
+                }
+            }
+            
             // Display success message
            JOptionPane.showMessageDialog(this, RB.getString("FPortecle.KeyPairImportSuccessful.message"),
 			    RB.getString("FPortecle.ImportKeyPair.Title"), JOptionPane.INFORMATION_MESSAGE);
@@ -1398,12 +1420,12 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(btnNewCertificateRequest)
                     .add(btnImportCertificate))
-                .addContainerGap(7, Short.MAX_VALUE))
+                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(12, 132, -1, 60));
 
-        jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder("Your Certificates and Requests  "));
+        jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder("Certificates and Requests  "));
 
         jComboBox1.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
@@ -1451,7 +1473,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         jLabel10.setText("Type:");
 
         caCertStatusTextField.setEditable(false);
-        caCertStatusTextField.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        caCertStatusTextField.setFont(new java.awt.Font("Tahoma", 1, 11));
         caCertStatusTextField.setText("Unknown");
         caCertStatusTextField.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         caCertStatusTextField.addActionListener(new java.awt.event.ActionListener() {
@@ -1685,7 +1707,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                         .add(62, 62, 62)
                         .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
                             .add(btnInstall, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .add(btnRefresh, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 105, Short.MAX_VALUE))
+                            .add(btnRefresh, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 105, Short.MAX_VALUE))
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                         .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
                             .add(btnExport, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -1757,13 +1779,13 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                     .add(pnlAllDetailsLayout.createSequentialGroup()
                         .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                             .add(btnRefresh, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .add(btnRenew, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 25, Short.MAX_VALUE))
+                            .add(btnRenew, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 26, Short.MAX_VALUE))
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                             .add(btnInstall, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 27, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                             .add(btnExport, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 26, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
                     .add(pnlAllDetailsLayout.createSequentialGroup()
-                        .add(btnRevoke, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 26, Short.MAX_VALUE)
+                        .add(btnRevoke, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 27, Short.MAX_VALUE)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(btnDelete, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 26, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))

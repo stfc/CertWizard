@@ -4,6 +4,9 @@ import java.awt.Color;
 import java.util.Date;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.swing.JOptionPane;
 import uk.ngs.ca.certificate.client.PingService;
 import uk.ngs.ca.common.SystemStatus;
@@ -18,6 +21,8 @@ import uk.ngs.ca.tools.property.SysProperty;
 public class OnlineStatus extends javax.swing.JPanel implements Observer {
 
     private Date lastOnline = new Date(); 
+    private AtomicBoolean pingRunning = new AtomicBoolean(false); 
+    private Executor executor = Executors.newSingleThreadExecutor(); 
     
     /** Creates new form OnlineStatus */
     public OnlineStatus() {
@@ -146,7 +151,12 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
     private void doPingCheckActionPerformed(){
         // calling isPingService will call SystemStatus.setIsOnline(bool) which
         // will subsequently invoke update below if the state changes.
-        PingService.getPingService().isPingService();
+        //
+        // if(pingchecktaskisrunning) {
+        // the ping task is running, kill ping task? or cancel ? 
+        //PingService.getPingService().isPingService();
+        //this.update(null, null);
+        this.runPingCheck();
         this.update(null, null);
     }
 
@@ -163,13 +173,49 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
             this.onlineLabel.setForeground(new Color(0, 153, 0));
             //this.connectButton.setText("Refresh");
         } else {
-            this.onlineLabel.setText("Cannot Contact CA Server - Please check your network connection.");
+            if(pingRunning.get()){
+              this.onlineLabel.setText("Trying Contact CA Server - Please check your network connection.");  
+            } else {
+              this.onlineLabel.setText("Could not Contact CA Server - Please check your network connection.");
+            }
             this.onlineLabel.setForeground(Color.RED);
             //this.connectButton.setText("Try again");
         }
     }
+    
+    /**
+     * Asynchronously Ping the CA server (does not wait for ping check to complete). 
+     */
+    public void runPingCheck(){
+        if(pingRunning.get()){
+            // ping is running, so show dialog and return 
+             JOptionPane.showMessageDialog(this, "Ping check task is currently running.",
+                    "Ping Running", JOptionPane.INFORMATION_MESSAGE);         
+        } else {
+            // A ping thread is not running, so execute PingCheckTask as new thread 
+            //Thread ping = new Thread(new PingCheckTask()); 
+            //ping.start();         
+            executor.execute( new PingCheckTask() );
+            
+        }
+    }
 
 
+    private class PingCheckTask implements Runnable {
+        
+        @Override
+        public void run(){
+            try {
+                pingRunning.set(true);
+                // simply call isPingService which will itself call SystemStatus.setIsOnline(bool)
+                // and update any observers (such as the onlineStatusPanel).
+                PingService.getPingService().isPingService();
+            } finally {
+                pingRunning.set(false);
+            }
+        }
+        
+    }
 
 
 }

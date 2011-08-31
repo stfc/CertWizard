@@ -220,20 +220,22 @@ public class CertWizardMain { //implements Observer {
         // so that we can update its GUI accordingly.
         SystemStatus.getInstance().addObserver(onlineStatusPanel);
 
+
         //System.setProperty("http.proxyHost", "wwwnotexist.tr.ld");
         //System.setProperty("http.proxyHost", "wwwcache.dl.ac.uk");
         
         // Run ping check in a new thread so we don't block while it tries to connect.
-        Timer timer = new Timer();
+        onlineStatusPanel.runPingCheck(); 
+        
+        //Timer timer = new Timer();
         // execute once with no delay required.
-        timer.schedule(new runPingCheck(), 0); 
+        //timer.schedule(new runPingCheck(), 0); 
         // repeat every n millisecs with no delay (GUI will automatically update if the connection is lost).
         //timer.schedule(new runPingCheck(), 0, 10000); 
-        
     }
     
 
-    private class runPingCheck extends TimerTask {
+    /*private class runPingCheck extends TimerTask {
         public runPingCheck() {
         }
         public void run() {
@@ -241,7 +243,7 @@ public class CertWizardMain { //implements Observer {
             // and update any observers (such as the onlineStatusPanel).
             PingService.getPingService().isPingService();
         }
-    }
+    }*/
 
 
 
