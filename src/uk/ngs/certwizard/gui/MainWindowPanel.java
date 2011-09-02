@@ -591,6 +591,8 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             int ok = JOptionPane.showConfirmDialog(this, "Are you sure you want to renew the selected certificate?", "Renew Certificate", JOptionPane.OK_CANCEL_OPTION);
             if (JOptionPane.OK_OPTION == ok) {
 
+                JOptionPane.showMessageDialog(this, "You will now be prompted to enter a new unique alias\n"
+                        + "for your certificate to be renewed.", "Certificate Renewal", JOptionPane.INFORMATION_MESSAGE);
                 //let the user alter the alias
                 KeyStore keyStore = this.keyStoreCaWrapper.getClientKeyStore().getKeyStore();
                 String sAlias = selectedKSEW.getAlias();
@@ -2117,7 +2119,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     private void btnChangeAliasMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnChangeAliasMouseEntered
         // TODO add your handling code here:
-        setMOD("Change the user friendly name of the selected certificate");
+        setMOD("Give the selected certificate a unique user friendly name (Alias)");
     }//GEN-LAST:event_btnChangeAliasMouseEntered
 
     private void viewCertDetailsButtonMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_viewCertDetailsButtonMouseEntered
