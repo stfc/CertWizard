@@ -84,7 +84,7 @@ public class SystemStatus extends Observable {
         }
     }
 
-    public synchronized boolean isValidPassphrase(char[] passphrase) {
+    /*public synchronized boolean isValidPassphrase(char[] passphrase) {
         //uk.ngs.ca.common.ClientKeyStore keyStore = new uk.ngs.ca.common.ClientKeyStore(passphrase);
         ClientKeyStore keyStore = ClientKeyStore.getClientkeyStore(passphrase);
         String _errorMessage = keyStore.getErrorMessage();
@@ -111,5 +111,5 @@ public class SystemStatus extends Observable {
             return false;
         }
 
-    }
+    }*/
 }

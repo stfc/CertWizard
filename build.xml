@@ -7,8 +7,8 @@
 <!-- the Compile on Save feature is turned off for the project. -->
 <!-- You can turn off the Compile on Save (or Deploy on Save) setting -->
 <!-- in the project's Project Properties dialog box.-->
-<project name="Latest-Certwizard" default="default" basedir=".">
-    <description>Builds, tests, and runs the project Latest-Certwizard.</description>
+<project name="Certwizard" default="default" basedir=".">
+    <description>Builds, tests, and runs the project Certwizard.</description>
     <import file="nbproject/build-impl.xml"/>
     <!--
 
@@ -59,7 +59,7 @@
 
     An example of overriding the target for project execution could look like this:
 
-        <target name="run" depends="Latest-Certwizard-impl.jar">
+        <target name="run" depends="Certwizard-impl.jar">
             <exec dir="bin" executable="launcher.exe">
                 <arg file="${dist.jar}"/>
             </exec>
@@ -71,4 +71,53 @@
     nbproject/build-impl.xml file. 
 
     -->
+    
+    
+    
+        <property name="env.properties.file" value="env.properties" />
+    <property file="${env.properties.file}" />
+
+
+<!--
+Sign all the JAR files in dist/**/*.jar in-situ.
+Lazy signing is used, so the files will only be signed if they are not already signed.
+-->
+    <target name="JarAndSignDistJars" depends="jar"><!--depends="jar" -->
+
+        <echo message="checking for ${env.properties.file} which contain keystore signing information." />
+        <available file="${env.properties.file}" property="has.env.properties" />
+        <fail unless="has.env.properties">${env.properties.file} must exist to sign the jar files in 'dist': Use the sample env.properties as a template</fail>
+
+        <echo message="Now signing all jars in 'dist' "/>
+        <!-- lazy = flag to control whether the presence of a signature file
+        means a JAR is signed. This is only used when the target JAR
+        matches the source JAR-->
+        <signjar
+        alias="${alias}"
+        keystore="${keystore}"
+        storetype="${storetype}"
+        storepass="${storepass}"
+        lazy="true" >
+            <path>
+                <fileset dir="dist" casesensitive="yes">
+                    <include name="**/*.jar"/>
+                    <!--<exclude name="**/*jce*"/>-->
+                    <exclude name="**/bcprov*"/>
+                </fileset>
+            </path>
+        </signjar>
+
+        <echo message="done"/>
+    </target>
+    
+    
+    <target name="-post-jar">
+          <echo message="copying myproxy.jnlp and bcprov.jnlp into dist"/>
+          <copy file="resources/myproxy.jnlp" todir="dist"/>
+          <copy file="resources/bcprov.jnlp" todir="dist"/>
+          <copy file="resources/ngs_smallicon.jpg" todir="dist"/>          
+    </target>
+
+
+
 </project>
