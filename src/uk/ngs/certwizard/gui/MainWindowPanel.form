@@ -69,7 +69,7 @@
                       <Component id="btnNewCertificateRequest" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="btnImportCertificate" alignment="3" min="-2" max="-2" attributes="0"/>
                   </Group>
-                  <EmptySpace pref="7" max="32767" attributes="0"/>
+                  <EmptySpace max="32767" attributes="0"/>
               </Group>
           </Group>
         </DimensionLayout>
@@ -263,7 +263,7 @@
                           <Group type="102" attributes="0">
                               <Group type="103" groupAlignment="0" attributes="0">
                                   <Component id="btnRefresh" max="32767" attributes="1"/>
-                                  <Component id="btnRenew" alignment="0" pref="25" max="32767" attributes="1"/>
+                                  <Component id="btnRenew" alignment="0" pref="26" max="32767" attributes="1"/>
                               </Group>
                               <EmptySpace max="-2" attributes="0"/>
                               <Group type="103" groupAlignment="3" attributes="0">
@@ -272,7 +272,7 @@
                               </Group>
                           </Group>
                           <Group type="102" attributes="0">
-                              <Component id="btnRevoke" pref="26" max="32767" attributes="1"/>
+                              <Component id="btnRevoke" pref="27" max="32767" attributes="1"/>
                               <EmptySpace max="-2" attributes="0"/>
                               <Component id="btnDelete" min="-2" pref="26" max="-2" attributes="0"/>
                           </Group>

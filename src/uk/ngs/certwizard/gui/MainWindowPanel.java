@@ -331,24 +331,23 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             }
 
             //Remaining time
-
             vToDate= selectedKeyStoreEntry.getNotAfter();
-            int timeLeft = Integer.parseInt(getLifeDays(vToDate));
-            if (timeLeft < 0)
+            Calendar todaysDate = Calendar.getInstance();  
+            if(vToDate.after(todaysDate.getTime())){
+                // vToDate is after today (hence we have time left) 
+                long diffDays = (vToDate.getTime() - todaysDate.getTimeInMillis()) / (24 * 60 * 60 * 1000);
+                this.dRemaining.setText(String.valueOf(diffDays)); 
+            } else {
+                // we are expired  
                 this.dRemaining.setText("0");
-            else
-                this.dRemaining.setText(Integer.toString(timeLeft));
-
+            }
+ 
+            
             //Renewal Due
-
             Calendar renewalDue = Calendar.getInstance();
             renewalDue.setTime(vToDate);
             renewalDue.add(Calendar.MONTH, -1);
-
-            this.rDue.setText(formatter.format(renewalDue.getTime()));
-
-            Calendar todaysDate = Calendar.getInstance();
-            
+            this.rDue.setText(formatter.format(renewalDue.getTime()));                   
             if (todaysDate.after(renewalDue))
                 this.rDue.setForeground(new RenewalDueColor());
             else
@@ -356,26 +355,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
         }
         //((TitledBorder)this.jPanel2.getBorder()).setTitle("Your Certificates and Requests ("+this.jComboBox1.getItemCount()+" entries)");
-    }
-
-    /**
-     * Method used by updateGUIPanel() method to calculate the number of days
-     * remaining until the selected certificate expires.
-     *
-     * @param date of "Valid To"
-     * @return number of days remaining until certificate expires
-     */
-    private String getLifeDays(Date date) {
-
-        long currentMillis = new Date().getTime();
-        long endMillis = date.getTime();
-        if (endMillis < currentMillis) { //This means it's expired
-            return "Expired";
-        }
-        long diffDays = (endMillis - currentMillis) / (24 * 60 * 60 * 1000);
-        //the live days would include the extra rekey days.
-        return new Long(diffDays).toString();
-
     }
 
     /**
