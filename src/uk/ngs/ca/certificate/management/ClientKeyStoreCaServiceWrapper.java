@@ -237,15 +237,42 @@ public class ClientKeyStoreCaServiceWrapper {
                 // b) Not Issued by our CA
                 //
                 // TODO: - need to check that this is the user's cert if this is
-                // a cert chaing (e.g. userCert - eScienceCA - eScience Root).
+                // a cert chain (e.g. userCert - eScienceCA - eScience Root).
                 // If this entry is a chain, getCertificate returns the first
                 // element in that chain is returned.
-                String keyStoreAlias = keyStoreEntryWrapper.getAlias();
+                /*String keyStoreAlias = keyStoreEntryWrapper.getAlias();
                 X509Certificate cert = (X509Certificate) clientKeyStore.getKeyStore().getCertificate(keyStoreAlias);
                 if ( !(cert.getSubjectDN().toString().equals(cert.getIssuerDN().toString())
                       ||  cert.getIssuerDN().toString().equals(  SysProperty.getValue("ngsca.issuer.dn") ))  ) {
                     return;
+                }*/
+                
+                
+                boolean isSelfSignedCert = false;
+                String keyStoreAlias = keyStoreEntryWrapper.getAlias();
+                X509Certificate cert = (X509Certificate) clientKeyStore.getKeyStore().getCertificate(keyStoreAlias);
+                if ( (cert.getSubjectDN().toString().equals(cert.getIssuerDN().toString()))  ) {
+                    isSelfSignedCert = true; 
                 }
+                
+                boolean hasAKnownDN = false; 
+                String[] allKnownDNs = SysProperty.getValue("ngsca.issuer.dn").split(";");
+                for (int i = 0; i < allKnownDNs.length; i++) {
+                   if(cert.getIssuerDN().toString().equals(allKnownDNs[i])){
+                       hasAKnownDN = true; 
+                       break; 
+                   }
+               }
+                
+               if( isSelfSignedCert || hasAKnownDN ){
+                   // ok, we either have a self signed cert (CSR) or the cert 
+                   // has a known issuer DN so we will do nothing. 
+               } else {
+                   return; 
+               }
+                
+                
+                
 //                //ngsca.issuer.dn= "C=UK,O=eScienceDev,OU=NGS,CN=DevelopmentCA"
 //                String oldStatus = keyStoreEntryWrapper.getServerCertificateCSRInfo().getStatus();
 
