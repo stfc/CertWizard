@@ -12,6 +12,8 @@ public class CertificateCSRInfo {
 
     private String owner = null;
     private String role = null;
+    
+    // The status returned by the server. TODO: 
     private String status = null;
     private String useremail = null;
     private String id = null;

@@ -266,7 +266,7 @@ public class ClientKeyStoreCaServiceWrapper {
                 
                if( isSelfSignedCert || hasAKnownDN ){
                    // ok, we either have a self signed cert (CSR) or the cert 
-                   // has a known issuer DN so we will do nothing. 
+                   // has a known issuer DN so we will do nothing (i.e. continue on)  
                } else {
                    return; 
                }

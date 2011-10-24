@@ -228,7 +228,8 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     /**
      * Update combo based on current state of <code>this.keyStoreCaWrapper<code>
-     * (note, no reload of keystore !)
+     * (note, no reload of keystore !). The combo elements are rendered using 
+     * the CombBoxRenderer inner class. 
      */
     private void updateCombo() {
         jComboBox1.removeAllItems();
@@ -250,7 +251,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private void updateGUIPanel() {
         // nullify/clear the gui components first
 
-        Date vToDate  = null;
+      
 
         this.vFrom.setText("");
         this.vTo.setText("");
@@ -260,7 +261,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         this.dRemaining.setText("");
         this.caCertStatusTextField.setText("Unknown (offline or certificate not recognized by UK CA)");
         // set to default color first
-        this.caCertStatusTextField.setForeground(this.getColorFromState(null));
+        this.caCertStatusTextField.setForeground(this.getColorFromState(null, null));
         this.aliasTextField.setText("");
         this.certificateTypeLabel.setText("");
         this.certificateTypeLabel.setIconTextGap(10);
@@ -317,6 +318,10 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 //                this.vTo.setText("N/A");
 //            }
 
+            
+            // First, get the date info from the keystore entry 
+            Date endDate = selectedKeyStoreEntry.getNotAfter();
+            Calendar todaysDate = Calendar.getInstance(); 
 
 
             // If the CertificateCSRInfo member object of the selected
@@ -325,27 +330,28 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             // certificate not issued by our CA).
             if (selectedKeyStoreEntry.getServerCertificateCSRInfo() != null) {
                 String state = selectedKeyStoreEntry.getServerCertificateCSRInfo().getStatus();
-                //labelText += selectedKeyStoreEntry.getServerCertificateCSRInfo().getOwner();
                 this.caCertStatusTextField.setText(state + " " + this.getExtraLabelTextFromState(state));
-                this.caCertStatusTextField.setForeground(this.getColorFromState(state));
+                this.caCertStatusTextField.setForeground(this.getColorFromState(state, endDate));
             }
 
             //Remaining time
-            vToDate= selectedKeyStoreEntry.getNotAfter();
-            Calendar todaysDate = Calendar.getInstance();  
-            if(vToDate.after(todaysDate.getTime())){
-                // vToDate is after today (hence we have time left) 
-                long diffDays = (vToDate.getTime() - todaysDate.getTimeInMillis()) / (24 * 60 * 60 * 1000);
+            if(endDate.after(todaysDate.getTime())){
+                // endDate is after today (hence we have time left) 
+                long diffDays = (endDate.getTime() - todaysDate.getTimeInMillis()) / (24 * 60 * 60 * 1000);
                 this.dRemaining.setText(String.valueOf(diffDays)); 
             } else {
                 // we are expired  
                 this.dRemaining.setText("0");
+                // this is required because the CA server returned state will be 
+                // valid even if the state is Expired (i.e. it is up to the 
+                // client to check the time remaining and set set state accordingly). 
+                this.caCertStatusTextField.setText("Expired" + " " + this.getExtraLabelTextFromState("Expired"));
             }
  
             
             //Renewal Due
             Calendar renewalDue = Calendar.getInstance();
-            renewalDue.setTime(vToDate);
+            renewalDue.setTime(endDate);
             renewalDue.add(Calendar.MONTH, -1);
             this.rDue.setText(formatter.format(renewalDue.getTime()));                   
             if (todaysDate.after(renewalDue))
@@ -469,7 +475,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 // be fetched if the info could be retrieved from the CA server.
                 if (keyStoreEntry.getServerCertificateCSRInfo() != null) {
                     String state = keyStoreEntry.getServerCertificateCSRInfo().getStatus();
-                    this.setForeground(getColorFromState(state));
+                    this.setForeground(getColorFromState(state, keyStoreEntry.getNotAfter()));
                 } else {
                     this.setForeground(Color.DARK_GRAY);
                 }
@@ -484,14 +490,31 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     /**
      * Return the appropriate display colour according to the given
      * state string. If state is null or not recognised,
-     * then return <code>Color.DARK_GRAY</code> as default.
+     * then return <code>Color.DARK_GRAY</code> as default. If State is equal 
+     * to 'VALID' and the endDate is not null, then test to see if the end 
+     * date is before today, if true, we are actually expired. This is 
+     * required because the CA server returns the 'VALID' state even if the 
+     * certificate's end date is in the past (i.e. it is valid in that it is 
+     * recognised by our CA server, but it has actually expired). 
+     * 
+     * @param state Optional end date / not after date of keystore entry (nullable). 
+     * @param endDate
+     * @return The colour that is appropriate to given state
      */
-    private Color getColorFromState(String state) {
-        if ("VALID".equals(state)) {
-            return new ValidCertColor();
-            // TODO also need to pass two dates to this method so that the
-            // ExpiredCertColor and ExpiredForeverCertColor can be returned.
-            // Passing null for these dates will be perfectly valid. 
+    private Color getColorFromState(String state, Date endDate) {
+        if ("VALID".equals(state)) {     
+            if (endDate != null) {
+                Calendar todaysDate = Calendar.getInstance();
+                if (endDate.before(todaysDate.getTime())) {
+                    // End date is BEFORE today, hence we are Expired. 
+                    // TODO: If end date is more than 30 days before today, set to 
+                    // ExpiredForeverCertColor, otherwise there may be a chance to 
+                    // renew within next 30 day threshold. 
+                    return new ExpiredCertColor();
+                }
+            }
+            return new ValidCertColor();         
+            
         } else if ("REVOKED".equals(state)) {
             return new RevokedCertColor();
         } else if ("NEW".equals(state)) {
@@ -522,9 +545,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private String getExtraLabelTextFromState(String state) {
         if ("VALID".equals(state)) {
             return "";
-            // TODO also need to pass two dates to this method so that the
-            // ExpiredCertColor and ExpiredForeverCertColor can be returned.
-            // Passing null for these dates will be perfectly valid.
         } else if ("REVOKED".equals(state)) {
             return "";
         } else if ("NEW".equals(state)) {
@@ -540,7 +560,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         } else if ("DELETED".equals(state)) {
             return "";
         } else if ("Expired".equals(state)) {
-            return "";
+            return "";          
         } else {
             return "";
         }

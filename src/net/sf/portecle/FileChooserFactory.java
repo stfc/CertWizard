@@ -313,6 +313,7 @@ public class FileChooserFactory
 	public static JFileChooser getKeyPairFileChooser(String basename)
 	{
 		JFileChooser chooser = new JFileChooser();
+                chooser.setFileHidingEnabled(false); 
 		LinkedHashSet<String> exts = new LinkedHashSet<String>();
 		exts.addAll(KeyStoreType.PKCS12.getFilenameExtensions());
 		exts.add(PEM_EXT);
