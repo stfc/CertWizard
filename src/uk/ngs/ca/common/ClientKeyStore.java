@@ -259,6 +259,16 @@ public final class ClientKeyStore {
         }
     }
 
+    public X509Certificate getX509Certificate(String alias) {
+        try {
+            X509Certificate cert = (X509Certificate) this.keyStore.getCertificate(alias);
+            return cert;
+        } catch (Exception ep) {
+            ep.printStackTrace();
+            return null;
+        }
+    }
+        
     public PublicKey getPublicKey(String alias) {
         try {
             X509Certificate cert = (X509Certificate) this.keyStore.getCertificate(alias);

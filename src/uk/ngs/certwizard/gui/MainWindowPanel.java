@@ -13,6 +13,7 @@ import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.PrivateKey;
+//import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
@@ -47,6 +48,7 @@ import net.sf.portecle.gui.SwingHelper;
 import net.sf.portecle.gui.error.DThrowable;
 import net.sf.portecle.gui.password.DGetNewPassword;
 import net.sf.portecle.gui.password.DGetPassword;
+//import org.bouncycastle.jce.provider.unlimited.PKCS12KeyStoreUnlimited;
 import org.bouncycastle.openssl.PEMReader;
 import org.bouncycastle.openssl.PEMWriter;
 import org.bouncycastle.openssl.PasswordFinder;
@@ -57,6 +59,7 @@ import org.globus.util.PEMUtils;
 import org.globus.util.Util;
 import uk.ngs.ca.certificate.OnLineUserCertificateReKey;
 
+import uk.ngs.ca.certificate.management.KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE;
 import uk.ngs.ca.common.SystemStatus;
 import uk.ngs.ca.certificate.client.CAMotd;
 import uk.ngs.ca.certificate.client.CertificateDownload;
@@ -71,8 +74,8 @@ import uk.ngs.ca.tools.property.SysProperty;
  * GUI for displaying the keyStore entries in the user's '$HOME/.ca/cakeystore.pkcs12' file.
  * This class also provides functions for importing, exporting, deleting 
  * requesting, requesting, renewing certificates.
- *
- * @author David Meredith
+ * 
+ * @author David Meredith (largely refactored from code by xw75 - lots of original xw75 code remains) 
  */
 public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
@@ -788,7 +791,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         }
         KeyStoreEntryWrapper selectedKSEW = (KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem();
         KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE selectedType = selectedKSEW.getEntryType();
-        if (selectedType == null || selectedType.equals(selectedType.KEY_ENTRY)) {
+        if (selectedType == null || selectedType.equals(KEYSTORE_ENTRY_TYPE.KEY_ENTRY)) {
             JOptionPane.showMessageDialog(this, "Please select a certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
             return false;
         }
@@ -2150,7 +2153,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     // a helper class to make this class smaller.
     ////////////////////////////////////////////////////////////////////////////
 
-
+    
     /**
      * Export the private key and certificates of the keystore entry to a PKCS #12 keystore file.
      * Based on Portecle.
@@ -2160,39 +2163,52 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
      * @return True if the export is successful, false otherwise
      */
     private boolean exportPrivKeyCertChainPKCS12(String sEntryAlias) {
-
+        
         KeyStore keyStore = this.keyStoreCaWrapper.getClientKeyStore().getKeyStore();
         char[] cPassword = this.PASSPHRASE;
 
         File fExportFile = null;
-
+        FileOutputStream fos = null;
         try {
-            // Get the private key and certificate chain from the entry
-            Key privKey = keyStore.getKey(sEntryAlias, cPassword);
-            Certificate[] certs = keyStore.getCertificateChain(sEntryAlias);
-
-            // Update the keystore wrapper
-            // DM: commented this out - not sure if its necessary ?
-            //m_keyStoreWrap.setEntryPassword(sEntryAlias, cPassword);
-
-            // Create a new PKCS #12 keystore
-            KeyStore pkcs12 = KeyStoreUtil.createKeyStore(KeyStoreType.PKCS12);
-
-            // Place the private key and certificate chain into the PKCS #12 keystore under the same alias as
-            // it has in the loaded keystore
-            pkcs12.setKeyEntry(sEntryAlias, privKey, new char[0], certs);
-
-            // Get a new password for the PKCS #12 keystore
+            
+            // First get a new password for the PKCS #12 keystore
             DGetNewPassword dGetNewPassword =
                     new DGetNewPassword(null, RB.getString("FPortecle.Pkcs12Password.Title"));
             dGetNewPassword.setLocationRelativeTo(this);
             SwingHelper.showAndWait(dGetNewPassword);
-
-            char[] cPKCS12Password = dGetNewPassword.getPassword();
-
-            if (cPKCS12Password == null) {
+            char[] newPKCS12Password = dGetNewPassword.getPassword();
+            if (newPKCS12Password == null) {
                 return false;
             }
+            
+            // Get the private key and certificate chain from the entry
+            Key privKey = keyStore.getKey(sEntryAlias, cPassword);
+            Certificate[] certs = keyStore.getCertificateChain(sEntryAlias); 
+            
+
+            // Create a new PKCS12 keystore
+            // DM: Important note. We Cannot use portecle's 'KeyStoreUtil.createKeyStore' 
+            // method because we have modified it to return a different KeyStore provider 
+            // impl; originally portecle created a keystore using Bouncy Castle 
+            // (i.e. 'keystore = KeyStore.getInstance(keyStoreType.name(), "BC");' ) 
+            // and then we modified it to use 'keyStore = PKCS12KeyStoreUnlimited.getInstance();'. 
+            // However, as of 09/11/2012 both of these crypto providers create 
+            // pkcs12 keystores that gives firefox problems. Therefore, we need 
+            // to fall back on using the default Java provider as below. 
+            // Creating and ENCRYTPING keystores with passwords longer than 7chars does 
+            // not seem to conflict with Java's limited strength jurisdiction policy file
+            // limitations (which may apply to DECRYPTION only) - so we are ok 
+            // to use it for creating new keystores. 
+            // http://www.ngs.ac.uk/tools/jcepolicyfiles 
+            
+            //KeyStore newPkcs12 = KeyStoreUtil.createKeyStore(KeyStoreType.PKCS12);
+            KeyStore newPkcs12 = KeyStore.getInstance(KeyStoreType.PKCS12.name());
+            newPkcs12.load(null, null);
+
+            // Place the private key and certificate chain into the PKCS #12 keystore under the same alias as
+            // it has in the loaded keystore
+            newPkcs12.setKeyEntry(sEntryAlias, privKey, newPKCS12Password, certs);
+            
 
             String basename = null;
             if (certs.length > 0 && certs[0] instanceof X509Certificate) {
@@ -2212,12 +2228,16 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 return false;
             }
 
-            // Store the keystore to disk
-            KeyStoreUtil.saveKeyStore(pkcs12, fExportFile, cPKCS12Password);
-
+            // Store the keystore to disk. DM: note, cannot use portecle's 
+            // keyStoreUtil.savekeyStore because it re-loads it afterwards using
+            // the BC provider (See issues described above). 
+            //KeyStoreUtil.saveKeyStore(newPkcs12, fExportFile, cPKCS12Password);
+            fos = new FileOutputStream(fExportFile);
+            newPkcs12.store(fos, newPKCS12Password);
+            
             m_lastDir.updateLastDir(fExportFile);
-
             return true;
+            
         } catch (FileNotFoundException ex) {
             String sMessage =
                     MessageFormat.format(RB.getString("FPortecle.NoWriteFile.message"), fExportFile.getName());
@@ -2229,10 +2249,20 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         } catch (GeneralSecurityException ex) {
             DThrowable.showAndWait(null, null, ex);
             return false;
-        } catch (CryptoException ex) {
-            DThrowable.showAndWait(null, null, ex);
-            return false;
+        } finally {
+            try {
+                if (fos != null) {
+                    fos.close();
+                }
+            } catch (Exception ex) {
+                DThrowable.showAndWait(null, null, ex);
+                return false;
+            }
         }
+//        catch (CryptoException ex) {
+//            DThrowable.showAndWait(null, null, ex);
+//            return false;
+//        }
     }
 
     /**
