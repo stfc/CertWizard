@@ -70,5 +70,23 @@ cd into the build dir and run:
 java uk.ngs.certwizard.gui.CertWizardMain
 
 
+TODOs:
+======
+There are lots of to do items. Much of the code needs refactoring (many parts 
+are rather poorly written and involves much legacy). 
 
+- Default the keysize from 1024 to 2048. 
+- OnLineUserCertificateReKey.java and CSRRequest.java both test for HTTP 202 
+  return codes (when doing a renew or new csr). This is wrong! (the server is 
+  also wrong). We should NOT be using 202 to return error codes ! certwiz and 
+  the server both need updating in-synch to fix this.  
 
+- When doing host certs, stop adding the Email address field for host certs (or even removing it when renewing?) 
+  because CERN don't like it (special actions need to be taken as Email field can be 
+  email, Email, emailadress etc...) - need to tell JJ. 
+- Following string is too long "SUSPENDED (Your certificate revocation request is waiting to be processed)"
+- Edit Colours 
+- typo on dialog that pops up informing that the user appears to have no certs, either import or apply 
+- Remove oxford myproxy server
+- Add gridpp myproxy server (lcgrbp01.gridpp.rl.ac.uk:7512)
+- New server cert for voms (check) 
