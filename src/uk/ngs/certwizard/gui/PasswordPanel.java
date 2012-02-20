@@ -11,14 +11,16 @@
 package uk.ngs.certwizard.gui;
 
 import help_panel_html.LoadHtmlResource;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 import java.io.IOException;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
 import uk.ngs.ca.common.ClientKeyStore;
-
-import uk.ngs.ca.common.SystemStatus;
 import uk.ngs.ca.common.LocalBackup;
+import uk.ngs.ca.common.SystemStatus;
 import uk.ngs.ca.tools.property.SysProperty;
 
 /**
@@ -27,31 +29,25 @@ import uk.ngs.ca.tools.property.SysProperty;
  */
 public class PasswordPanel extends javax.swing.JPanel  {
 
-    String message = "";
-    String messageTitle = "";
-    boolean online;
-    private JPanel getCertPanel;
+    private JPanel parentPanel;
     private SystemStatus sysStatus = null;
-
     private boolean isExistKeyStore = false;
 
-    private CertWizardMain _certWizardMain = null;
-
+    
 
     /** Creates new form Password */
-    public PasswordPanel(CertWizardMain _certWizardMain) {
-
-                
+    public PasswordPanel(JPanel parent) {
+        super(); 
         this.sysStatus = SystemStatus.getInstance(); 
         this.isExistKeyStore = this.sysStatus.isExistKeyStore();
 
+        this.parentPanel = parent; 
         initComponents();
 
 //        this.setFocusable(true);
 //        txtPassword.requestFocusInWindow();
 
-        this._certWizardMain = _certWizardMain;
-        getCertPanel = this._certWizardMain.getCertificatePanel();
+     
 
 
         if ( this.isExistKeyStore ) {
@@ -72,11 +68,7 @@ public class PasswordPanel extends javax.swing.JPanel  {
         jLabel2.setText(keyStorePath);
     }
 
-    /*public PasswordPanel(String message, String messageTitle) {
-        initComponents();
-        this.message = message;
-        this.messageTitle = messageTitle;
-    }*/
+
 
     /** This method is called from within the constructor to
      * initialize the form.
@@ -244,12 +236,32 @@ public class PasswordPanel extends javax.swing.JPanel  {
         LocalBackup localBackup = new LocalBackup();
         localBackup.isSuccess();
 
-        getCertPanel.remove(this);
-        MainWindowPanel mainpane = new MainWindowPanel(passphrase, this._certWizardMain);
-        mainpane.setSize(800, 500);
-        getCertPanel.add(mainpane, "MainWindowPanel");
-        getCertPanel.revalidate();
+        //getCertPanel.remove(this);
+        this.setVisible(false); 
+        
+        final MainWindowPanel mainpane = new MainWindowPanel(passphrase);
+        parentPanel.add(mainpane, "MainWindowPanel");
+        
+        
+        parentPanel.addComponentListener(new ComponentListener() {
 
+            public void componentResized(ComponentEvent e) {
+                mainpane.setPreferredSize(new Dimension(e.getComponent().getWidth(), e.getComponent().getHeight()));
+                revalidate();
+            }
+
+            public void componentMoved(ComponentEvent e) {
+                //throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public void componentShown(ComponentEvent e) {
+                //throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public void componentHidden(ComponentEvent e) {
+                //throw new UnsupportedOperationException("Not supported yet.");
+            }
+        });
     }
 
     private void txtPasswordActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtPasswordActionPerformed

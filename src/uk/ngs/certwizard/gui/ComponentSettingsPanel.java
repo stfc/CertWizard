@@ -4,12 +4,10 @@
  */
 package uk.ngs.certwizard.gui;
 
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import javax.swing.JPanel;
-//import org.globus.cog.gui.setup.panels.ComponentPanel;
 import org.globus.cog.gui.setup.panels.ListPanel;
 import org.globus.cog.gui.setup.panels.LogoPanel;
 import org.globus.cog.gui.setup.panels.NavPanel;
@@ -26,11 +24,11 @@ public class ComponentSettingsPanel extends JPanel {
 
     private ComponentPanel2 componentPanel;
 
-    public ComponentSettingsPanel(final Component parent) {
+    public ComponentSettingsPanel(final JPanel parent) {
         super();
 
         final GridContainer contentPane = new GridContainer(1, 2);
-        contentPane.setPreferredSize(parent.getWidth() - 50, parent.getHeight() - 100);
+        contentPane.setPreferredSize(parent.getWidth(), parent.getHeight());
 
         GridContainer leftPanel = new GridContainer(2, 1);
         leftPanel.setPreferredSize(new Dimension(164, SimpleGridLayout.Expand));
@@ -75,7 +73,7 @@ public class ComponentSettingsPanel extends JPanel {
         parent.addComponentListener(new ComponentListener() {
 
             public void componentResized(ComponentEvent e) {
-                contentPane.setPreferredSize(e.getComponent().getWidth() - 50, e.getComponent().getHeight() - 100);
+                contentPane.setPreferredSize(e.getComponent().getWidth(), e.getComponent().getHeight());
                 revalidate();
             }
 

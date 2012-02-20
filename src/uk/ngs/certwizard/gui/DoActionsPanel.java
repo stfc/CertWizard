@@ -4,7 +4,6 @@
  */
 package uk.ngs.certwizard.gui;
 
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
@@ -20,19 +19,19 @@ public class DoActionsPanel extends JPanel {
 
     private DoActionsComponent doActions ;
 
-    public DoActionsPanel(Component parent) {
+    public DoActionsPanel(JPanel parent) {
         super();
 
          doActions = new DoActionsComponent(CoGProperties.getDefault());
 
-        doActions.setPreferredSize(new Dimension(parent.getWidth() - 40, parent.getHeight() - 100)); //500, 500
+        doActions.setPreferredSize(new Dimension(parent.getWidth(), parent.getHeight())); //500, 500
         doActions.setVisible(true);
         this.add(doActions);
 
         parent.addComponentListener(new ComponentListener() {
 
             public void componentResized(ComponentEvent e) {
-                doActions.setPreferredSize(e.getComponent().getWidth() - 40, e.getComponent().getHeight() - 100);
+                doActions.setPreferredSize(e.getComponent().getWidth(), e.getComponent().getHeight());
                 revalidate();
             }
 

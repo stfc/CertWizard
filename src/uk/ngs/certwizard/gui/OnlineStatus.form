@@ -1,4 +1,4 @@
-<?xml version="1.1" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8" ?>
 
 <Form version="1.3" maxVersion="1.7" type="org.netbeans.modules.form.forminfo.JPanelFormInfo">
   <Properties>
@@ -22,14 +22,16 @@
           <Group type="102" alignment="1" attributes="0">
               <EmptySpace min="-2" max="-2" attributes="0"/>
               <Component id="jLabel1" min="-2" max="-2" attributes="0"/>
-              <EmptySpace max="-2" attributes="0"/>
-              <Component id="onlineLabel" min="-2" pref="401" max="-2" attributes="0"/>
-              <EmptySpace max="32767" attributes="0"/>
+              <EmptySpace min="-2" max="-2" attributes="0"/>
+              <Component id="onlineLabel" max="32767" attributes="0"/>
+              <EmptySpace min="-2" pref="30" max="-2" attributes="0"/>
               <Component id="jLabel2" min="-2" max="-2" attributes="0"/>
-              <EmptySpace type="unrelated" max="-2" attributes="0"/>
-              <Component id="timeoutTextField" min="-2" pref="22" max="-2" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
+              <Component id="timeoutTextField" min="-2" pref="22" max="-2" attributes="0"/>
+              <EmptySpace min="-2" pref="4" max="-2" attributes="0"/>
               <Component id="connectButton" min="-2" max="-2" attributes="0"/>
+              <EmptySpace min="-2" pref="2" max="-2" attributes="0"/>
+              <Component id="helpButton" min="-2" max="-2" attributes="0"/>
           </Group>
       </Group>
     </DimensionLayout>
@@ -41,6 +43,7 @@
               <Component id="onlineLabel" alignment="3" min="-2" max="-2" attributes="0"/>
               <Component id="timeoutTextField" alignment="3" min="-2" max="-2" attributes="0"/>
               <Component id="jLabel2" alignment="3" min="-2" max="-2" attributes="0"/>
+              <Component id="helpButton" alignment="3" min="-2" max="-2" attributes="0"/>
           </Group>
       </Group>
     </DimensionLayout>
@@ -60,12 +63,12 @@
         <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
           <Color blue="33" green="0" red="ff" type="rgb"/>
         </Property>
-        <Property name="text" type="java.lang.String" value="Cannot Contact CA Server - Please check your network connection."/>
+        <Property name="text" type="java.lang.String" value="Cannot Contact Server - Click help to configure connection."/>
       </Properties>
     </Component>
     <Component class="javax.swing.JLabel" name="jLabel1">
       <Properties>
-        <Property name="text" type="java.lang.String" value="Online CA Status:"/>
+        <Property name="text" type="java.lang.String" value="Online Status:"/>
       </Properties>
     </Component>
     <Component class="javax.swing.JTextField" name="timeoutTextField">
@@ -79,8 +82,16 @@
     </Component>
     <Component class="javax.swing.JLabel" name="jLabel2">
       <Properties>
-        <Property name="text" type="java.lang.String" value="Connection timeout (secs)"/>
+        <Property name="text" type="java.lang.String" value="Connect timeout (secs)"/>
       </Properties>
+    </Component>
+    <Component class="javax.swing.JButton" name="helpButton">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Help"/>
+      </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="helpButtonActionPerformed"/>
+      </Events>
     </Component>
   </SubComponents>
 </Form>

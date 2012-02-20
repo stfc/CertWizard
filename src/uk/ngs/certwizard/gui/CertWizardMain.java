@@ -10,47 +10,44 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.io.File;
 import java.net.URL;
-//import java.util.Observer;
-//import java.util.Observable;
-import java.util.Observable;
-import java.util.Timer;
-import java.util.TimerTask;
-import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
-import javax.swing.WindowConstants;
 import org.globus.common.CoGProperties;
-import uk.ngs.ca.certificate.client.PingService;
 import uk.ngs.ca.common.SystemStatus;
 import uk.ngs.ca.tools.property.SysProperty;
 
 /**
- *
- * @author xw75
+ * The main frame class. 
+ * 
+ * @author Xiao Wang
+ * @author David Meredith
  */
-public class CertWizardMain { //implements Observer {
-
-    //private CardLayout cardLayout;
-    private JFrame frame;
-    private JTabbedPane tabbedPane;
-    private JPanel getCertificatePanel;
-    //private JPanel settingsPanel;
-    //private JPanel useCertificatePanel;
-
-    //private ComponentSettingsPanel settingsComponentPanel;
-
-    //private RAOperationPanel raopPanel = null;
-    //private RAUtilityPanel rautilPanel = null;
+public class CertWizardMain extends javax.swing.JFrame {
 
     private OnlineStatus onlineStatusPanel = new OnlineStatus();
+    private JTabbedPane tabbedPane = new JTabbedPane();
 
+    /**
+     * Creates new form CertWizardMainFrame
+     */
     public CertWizardMain() {
+        initComponents();
+        setupFrame();
+    }
+
+    private void setupFrame() {
+        this.setLayout(new BorderLayout());
+        URL iconURL = CertWizardMain.class.getResource("/uk/ngs/ca/images/ngs-icon.png");
+        if (iconURL != null) {
+            this.setIconImage(Toolkit.getDefaultToolkit().getImage(iconURL));
+        }
         java.security.Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 
         String title = SysProperty.getValue("ngsca.certwizard.version");
-        frame = new JFrame( title );
-        frame.setResizable(false);
+        this.setTitle(title);
+        //frame = new JFrame( title );
+        //frame.setResizable(true);
         if (!checkGlobusDirectory()) {
             System.exit(0);
         }
@@ -63,7 +60,7 @@ public class CertWizardMain { //implements Observer {
         //System.out.println("http.proxyHost "+System.getProperty("http.proxyHost"));
         //System.out.println("http.proxyPort "+System.getProperty("http.proxyPort"));
 
-        try{
+        try {
             SysProperty.setupTrustStore(); // throws IllegalStateException if prob
             String trustStoreFile = SysProperty.getValue("ngsca.truststore.file");
             String trustStorePath = System.getProperty("user.home");
@@ -76,42 +73,86 @@ public class CertWizardMain { //implements Observer {
 
             // check files exist and are readable
             File truststore = new File(trustStorePath);
-            if(!truststore.exists() || !truststore.canRead()){
-                throw new IllegalStateException("Trustore cannot be read"); 
+            if (!truststore.exists() || !truststore.canRead()) {
+                throw new IllegalStateException("Trustore cannot be read");
             }
 
-        } catch(Exception ex) {
-            JOptionPane.showMessageDialog(null,ex.getMessage(),"Error", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             System.exit(0);
         }
 
+        this.initTabbedPane();
 
-        URL iconURL = CertWizardMain.class.getResource("/uk/ngs/ca/images/ngs-icon.png");
-        if (iconURL != null) {
-            frame.setIconImage(Toolkit.getDefaultToolkit().getImage(iconURL));
+        // We want to ensure onlineStatusPanel can observe any changes in online system status
+        // so that we can update its GUI accordingly.
+        SystemStatus.getInstance().addObserver(onlineStatusPanel);
+
+        //System.setProperty("http.proxyHost", "wwwnotexist.tr.ld");
+        //System.setProperty("http.proxyHost", "wwwcache.dl.ac.uk");     
+        // Run ping check in a new thread so we don't block while it tries to connect.
+        onlineStatusPanel.runPingCheck();
+
+        //Timer timer = new Timer();
+        // execute once with no delay required.
+        //timer.schedule(new runPingCheck(), 0); 
+        // repeat every n millisecs with no delay (GUI will automatically update if the connection is lost).
+        //timer.schedule(new runPingCheck(), 0, 10000); 
+
+        this.getContentPane().add(BorderLayout.CENTER, this.tabbedPane);
+        this.getContentPane().add(BorderLayout.SOUTH, this.onlineStatusPanel);
+    }
+
+    private void initTabbedPane() {
+        JPanel tabPanelManageCerts = new JPanel();
+        JPanel tabPanelSetup = new JPanel();
+        JPanel tabPanelUseCert = new JPanel();
+        tabbedPane.addTab("Apply For/Manage Your Certificate", tabPanelManageCerts);
+        tabbedPane.addTab("Use Your Installed Certificate", tabPanelUseCert);
+        tabbedPane.addTab("Setup", tabPanelSetup);
+
+        // First, create the settings/setup panel and the doActions panel.
+        final ComponentSettingsPanel setupPanel = new ComponentSettingsPanel(tabPanelSetup);
+        final DoActionsPanel doActions = new DoActionsPanel(tabPanelUseCert);
+        final PasswordPanel pp = new PasswordPanel(tabPanelManageCerts);
+
+        tabPanelSetup.add(setupPanel);
+        tabPanelUseCert.add(doActions);
+        tabPanelManageCerts.add(pp);
+
+        // if the user's pem files already exist in the default location, then 
+        // set the focus on the Use Certifiate panel 
+        if (doPemFilesExist()) {
+            tabbedPane.setSelectedComponent(tabPanelUseCert);
         }
 
-        frame.setSize(860, 540);
-        frame.setLocation(300, 200);
-        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        // Second, add componentListeners so that the panel's can be refreshed
+        // when the appropriate tab is shown.
+        tabPanelSetup.addComponentListener(new ComponentAdapter() {
 
-        tabbedPane = new JTabbedPane();
-        //getCertificatePanel = new JPanel();
-        //settingsPanel = new JPanel();
-        //useCertificatePanel = new JPanel();
-        //cardLayout = new CardLayout();
+            @Override
+            public void componentShown(ComponentEvent evt) {
+                // we could refresh the dislay from this listener which will be
+                // called whenever the settings tab is re-shown.
+                //System.out.println("settings tab shown....");
+                setupPanel.updateCertificateComponent();
+            }
+        });
+        tabPanelUseCert.addComponentListener(new ComponentAdapter() {
 
-        initComponents();
-
-        frame.getContentPane().add(BorderLayout.SOUTH, this.onlineStatusPanel);
-        frame.getContentPane().add(BorderLayout.CENTER, this.tabbedPane);
-        frame.setVisible(true);
-
+            @Override
+            public void componentShown(ComponentEvent evt) {
+                // we need to refresh the display on the CertWizard's 'use certificate'
+                // panel because we have chosen a new certificate.
+                //System.out.println("use cert tab shown....");
+                doActions.update();
+            }
+        });
     }
 
     /**
-     * Checks if the ~/.globus directory exists. If not, it creates one.
-     * Returns false if an error has occurred
+     * Checks if the ~/.globus directory exists. If not, it creates one. Returns
+     * false if an error has occurred
      */
     private boolean checkGlobusDirectory() {
         //if(true)return false;
@@ -125,11 +166,11 @@ public class CertWizardMain { //implements Observer {
             } else {
                 JOptionPane.showMessageDialog(
                         null,
-                        "[" + globusDir.getAbsolutePath() + "]  is not a directory.\n" +
-                        "A .globus directory is needed in your HOME directory.\n" +
-                        "However this directory could not be created: Either a file " +
-                        "with that name already exists or you do not have the required permissions." +
-                        "\nPlease either remove or rename the .globus file or ensure you have the necessary permissions, then restart this wizard.",
+                        "[" + globusDir.getAbsolutePath() + "]  is not a directory.\n"
+                        + "A .globus directory is needed in your HOME directory.\n"
+                        + "However this directory could not be created: Either a file "
+                        + "with that name already exists or you do not have the required permissions."
+                        + "\nPlease either remove or rename the .globus file or ensure you have the necessary permissions, then restart this wizard.",
                         "Error", JOptionPane.ERROR_MESSAGE);
                 return false;
             }
@@ -137,8 +178,8 @@ public class CertWizardMain { //implements Observer {
     }
 
     /**
-     * Checks if the ~/.ca directory exists. If not, it creates one.
-     * Returns false if an error has occurred
+     * Checks if the ~/.ca directory exists. If not, it creates one. Returns
+     * false if an error has occurred
      */
     private boolean checkCADirectory() {
         //if(true)return false;
@@ -152,192 +193,21 @@ public class CertWizardMain { //implements Observer {
             } else {
                 JOptionPane.showMessageDialog(
                         null,
-                        "[" + caDir.getAbsolutePath() + "]  is not a directory.\n" +
-                        "A .ca directory is needed in your HOME directory.\n" +
-                        "However this directory could not be created: Either a file " +
-                        "with that name already exists or you do not have the required permissions." +
-                        "\nPlease either remove or rename the .ca file or ensure you have the necessary permissions, then restart this wizard.",
+                        "[" + caDir.getAbsolutePath() + "]  is not a directory.\n"
+                        + "A .ca directory is needed in your HOME directory.\n"
+                        + "However this directory could not be created: Either a file "
+                        + "with that name already exists or you do not have the required permissions."
+                        + "\nPlease either remove or rename the .ca file or ensure you have the necessary permissions, then restart this wizard.",
                         "Error", JOptionPane.ERROR_MESSAGE);
                 return false;
             }
         }
     }
 
-
-    private void initComponents() {
-
-        getCertificatePanel = new JPanel();
-        JPanel settingsPanel = new JPanel();
-        JPanel useCertificatePanel = new JPanel();
-        tabbedPane.addTab("Apply For/Manage Your Certificate", getCertificatePanel);
-        tabbedPane.addTab("Use Your Installed Certificate", useCertificatePanel);
-        tabbedPane.addTab("Setup", settingsPanel);
-
-
-        // First, create the settings/setup panel and the doActions panel.
-        final ComponentSettingsPanel setupPanel = new ComponentSettingsPanel(this.frame);
-        final DoActionsPanel doActions = new DoActionsPanel(this.frame);
-        settingsPanel.add(setupPanel);
-        useCertificatePanel.add(doActions);
-
-        PasswordPanel pp = new PasswordPanel(this);
-        pp.setSize(800, 500); 
-        getCertificatePanel.add(pp);
-
-
-        //getCertificatePanel.setLayout(new CardLayout());
-        //getCertificatePanel.add(new ContactServerPanel(this), "ContactServer");
-        //SystemStatus.ISONLINE = uk.ngs.ca.certificate.client.PingService.getPingService().isPingService();
-
-        if (isExistPemFiles()) {
-            tabbedPane.setSelectedComponent(useCertificatePanel);
-        }
-
-        
-        // Second, add componentListeners so that the panel's can be refreshed
-        // when the appropriate tab is shown.
-        settingsPanel.addComponentListener( new ComponentAdapter() {
-            @Override
-            public void componentShown(ComponentEvent evt) {
-                // we could refresh the dislay from this listener which will be
-                // called whenever the settings tab is re-shown.
-                //System.out.println("settings tab shown....");
-                setupPanel.updateCertificateComponent();
-            }
-        });
-        useCertificatePanel.addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentShown(ComponentEvent evt) {
-                // we need to refresh the display on the CertWizard's 'use certificate'
-                // panel because we have chosen a new certificate.
-                //System.out.println("use cert tab shown....");
-                doActions.update();
-            }
-        });
-
-
-        // We want to ensure onlineStatusPanel can observe any changes in online system status
-        // so that we can update its GUI accordingly.
-        SystemStatus.getInstance().addObserver(onlineStatusPanel);
-
-
-        //System.setProperty("http.proxyHost", "wwwnotexist.tr.ld");
-        //System.setProperty("http.proxyHost", "wwwcache.dl.ac.uk");
-        
-        // Run ping check in a new thread so we don't block while it tries to connect.
-        onlineStatusPanel.runPingCheck(); 
-        
-        //Timer timer = new Timer();
-        // execute once with no delay required.
-        //timer.schedule(new runPingCheck(), 0); 
-        // repeat every n millisecs with no delay (GUI will automatically update if the connection is lost).
-        //timer.schedule(new runPingCheck(), 0, 10000); 
-    }
-    
-
-    /*private class runPingCheck extends TimerTask {
-        public runPingCheck() {
-        }
-        public void run() {
-            // simply call isPingService which will itself call SystemStatus.setIsOnline(bool)
-            // and update any observers (such as the onlineStatusPanel).
-            PingService.getPingService().isPingService();
-        }
-    }*/
-
-
-
-    public JPanel getCertificatePanel(){
-        return this.getCertificatePanel;
-    }
-
-
-    /*public void update(){
-        this.onlineStatusPanel.update();
-    }*/
-
-    public void update( Observable o, Object obj ){
-        // we want to update the online status panel e.g. whenever there is
-        // a change in online system status.
-        //this.onlineStatusPanel.update();
-    }
-
-    
-    //test only
-    /*public void update( Observable o, Object obj ){
-//comment it temperately for real ca server test.
-        String _className = o.getClass().getSimpleName();
-        if( _className.equals("CertWizardObservable") ){
-            CertificateCSRInfo _info = (CertificateCSRInfo)obj;
-            String _role = _info.getRole();
-            
-//            if( _role.equals("RA Operator") || _role.equals("CA Operator")){
-//
-//                WaitDialog.showDialog();
-//                if( tabbedPane.getTabCount() != 5 ){
-//                    String _id = _info.getId();
-//                    CertificateDownload certDownload = new CertificateDownload(_id);
-//                    if( ! certDownload.isCertificateExpired() ){
-//                        tabbedPane.addTab("RA Operation", new RAOperationPanel( _info ));
-//
-//                        tabbedPane.addTab("RA Utilities", new RAUtilityPanel( _info ));
-//                    }
-//                }else{
-//                    tabbedPane.remove( 4 );
-//                    tabbedPane.remove(3);
-//                }
-//
-//                WaitDialog.hideDialog();
-//
-//================///commented out as RA Utils tab is currently not supported!
-
-//                WaitDialog.showDialog();
-//                if( tabbedPane.getTabCount() != 5 ){
-//                    String _id = _info.getId();
-//                    CertificateDownload certDownload = new CertificateDownload(_id);
-//                    if( ! certDownload.isCertificateExpired() ){
-//                        if( ( this.raopPanel == null ) || ( this.rautilPanel == null ) ){
-//                            this.raopPanel = new RAOperationPanel( _info );
-//                            this.rautilPanel = new RAUtilityPanel( _info );
-//                        }
-//                        tabbedPane.addTab("RA Operation", this.raopPanel);
-//                        tabbedPane.addTab("RA Utilities", this.rautilPanel);
-//                    }
-//
-//                }else{
-//                    tabbedPane.remove( 4 );
-//                    tabbedPane.remove(3);
-//                }
-//                WaitDialog.hideDialog();
-
-//================///
-                
-            }else{
-                if( tabbedPane.getTabCount() == 5 ){
-                    tabbedPane.remove( 4 );
-                    tabbedPane.remove(3);
-                }
-            }
-        }
-    }*/
-
-    /*private void getCertPanelComponentShown(ComponentEvent evt) {
-        String _property = SysProperty.getValue("uk.ngs.ca.immegration.password.property");
-        String _passphrase = System.getProperty(_property);
-
-        if (_passphrase == null) {
-            getCertificatePanel.removeAll();
-            getCertificatePanel.add(new ContactServerPanel(this), "ContactServer");
-
-            //calling revalidate() will display the GUI properly.
-            getCertificatePanel.repaint();
-            getCertificatePanel.revalidate();
-        } else {
-            cardLayout.show(getCertificatePanel, "MainWindowPanel");
-        }
-    }*/
-
-    private boolean isExistPemFiles() {
+    /**
+     * See if pem files already exist in default location
+     */
+    private boolean doPemFilesExist() {
         CoGProperties props = CoGProperties.getDefault();
         String certPemFile = props.getUserCertFile();
         String keyPemFile = props.getUserKeyFile();
@@ -359,7 +229,88 @@ public class CertWizardMain { //implements Observer {
         }
     }
 
-    public static void main(String[] args) {
-        CertWizardMain run = new CertWizardMain();
+    /**
+     * This method is called from within the constructor to initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is always
+     * regenerated by the Form Editor.
+     */
+    @SuppressWarnings("unchecked")
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    private void initComponents() {
+
+        jMenuBar1 = new javax.swing.JMenuBar();
+        jMenu1 = new javax.swing.JMenu();
+        jMenu2 = new javax.swing.JMenu();
+
+        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setName("frame");
+
+        jMenu1.setText("File");
+        jMenuBar1.add(jMenu1);
+
+        jMenu2.setText("Edit");
+        jMenuBar1.add(jMenu2);
+
+        setJMenuBar(jMenuBar1);
+
+        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
+        getContentPane().setLayout(layout);
+        layout.setHorizontalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 863, Short.MAX_VALUE)
+        );
+        layout.setVerticalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 506, Short.MAX_VALUE)
+        );
+
+        pack();
+    }// </editor-fold>//GEN-END:initComponents
+
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String args[]) {
+        /*
+         * Set the Nimbus look and feel
+         */
+        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
+        /*
+         * If Nimbus (introduced in Java SE 6) is not available, stay with the
+         * default look and feel. For details see
+         * http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html
+         */
+        try {
+            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (ClassNotFoundException ex) {
+            java.util.logging.Logger.getLogger(CertWizardMain.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            java.util.logging.Logger.getLogger(CertWizardMain.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            java.util.logging.Logger.getLogger(CertWizardMain.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+            java.util.logging.Logger.getLogger(CertWizardMain.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        }
+        //</editor-fold>
+
+        /*
+         * Create and display the form
+         */
+        java.awt.EventQueue.invokeLater(new Runnable() {
+
+            public void run() {
+                new CertWizardMain().setVisible(true);
+            }
+        });
     }
+    // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JMenu jMenu1;
+    private javax.swing.JMenu jMenu2;
+    private javax.swing.JMenuBar jMenuBar1;
+    // End of variables declaration//GEN-END:variables
 }

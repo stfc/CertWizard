@@ -49,7 +49,7 @@ import java.util.Calendar;
  */
 public class CAKeyPair {
 
-    private static final int KEYSIZE = 1024;
+    private static final int KEYSIZE = 2048; //1024;  // DAVE,
     private static final String KEY_ALG = "RSA";
 
     //private static final String KEY_HEADER = "-----BEGIN ENCRYPTED PRIVATE KEY-----";
