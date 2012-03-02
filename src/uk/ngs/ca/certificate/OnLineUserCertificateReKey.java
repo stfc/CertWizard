@@ -194,13 +194,16 @@ public class OnLineUserCertificateReKey {
         Client client = new Client(Protocol.HTTPS);
         client.setConnectTimeout(SysProperty.getTimeoutMilliSecs());  // in milliseconds (8 secs). TODO: should be editable and stored in .properties file 
 
+        // First attempt to connect without the necessary PPPK headers (just the
+        // PPPK header). We subsequently expect a 401 response challenge. 
         Representation representation = getRepresentation();
         Request request = new Request(Method.POST, new Reference(CSRURL), representation);
         request = setupHeaders(request);
         Response response = client.handle(request);
         Status _status = response.getStatus();
 
-        //we will do second post
+        // 401 response challenge was issued by the server - we will do a 
+        // second post and this time include the required PPPK headers.
         if (_status.equals(Status.CLIENT_ERROR_UNAUTHORIZED)) {
             org.restlet.util.Series<org.restlet.data.Parameter> headers = (org.restlet.util.Series) response.getAttributes().get("org.restlet.http.headers");
             Parameter _realmP = headers.getFirst("realm");
@@ -210,8 +213,7 @@ public class OnLineUserCertificateReKey {
             //we will do the response action from here.
             if (_opaqueP == null) {
 
-                PublicKey _publicKey = this.CERTIFICATE.getPublicKey();
-                PrivateKey _privateKey = this.clientKeyStore.getPrivateKey(_publicKey);
+                PrivateKey _privateKey = this.clientKeyStore.getPrivateKey(this.CERTIFICATE.getPublicKey());
 
                 String _keyid = _keyidP.getValue();
                 int index = _keyid.indexOf(".");
@@ -237,6 +239,8 @@ public class OnLineUserCertificateReKey {
                 client = new Client(Protocol.HTTPS);
                 client.setConnectTimeout(SysProperty.getTimeoutMilliSecs());  // in milliseconds (8 secs). TODO: should be editable and stored in .properties file 
 
+                //please note you have to call getRepresentation() again, otherwise 
+                // it will be null. Why? - maybe restlet nullifies it after the first post?
                 representation = getRepresentation();
                 request = new Request(Method.POST, new Reference(CSRURL), representation);
                 request.getAttributes().put("org.restlet.http.headers", form);
@@ -253,7 +257,8 @@ public class OnLineUserCertificateReKey {
                 form.add("opaque", _opaqueP.getValue());
 
                 client = new Client(Protocol.HTTPS);
-//please note you have to call getRepresentation() again, otherwise it will be null. Why???
+                //please note you have to call getRepresentation() again, otherwise 
+                // it will be null. Why? - maybe restlet nullifies it after the first post?
                 representation = getRepresentation();
                 request = new Request(Method.POST, new Reference(CSRURL), representation);
                 request.getAttributes().put("org.restlet.http.headers", form);
@@ -448,12 +453,12 @@ public class OnLineUserCertificateReKey {
             eltName.appendChild(d.createTextNode(getEmail()));
             rootElement.appendChild(eltName);
 
-            PublicKey _publicKey = this.CERTIFICATE.getPublicKey();
-            String modulusString = ((RSAPublicKey) this.CERTIFICATE.getPublicKey()).getModulus().toString(16);
-            String exponentString = ((RSAPublicKey) this.CERTIFICATE.getPublicKey()).getPublicExponent().toString(16);
-
+            // We include the keyid string as the <PublicKey> element so that 
+            // the server can then issue a 401 response challenge for this pubkey. 
+            RSAPublicKey _publicKey = (RSAPublicKey) this.CERTIFICATE.getPublicKey();
+            String modulusString = _publicKey.getModulus().toString(16);
+            String exponentString = _publicKey.getPublicExponent().toString(16);
             String keyString = modulusString + "." + exponentString;
-
             eltName = d.createElement("PublicKey");
             eltName.appendChild(d.createTextNode(keyString));
             rootElement.appendChild(eltName);
