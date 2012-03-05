@@ -75,7 +75,8 @@ TODOs:
 There are lots of to do items. Much of the code needs refactoring (many parts 
 are rather poorly written and involves much legacy). 
 
-
+- Display the certificate serial number 
+- Display a different icon for self-signed CSRs 
 - When exporting certs, need to change the perms on *nix box much like 
   when installing the pem files.
 - Default the keysize from 1024 to 2048. 
