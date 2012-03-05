@@ -75,6 +75,9 @@ TODOs:
 There are lots of to do items. Much of the code needs refactoring (many parts 
 are rather poorly written and involves much legacy). 
 
+
+- When exporting certs, need to change the perms on *nix box much like 
+  when installing the pem files.
 - Default the keysize from 1024 to 2048. 
 - OnLineUserCertificateReKey.java and CSRRequest.java both test for HTTP 202 
   return codes (when doing a renew or new csr). This is wrong! (the server is 
