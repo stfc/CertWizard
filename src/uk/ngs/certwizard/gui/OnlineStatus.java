@@ -46,7 +46,6 @@ public class OnlineStatus extends javax.swing.JPanel implements Observer {
         jLabel1 = new javax.swing.JLabel();
         timeoutTextField = new javax.swing.JTextField();
         jLabel2 = new javax.swing.JLabel();
-        helpButton = new javax.swing.JButton();
 
         setToolTipText("Online CA status indicates whether the tool can contact the UK Certification Authority Server");
 
@@ -77,13 +76,6 @@ public class OnlineStatus extends javax.swing.JPanel implements Observer {
 
         jLabel2.setText("Connect timeout (secs)");
 
-        helpButton.setText("Help");
-        helpButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                helpButtonActionPerformed(evt);
-            }
-        });
-
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -98,9 +90,7 @@ public class OnlineStatus extends javax.swing.JPanel implements Observer {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(timeoutTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(4, 4, 4)
-                .addComponent(connectButton)
-                .addGap(2, 2, 2)
-                .addComponent(helpButton))
+                .addComponent(connectButton))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -109,8 +99,7 @@ public class OnlineStatus extends javax.swing.JPanel implements Observer {
                 .addComponent(jLabel1)
                 .addComponent(onlineLabel)
                 .addComponent(timeoutTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addComponent(jLabel2)
-                .addComponent(helpButton))
+                .addComponent(jLabel2))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -129,23 +118,18 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
     this.doChangeTimeout();
 }//GEN-LAST:event_timeoutTextFieldFocusLost
 
-    private void helpButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_helpButtonActionPerformed
-        // TODO add your handling code here:
-        this.doHelpButtonActionPerformed(evt);
-    }//GEN-LAST:event_helpButtonActionPerformed
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton connectButton;
-    private javax.swing.JButton helpButton;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel onlineLabel;
     private javax.swing.JTextField timeoutTextField;
     // End of variables declaration//GEN-END:variables
 
-    private void doHelpButtonActionPerformed(java.awt.event.ActionEvent evt) {
+    /*private void doHelpButtonActionPerformed(java.awt.event.ActionEvent evt) {
         JOptionPane.showMessageDialog(this, "todo",
                     "Configure Network Connection", JOptionPane.INFORMATION_MESSAGE);
-    }
+    }*/
 
     /**
      * change the timeout value

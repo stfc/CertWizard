@@ -262,6 +262,8 @@ public class PasswordPanel extends javax.swing.JPanel  {
                 //throw new UnsupportedOperationException("Not supported yet.");
             }
         });
+        // 
+        mainpane.doPostConstruct();
     }
 
     private void txtPasswordActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtPasswordActionPerformed

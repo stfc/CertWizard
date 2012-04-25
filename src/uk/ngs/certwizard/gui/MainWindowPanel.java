@@ -45,8 +45,9 @@ import uk.ngs.ca.tools.property.SysProperty;
 
 /**
  * GUI for displaying the keyStore entries in the user's '$HOME/.ca/cakeystore.pkcs12' file.
- * This class also provides functions for importing, exporting, deleting 
- * requesting, requesting, renewing certificates.
+ * This class also manages importing, exporting, deleting requesting, renewing certificates.
+ * There is lots to do in terms of refactoring and logic out of this class into 
+ * service classes and function objects. 
  * 
  * @author Xiao Wang
  * @author David Meredith (largely refactored from code by xw75 - lots of original xw75 code remains) 
@@ -102,26 +103,13 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         if (SystemStatus.getInstance().getIsOnline()) {
             stringMotD = motd.getText();
             setMOD(stringMotD);
-            String certWizardVersion = SysProperty.getValue("ngsca.certwizard.versionNumber");
-            //Now fetch the latest version from the server. Required info is in DBCAInfo, ultimately
-            //handled by the CAResource class.
-            String latestVersion = motd.getLatestVersion();
-            if (!(certWizardVersion.equals(latestVersion))) {
-                JOptionPane.showMessageDialog(null, "A new version of the Certificate Wizard is available!\n"
-                        + "Please go to www.ngs.ac.uk in order to obtain the latest version",
-                        "New Version of Certificate Wizard", JOptionPane.INFORMATION_MESSAGE);
-            }
         } else {
             setRedMOD(stringMotDOffline);
         }
         WaitDialog.hideDialog();
 
         // if we have not certs, present a useful message
-        if(this.keyStoreCaWrapper.getKeyStoreEntryMap().isEmpty()){
-            JOptionPane.showMessageDialog(null, "You appear to have no certificates. Please either\n"
-                    + "a) Apply for a certificate with the 'Apply' button or\n"
-                    + "b) Import a certificate/key pair from file (this file can be exported from your web browser)");
-        } else {
+        if( !this.keyStoreCaWrapper.getKeyStoreEntryMap().isEmpty() ){
             // set to the first visible cert/key entry (rather than showing e.g. trust root certs). 
             for (int index = 0; index < this.jComboBox1.getItemCount(); index++) {
                 KeyStoreEntryWrapper selectedKSEWComboBox = (KeyStoreEntryWrapper) this.jComboBox1.getItemAt(index);
@@ -131,6 +119,34 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 }
             }
        
+        }
+        
+    }
+    
+    /**
+     * Do some post object construction checks. Shows modal message dialogs if
+     * a) no certificates exist in the managed CA keystore
+     * b) a newer version of the certificate wizard is available. 
+     */
+    public void doPostConstruct() {
+        if (this.keyStoreCaWrapper.getKeyStoreEntryMap().isEmpty()) {
+            JOptionPane.showMessageDialog(this, 
+                    "You have no certificates. Please either:\n"
+                    + "a) Apply for a certificate with the [Apply For New Cert] button or\n"
+                    + "b) Import an existing certificate from a backup file with the [Import Cert From File] button\n\n"
+                    + "(Note, you can export your certificate as a backup file from your web browser)", 
+                    "No Certificates Found", 
+                    JOptionPane.INFORMATION_MESSAGE);
+
+        }
+        //Now fetch the latest version from the server. Required info is in DBCAInfo, ultimately
+        //handled by the CAResource class.
+        String latestVersion = motd.getLatestVersion();
+        String certWizardVersion = SysProperty.getValue("ngsca.certwizard.versionNumber");
+        if (!(certWizardVersion.equals(latestVersion))) {
+            JOptionPane.showMessageDialog(this, "A new version of the Certificate Wizard is available!\n"
+                    + "Please go to www.ngs.ac.uk in order to obtain the latest version",
+                    "New Version of Certificate Wizard", JOptionPane.INFORMATION_MESSAGE);
         }
     }
 

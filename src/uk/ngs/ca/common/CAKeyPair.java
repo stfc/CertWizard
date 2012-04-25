@@ -68,7 +68,7 @@ public class CAKeyPair {
 
     /*
      * This factory function generates a new pair of keys suitable for the use with NGS.
-     * The default keyzise is 1024.
+     * The default keyzise is 2048.
      *
      * @return The created KeyPair
      */
