@@ -609,17 +609,19 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 OnLineUserCertificateReKey rekey = new OnLineUserCertificateReKey(PASSPHRASE,sAlias);
                 rekey.addCertificate(certDownload.getCertificate());
                 boolean isValidRekey = rekey.isValidReKey();
-                boolean submittedOk = rekey.doPosts();
+                
                 // TODO: may be better just to reload the selected entry rather than refresh them all ?
                 this.reloadKeystoreUpdateGUI();
                 WaitDialog.hideDialog();
                 if (isValidRekey) {
+                    boolean submittedOk = rekey.doPosts();
                     if (submittedOk) {
                         JOptionPane.showMessageDialog(this, "The renewal request has been submitted", "Renewal request successful", JOptionPane.INFORMATION_MESSAGE);
+                      
                     } else {
                         String messageTitle = rekey.getErrorMessage();
                         String moreMessage = rekey.getDetailErrorMessage();
-                        JOptionPane.showMessageDialog(this, moreMessage, messageTitle, JOptionPane.WARNING_MESSAGE);
+                        JOptionPane.showMessageDialog(this, moreMessage, messageTitle, JOptionPane.ERROR_MESSAGE);
                     }
                 } else {
                     JOptionPane.showMessageDialog(this, "The selected certificate is not valid to renew", "wrong certificate", JOptionPane.WARNING_MESSAGE);
@@ -629,6 +631,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             JOptionPane.showMessageDialog(this, "Only VALID certificates issued by the UK CA can be renewed",
                     "No suitable certificate selected", JOptionPane.WARNING_MESSAGE);
         }
+        this.reloadKeystoreUpdateGUI();
     }
 
     /** Called by the Revoke button  */

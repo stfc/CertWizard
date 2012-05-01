@@ -4,6 +4,7 @@
  */
 package uk.ngs.ca.certificate;
 
+import java.io.StringReader;
 import org.restlet.Client;
 import org.restlet.data.Protocol;
 import org.restlet.data.Reference;
@@ -48,8 +49,12 @@ import uk.ngs.ca.tools.property.SysProperty;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
+import javax.xml.parsers.DocumentBuilderFactory;
 import org.restlet.ext.xml.DomRepresentation;
 import org.restlet.representation.Representation;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 import uk.ngs.ca.common.HashUtil;
 import uk.ngs.ca.common.ClientKeyStore;
 import uk.ngs.ca.common.ClientHostName;
@@ -132,7 +137,7 @@ public class OnLineUserCertificateReKey {
      * @return detailed error message.
      */
     public String getDetailErrorMessage() {
-        if (this.DOCUMENT == null) {
+        /*if (this.DOCUMENT == null) {
             return "";
         }
         try {
@@ -153,8 +158,8 @@ public class OnLineUserCertificateReKey {
         } catch (Exception ep) {
             ep.printStackTrace();
             return ep.getMessage();
-        }
-
+        }*/
+        return this.DETAILERRORMESSAGE; 
     }
 
     private String asciiToHex(String ascii) {
@@ -274,66 +279,60 @@ public class OnLineUserCertificateReKey {
                 //201
                 return true;
 
-            } else if (response.getStatus().equals(Status.SUCCESS_ACCEPTED)) {
-                //202
+            } else {
+                // Set defaults 
+                this.ERRORMESSAGE = "Error";
+                this.DETAILERRORMESSAGE = "Unknown Error";
                 try {
-                    this.DETAILERRORMESSAGE = response.getEntityAsText();
-                    this.DOCUMENT = new DomRepresentation(response.getEntity()).getDocument();
-                    this.ERRORMESSAGE = "Error message received from the Server. Please contact the helpdesk.";
-                } catch (Exception ep) {
-                    ep.printStackTrace();
-                } finally {
-                    return false;
+                    String xmlResponse = response.getEntityAsText();
+                    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+                    InputSource source = new InputSource(new StringReader(xmlResponse));
+                    this.DOCUMENT = factory.newDocumentBuilder().parse(source);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
                 }
 
-            } else if (response.getStatus().equals(Status.CLIENT_ERROR_NOT_FOUND)) {
-                //404
-                this.ERRORMESSAGE = "there is no such service. Please check system configure file.";
-                try {
-                    this.DETAILERRORMESSAGE = response.getEntityAsText();
-                    this.DOCUMENT = new DomRepresentation(response.getEntity()).getDocument();
-                    //this.DOCUMENT = response.getEntityAsDom().getDocument();
-                } catch (Exception ep) {
-                    ep.printStackTrace();
-                } finally {
+                if (response.getStatus().equals(Status.SUCCESS_ACCEPTED)) {
+                    //202
+                    if (this.DOCUMENT != null) {
+                        NodeList allTextNodes = this.DOCUMENT.getElementsByTagName("text");
+                        if (allTextNodes != null) {
+                            Node node_minor_text = allTextNodes.item(1);
+                            if (node_minor_text != null) {
+                                this.DETAILERRORMESSAGE = node_minor_text.getTextContent();
+                            }
+                        }
+                    }
+                    return false;
+
+                } else if (response.getStatus().equals(Status.CLIENT_ERROR_NOT_FOUND)) {
+                    //404
+                    this.DETAILERRORMESSAGE = "There is no such service. Please check system configure file.";
+                    return false;
+                } else if (response.getStatus().equals(Status.CLIENT_ERROR_FORBIDDEN)) {
+                    //403
+                    this.DETAILERRORMESSAGE = "Failed authentication. Please contact the helpdesk";
+                    return false;
+                } else if (response.getStatus().equals(Status.CLIENT_ERROR_METHOD_NOT_ALLOWED)) {
+                    //405
+                    this.DETAILERRORMESSAGE = "Server does not support POST.";
+                    return false;
+                } else {
+                    this.DETAILERRORMESSAGE = "There appears to be a problem with submitting the renewal request.\n"
+                            + "This could be either due to networking problems you are having or \n"
+                            + "problem in the e-Science CA Server. If your connection is already up but still \n"
+                            + "unable to complete the renewal submission, please contact the helpdesk.";
                     return false;
                 }
-            } else if (response.getStatus().equals(Status.CLIENT_ERROR_FORBIDDEN)) {
-                //403
-                this.ERRORMESSAGE = "failed authentication. Please contact the helpdesk";
-                try {
-                    this.DETAILERRORMESSAGE = response.getEntityAsText();
-                    this.DOCUMENT = new DomRepresentation(response.getEntity()).getDocument();//= response.getEntityAsDom().getDocument();
-                } catch (Exception ep) {
-                    ep.printStackTrace();
-                } finally {
-                    return false;
-                }
-            } else if (response.getStatus().equals(Status.CLIENT_ERROR_METHOD_NOT_ALLOWED)) {
-                //405
-                this.ERRORMESSAGE = "Server does not support POST.";
-                try {
-                    this.DETAILERRORMESSAGE = response.getEntityAsText();
-                    this.DOCUMENT = new DomRepresentation(response.getEntity()).getDocument();//response.getEntityAsDom().getDocument();
-                } catch (Exception ep) {
-                    ep.printStackTrace();
-                } finally {
-                    return false;
-                }
-            } else {
-                this.ERRORMESSAGE = "There appears to be a problem with submitting the renewal request.\n"
-                    + "This could be either due to networking problems you are having or \n"
-                    + "problem in the e-Science CA Server. If your connection is already up but still \n"
-                    + "unable to complete the renewal submission, please contact the helpdesk.";
-                return false;
             }
         } else {
-            this.ERRORMESSAGE = "There appears to be a problem with submitting the renewal request.\n"
+            this.DETAILERRORMESSAGE = "There appears to be a problem with submitting the renewal request.\n"
                     + "This could be either due to networking problems you are having or \n"
                     + "problem in the e-Science CA Server. If your connection is already up but still \n"
                     + "unable to complete the renewal submission, please contact the helpdesk.";
             return false;
         }
+
     }
 
     /**

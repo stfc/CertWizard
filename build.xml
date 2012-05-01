@@ -115,7 +115,8 @@ Lazy signing is used, so the files will only be signed if they are not already s
           <echo message="copying myproxy.jnlp and bcprov.jnlp into dist"/>
           <copy file="resources/myproxy.jnlp" todir="dist"/>
           <copy file="resources/bcprov.jnlp" todir="dist"/>
-          <copy file="resources/ngs_smallicon.jpg" todir="dist"/>          
+          <copy file="resources/ngs_smallicon.jpg" todir="dist"/>   
+          <copy file="resources/readme_run.txt" todir="dist"/>   
     </target>
 
 

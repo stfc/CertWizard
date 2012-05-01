@@ -33,7 +33,7 @@ interacting with myproxy servers and VOMS.
         <jar href="Certwizard.jar" main="true" download="eager"/>
         <jar href="lib/AbsoluteLayout.jar"/>
         <!--<jar href="lib/bcprov-jdk15-145.jar"/>-->
-        <jar href="lib/cog-jglobus-1.7.0.jar"/>
+        <jar href="lib/cog-jglobus-1.8.0.jar"/>
         <jar href="lib/cog-util-0.91.jar"/>
         <jar href="lib/commons-discovery.jar"/>
         <jar href="lib/cryptix32.jar"/>
