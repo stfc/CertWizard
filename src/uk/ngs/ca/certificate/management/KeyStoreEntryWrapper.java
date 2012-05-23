@@ -4,7 +4,9 @@ import java.util.Date;
 
 /**
  * Data transfer object that represents an entry in a PKCS12 or JKS KeyStore.
- * It wraps required and optional values.
+ * An single instance can be shared by multiple threads and its state is mutable, 
+ * therefore all access to member variables is synchronized. 
+ * 
  * @author David Meredth
  */
 public class KeyStoreEntryWrapper {
@@ -45,20 +47,20 @@ public class KeyStoreEntryWrapper {
      * known about this certificate by the CA server. 
      * @return the mCertificateCSRInfo or null if it does not exist.
      */
-    public CertificateCSRInfo getServerCertificateCSRInfo() {
+    public synchronized CertificateCSRInfo getServerCertificateCSRInfo() {
         return serverCertificateCSRInfo;
     }
 
     /**
      * @param mCertificateCSRInfo the mCertificateCSRInfo to set
      */
-    public void setServerCertificateCSRInfo(CertificateCSRInfo mCertificateCSRInfo) {
+    public synchronized void setServerCertificateCSRInfo(CertificateCSRInfo mCertificateCSRInfo) {
         this.serverCertificateCSRInfo = mCertificateCSRInfo;
     }
 
 
     
-    public void setAlias(String alias){
+    public synchronized void setAlias(String alias){
         this.alias = alias;
     }
 
@@ -66,77 +68,77 @@ public class KeyStoreEntryWrapper {
     /**
      * @return the mAlias
      */
-    public String getAlias() {
+    public synchronized String getAlias() {
         return alias;
     }
 
     /**
      * @return the mEntryType
      */
-    public KEYSTORE_ENTRY_TYPE getEntryType() {
+    public synchronized KEYSTORE_ENTRY_TYPE getEntryType() {
         return entrytype;
     }
 
     /**
      * @return the mDate
      */
-    public Date getCreationDate() {
+    public synchronized Date getCreationDate() {
         return creationDate;
     }
 
-        /**
+    /**
      * @return the x500PrincipalName
      */
-    public String getX500PrincipalName() {
+    public synchronized String getX500PrincipalName() {
         return x500PrincipalName;
     }
 
     /**
      * @param x500PrincipalName the x500PrincipalName to set
      */
-    public void setX500PrincipalName(String x500PrincipalName) {
+    public synchronized void setX500PrincipalName(String x500PrincipalName) {
         this.x500PrincipalName = x500PrincipalName;
     }
 
     /**
      * @return the issuerName
      */
-    public String getIssuerName() {
+    public synchronized String getIssuerName() {
         return issuerName;
     }
 
     /**
      * @param issuerName the issuerName to set
      */
-    public void setIssuerName(String issuerName) {
+    public synchronized void setIssuerName(String issuerName) {
         this.issuerName = issuerName;
     }
 
     /**
      * @return the notBefore
      */
-    public Date getNotBefore() {
+    public synchronized Date getNotBefore() {
         return notBefore;
     }
 
     /**
      * @param notBefore the notBefore to set
      */
-    public void setNotBefore(Date notBefore) {
+    public synchronized void setNotBefore(Date notBefore) {
         this.notBefore = notBefore;
     }
 
     /**
      * @return the notAfter
      */
-    public Date getNotAfter() {
+    public synchronized Date getNotAfter() {
         return notAfter;
     }
 
     /**
      * @param notAfter the notAfter to set
      */
-    public void setNotAfter(Date notAfter) {
+    public synchronized void setNotAfter(Date notAfter) {
         this.notAfter = notAfter;
     }
 

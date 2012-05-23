@@ -344,7 +344,7 @@ public class Apply extends javax.swing.JDialog {
 
         // test to see if alias is already present
         try {
-            if (ClientKeyStore.getClientkeyStore(passphrase).getKeyStore().containsAlias(
+            if (ClientKeyStoreCaServiceWrapper.getInstance(passphrase).getClientKeyStore().containsAlias(
                     this.aliasTextField.getText())) {
                 complete = false;
                 text = text + "\nAlias already exits - please enter another alias";
@@ -421,7 +421,7 @@ public class Apply extends javax.swing.JDialog {
                            ClientKeyStoreCaServiceWrapper keyStoreCaWrapper = ClientKeyStoreCaServiceWrapper.getInstance(passphrase);
                            keyStoreCaWrapper.deleteEntry(this.aliasTextField.getText());
                            
-//                            ClientKeyStore.getClientkeyStore(passphrase).getKeyStore().deleteEntry(this.aliasTextField.getText());
+//                            ClientKeyStore.getClientkeyStore(passphrase).getKeyStoreCopy().deleteEntry(this.aliasTextField.getText());
                         } catch (KeyStoreException ex) {
                             Logger.getLogger(MainWindowPanel.class.getName()).log(Level.SEVERE, null, ex);
                             JOptionPane.showMessageDialog(this, "Unable to delete KeyStore entry. Please contact helpdesk and quote this message! " + ex.getMessage(), "Unable to clear up request", JOptionPane.ERROR_MESSAGE);

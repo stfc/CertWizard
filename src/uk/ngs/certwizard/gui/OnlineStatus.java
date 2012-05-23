@@ -4,10 +4,12 @@ import java.awt.Color;
 import java.util.Date;
 import java.util.Observable;
 import java.util.Observer;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 import uk.ngs.ca.certificate.client.PingService;
 import uk.ngs.ca.common.SystemStatus;
 import uk.ngs.ca.tools.property.SysProperty;
@@ -22,14 +24,22 @@ public class OnlineStatus extends javax.swing.JPanel implements Observer {
 
     private Date lastOnline = new Date();
     private AtomicBoolean pingRunning = new AtomicBoolean(false);
-    private Executor executor = Executors.newSingleThreadExecutor();
+    //private Executor executor = Executors.newSingleThreadExecutor();
+    private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
     /**
      * Creates new form OnlineStatus
      */
     public OnlineStatus() {
         initComponents();
-        //this.connectButton.setVisible(false);
+        // Can remove these GUI components in future - for now make them invisible 
+        // and do the following: 
+        // - comment out the calls to this.doPingCheckActionPerformed(); and this.doChangeTimeout(); 
+        // - comment out methods; doPingCheckActionPerformed(), doChangeTimeout()
+        // - change the type of the executor from newSingleThreadExecutor() to a scheduledExecutorService as above. 
+        // - modify runPingCheck() to use the newSingleThreadScheduledExecutor rather than newSingleThreadExecutor
+        this.connectButton.setVisible(false);
+        this.timeoutTextField.setVisible(false);    
     }
 
     /**
@@ -105,17 +115,17 @@ public class OnlineStatus extends javax.swing.JPanel implements Observer {
 
     private void connectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_connectButtonActionPerformed
         //System.setProperty("http.proxyHost", "wwwcache.dl.ac.uk");
-        this.doPingCheckActionPerformed();
+        //this.doPingCheckActionPerformed();
     }//GEN-LAST:event_connectButtonActionPerformed
 
 private void timeoutTextFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_timeoutTextFieldActionPerformed
 // TODO add your handling code here:
-    this.doChangeTimeout();
+    //this.doChangeTimeout();
 }//GEN-LAST:event_timeoutTextFieldActionPerformed
 
 private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_timeoutTextFieldFocusLost
 // TODO add your handling code here:
-    this.doChangeTimeout();
+    //this.doChangeTimeout();
 }//GEN-LAST:event_timeoutTextFieldFocusLost
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -134,7 +144,7 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
     /**
      * change the timeout value
      */
-    private void doChangeTimeout() {
+    /*private void doChangeTimeout() {
         try {
             String timeoutMilliSecs = this.timeoutTextField.getText();
             int timeout = Integer.parseInt(timeoutMilliSecs);
@@ -147,13 +157,13 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
                     "Invalid timeout", JOptionPane.ERROR_MESSAGE);
             this.timeoutTextField.setText(String.valueOf(SysProperty.getTimeoutMilliSecs() / 1000));
         }
-    }
+    }*/
 
     /**
      * Attempt a ping check and update our global state. This will block until
      * completed which avoids re-clicking while trying to connect.
      */
-    private void doPingCheckActionPerformed() {
+    /*private void doPingCheckActionPerformed() {
         // calling isPingService will call SystemStatus.setIsOnline(bool) which
         // will subsequently invoke update below if the state changes.
         //
@@ -163,7 +173,7 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
         //this.update(null, null);
         this.runPingCheck();
         this.update(null, null);
-    }
+    }*/
 
     /**
      * Update this panels online status GUI components based on the
@@ -200,24 +210,35 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
             // A ping thread is not running, so execute PingCheckTask as new thread 
             //Thread ping = new Thread(new PingCheckTask()); 
             //ping.start();         
-            executor.execute(new PingCheckTask());
+            
+            // If re-enabling buttons, change the executor to manual single execution below: 
+            //executor.execute(new PingCheckTask());
+            
+            // Run a ping every 5 mins 
+            executor.scheduleWithFixedDelay(new PingCheckTask(), 0, 1, TimeUnit.MINUTES); 
+    
         }
     }
-
+    
     private class PingCheckTask implements Runnable {
 
         @Override
         public void run() {
-            update(null, null);
             try {
                 pingRunning.set(true);
                 // simply call isPingService which will itself call SystemStatus.setIsOnline(bool)
                 // and update any observers (such as the onlineStatusPanel).
                 PingService.getPingService().isPingService();
+                SwingUtilities.invokeLater(new Runnable() {
+
+                    public void run() {
+                        //System.out.println("Will print true: "+SwingUtilities.isEventDispatchThread()); 
+                        update(null, null);
+                    }
+                });
             } finally {
                 pingRunning.set(false);
             }
-            update(null, null);
         }
     }
 }

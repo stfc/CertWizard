@@ -8,37 +8,34 @@ package uk.ngs.ca.certificate.management;
 import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpression;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
+import javax.xml.xpath.*;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import uk.ngs.ca.certificate.client.CertificateDownload;
+import uk.ngs.ca.certificate.client.PingService;
 import uk.ngs.ca.certificate.client.ResourcesPublicKey;
 import uk.ngs.ca.common.ClientKeyStore;
 import uk.ngs.ca.common.EncryptUtil;
-
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Node;
-import org.w3c.dom.Element;
-import uk.ngs.ca.certificate.client.CertificateDownload;
-import uk.ngs.ca.certificate.client.PingService;
 import uk.ngs.ca.tools.property.SysProperty;
 
 /**
- * Class that wraps the managed '$HOME/.ca/cakeystore.pkcs12' keyStore file and
- * checks the keyStore entries against the CA server for the status of the
- * particular entry according to the CA.
+ * Shared singleton that wraps the managed '$HOME/.ca/cakeystore.pkcs12' keyStore file. 
+ * The class checks the keyStore entries against the CA server for their current 
+ * status (according to the CA).
  *
- * @author an updated version based on xdw code
+ * @author Xiao Wang
+ * @author David Meredith (modifications - lots still to refactor)
  */
 public class ClientKeyStoreCaServiceWrapper {
 
@@ -47,9 +44,9 @@ public class ClientKeyStoreCaServiceWrapper {
     /** The password of the managed keyStore file */
     private char[] mKeystorePASSPHRASE = null;
     /** Wrapper object that holds the reference to the managed keyStore */
-    private ClientKeyStore clientKeyStore = null;
-    /** Map where the map key is keyStore alias and value is a KeyStoreEntryWrapper */
-    private Map<String, KeyStoreEntryWrapper> keyStoreEntryMap = new HashMap<String, KeyStoreEntryWrapper>(0);
+    private final ClientKeyStore clientKeyStore;
+    /** Map.key is keyStore alias and Map.value is a KeyStoreEntryWrapper */
+    private Map<String, KeyStoreEntryWrapper> keyStoreEntryMap = new ConcurrentHashMap<String, KeyStoreEntryWrapper>(0);
 
     // some internals
     private XPath certXpath = XPathFactory.newInstance().newXPath();
@@ -72,7 +69,6 @@ public class ClientKeyStoreCaServiceWrapper {
             instance = new ClientKeyStoreCaServiceWrapper(passphrase);
         }
         return instance;
-        //return new KeyStoreWrapper(passphrase);
     }
 
     private ClientKeyStoreCaServiceWrapper(char[] passphrase) throws KeyStoreException {
@@ -90,21 +86,22 @@ public class ClientKeyStoreCaServiceWrapper {
 
 
     /**
-     * Persist the managed keyStore object and populate
-     * <code>this.mKeyStoreEntries</code> list with <code>KeyStoreEntryWrapper</code> objects.
+     * (Re)load the managed keyStore object from file and populate
+     * <code>this.mKeyStoreEntries</code> with <code>KeyStoreEntryWrapper</code> objects.
+     * 
      * @throws KeyStoreException
      */
-    public void loadKeyStoreWithOnlineUpdate() throws KeyStoreException {
+    public void reloadKeyStoreFromFile() throws KeyStoreException {
         // keyStore object entries may have been modified, so
         // need to re-load this.keyStore pointer object from file because
         // the act of persisting then reloading seems to re-organize the
         // keystore entries so that Trusted certs that exist in an
         // imported cert chain are also stored as standalone entries in the
         // keyStore file.
-        this.reStore();
+        this.clientKeyStore.reStore();
         // Now refresh the keyStore entry map
-        this.keyStoreEntryMap = new HashMap<String, KeyStoreEntryWrapper>(0);
-        Enumeration<String> keystoreAliases = this.clientKeyStore.getKeyStore().aliases();
+        this.keyStoreEntryMap.clear(); 
+        Enumeration<String> keystoreAliases = this.clientKeyStore.aliases();
         while (keystoreAliases.hasMoreElements()) {
             String sAlias = keystoreAliases.nextElement();
             String x500PrincipalName = "Unknown"; // provide a default incase
@@ -113,23 +110,23 @@ public class ClientKeyStoreCaServiceWrapper {
 
             // Lets correspond to the java keytool entry types, see:
             // http://download.oracle.com/javase/1.4.2/docs/tooldocs/windows/keytool.html
-            KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE type = null;
-            //
-            if (this.clientKeyStore.getKeyStore().isCertificateEntry(sAlias)) {
+            KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE type;
+            
+            if (this.clientKeyStore.isCertificateEntry(sAlias)) {
                 // A single public key certificate belonging and signed by another party
                 type = KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.TRUST_CERT_ENTRY;
-                X509Certificate trustedCert = (X509Certificate) this.clientKeyStore.getKeyStore().getCertificate(sAlias);
+                X509Certificate trustedCert = (X509Certificate) this.clientKeyStore.getCertificate(sAlias);
                 x500PrincipalName = trustedCert.getSubjectX500Principal().toString();
                 issuerName = trustedCert.getIssuerX500Principal().toString();
                 notAfter = trustedCert.getNotAfter();
                 notBefore = trustedCert.getNotBefore();
                 
-            } else if (this.clientKeyStore.getKeyStore().isKeyEntry(sAlias) && this.clientKeyStore.getKeyStore().getCertificateChain(sAlias) != null
-                    && this.clientKeyStore.getKeyStore().getCertificateChain(sAlias).length != 0) {
+            } else if (this.clientKeyStore.isKeyEntry(sAlias) && this.clientKeyStore.getCertificateChain(sAlias) != null
+                    && this.clientKeyStore.getCertificateChain(sAlias).length != 0) {
                 // A private key accompanied by the certificate "chain" for the corresponding public key
                 type = KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY;
                 // get the first in the chain - we know it has a value.
-                X509Certificate cert = (X509Certificate) this.clientKeyStore.getKeyStore().getCertificateChain(sAlias)[0];
+                X509Certificate cert = (X509Certificate) this.clientKeyStore.getCertificateChain(sAlias)[0];
                 x500PrincipalName = cert.getSubjectX500Principal().toString();
                 issuerName = cert.getIssuerX500Principal().toString();
                 notAfter = cert.getNotAfter();
@@ -140,32 +137,70 @@ public class ClientKeyStoreCaServiceWrapper {
                 type = KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_ENTRY;
             }
             // create and add the KeyStoreEntryWrapper.
-            KeyStoreEntryWrapper keyStoreEntry = new KeyStoreEntryWrapper(sAlias, type, this.clientKeyStore.getKeyStore().getCreationDate(sAlias));
+            KeyStoreEntryWrapper keyStoreEntry = new KeyStoreEntryWrapper(sAlias, type, this.clientKeyStore.getCreationDate(sAlias));
             keyStoreEntry.setNotAfter(notAfter);
             keyStoreEntry.setNotBefore(notBefore);
             keyStoreEntry.setX500PrincipalName(x500PrincipalName);
             keyStoreEntry.setIssuerName(issuerName);
             this.keyStoreEntryMap.put(sAlias, keyStoreEntry);   
-        }
-        // if online, append the CertificateCSRInfo instances to each KeyStoreEntryWrapper
-        // (can simply comment out the followng calls to disable initialisation online).
+        }    
+    }
+    
+    
+    /**
+     * Request an online update of every relevant keyStore entry and update the keyStore accordingly. 
+     * This method is long running and should run in a background thread. 
+     * The data model it modifies is itself thread safe (delegation of thread safety to model).
+     * 
+     * @throws KeyStoreException 
+     */
+    public void onlineUpdateKeyStore() throws KeyStoreException {
+        // If online (can simply comment out the followng calls to disable initialisation online).
         if(PingService.getPingService().isPingService()){
-            this.initAllCertCSRInfos_WithOnlineCheck();
-            // update any self-signed CSR certs with the CA issued certs. Only
+            // Append the CertificateCSRInfo instances to each KeyStoreEntryWrapper
+            this.checkAllEntriesForUpdates();
+            
+            // Update any self-signed CSR certs with the CA issued certs. Only
             // need to reStore keyStore if we did actually update a cert.
-
-            if(this.updateValidCAIssuedCerts()){
+            boolean updateOccurred = false; 
+            for (Iterator<KeyStoreEntryWrapper> it = this.keyStoreEntryMap.values().iterator(); it.hasNext();) {
+                if(this.updateKeyStoreEntry(it.next())){
+                    updateOccurred = true; 
+                }
+            }
+            if(updateOccurred){
                 // If either a self-signed CSR cert or a VALID CA issued cert
                 // was updated/replaced with a new/updated CA issued certificate
                 // (i.e. occuring on new cert applications, renewals, online update),
                 // then reStore keyStore to persist changes.
-                this.reStore();
+                this.clientKeyStore.reStore();
             }
-        }    
+        }
     }
+    
+    /**
+     * Request an online update of the given keyStore entry object and update the keyStore accordingly. 
+     * This method is long running and should run in a background thread. 
+     * The data model it modifies is itself thread safe (delegation of thread safety to model).
+     * 
+     * @param keyStoreEntryWrapper
+     * @throws KeyStoreException 
+     */
+    /*public void onlineUpdateKeyStoreEntry(KeyStoreEntryWrapper keyStoreEntryWrapper) throws KeyStoreException {
+        if (PingService.getPingService().isPingService()) {
+            this.checkEntryForUpdates(keyStoreEntryWrapper);
+            if (this.updateKeyStoreEntry(keyStoreEntryWrapper)) {
+                // If either a self-signed CSR cert or a VALID CA issued cert
+                // was updated/replaced with a new/updated CA issued certificate
+                // (i.e. occuring on new cert applications, renewals, online update),
+                // then reStore keyStore to persist changes.
+                this.clientKeyStore.reStore();
+            }
+        }
+    }*/
 
     /**
-     * Get the ClientKeyStore 
+     * Get the managed ClientKeyStore instance 
      * @return
      */
     public ClientKeyStore getClientKeyStore(){
@@ -191,236 +226,238 @@ public class ClientKeyStoreCaServiceWrapper {
     public void deleteEntry(String alias) throws KeyStoreException {
         // delete from the cached list and also from the keyStore. Do not want
         // to call loadKeyStoreWithOnlineEntryUpdate(); 
-        this.keyStoreEntryMap.remove(alias);
-        this.clientKeyStore.getKeyStore().deleteEntry(alias);
-        this.reStore();
-    }
-
-    /**
-     * Save the managed keyStore file to its default location
-     * @return
-     */
-    public void reStore(){
+        this.keyStoreEntryMap.remove(alias);       
+        this.clientKeyStore.deleteEntry(alias);
         this.clientKeyStore.reStore();
     }
 
 
-
-
     /**
-     * For each keyStoreEntriyWrapper with KEY_PAIR_ENTRY type, get the PublicKey and
-     * query our CA to see if it has a record of that PubKey.
-     * If recognised, create a new <code>CertificateCSRInfo</code> from the PubKey and
-     * server response (an XML doc) and add as a member object of the <code>keyStoreEntryWrapper</code>.
+     * Check for updates for all KeyStoreEntryWrappers. 
+     * Does not update the keyStore. 
      */
-    private void initAllCertCSRInfos_WithOnlineCheck() {
+    private void checkAllEntriesForUpdates() {
         for (Iterator<KeyStoreEntryWrapper> it = this.keyStoreEntryMap.values().iterator(); it.hasNext();) {
             KeyStoreEntryWrapper keyStoreEntryWrapper = it.next();
-            this.initCertCSRInfo_WithOnlineCheck(keyStoreEntryWrapper);
+            this.checkEntryForUpdates(keyStoreEntryWrapper);
         }
     }
+ 
+    
+    /**
+     * Download the latest status for the given KeyStoreEntryWrapper (if any) and update the 
+     * KeyStoreEntryWrapper's member CertificateCSRInfo object (does not update the keyStore). 
+     * <p/>
+     * If keyStoreEntryWrapper has KEY_PAIR_ENTRY type, get the PublicKey and
+     * query our CA to see if it has a record of that PubKey.
+     * If recognised, create a new <code>CertificateCSRInfo</code> from the PubKey and the
+     * server response (XML) and add as a member object of the <code>keyStoreEntryWrapper</code>.
+     * 
+     * @param keyStoreEntryWrapper 
+     */
+    public void checkEntryForUpdates(KeyStoreEntryWrapper keyStoreEntryWrapper) {
+        try {
+            // return if not KEY_PAIR_ENTRY
+            if (!keyStoreEntryWrapper.getEntryType().equals(KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY)) {
+                return;
+            }
 
-    private void initCertCSRInfo_WithOnlineCheck(KeyStoreEntryWrapper keyStoreEntryWrapper) {
-           try {       
-                // return if not KEY_PAIR_ENTRY
-                if(!keyStoreEntryWrapper.getEntryType().equals(KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY )) {
-                   return;
+            // We do not want to check every possible keystore entry against
+            // our CA - the keystore may have many different certs issued from
+            // different CAs, therefore only continue if our certificate is 
+            // issued by our CA or is a self-signed CSR entry (a Self-signed 
+            // CSR cert is created by this tool and used for CSRs where 
+            // issuer dn == subject dn). 
+            
+            // TODO: - need to check that this is the user's cert if this is
+            // a cert chain (e.g. userCert - eScienceCA - eScience Root).
+            // If this entry is a chain, getCertificate returns the first
+            // element in that chain is returned.
+            /*
+             * String keyStoreAlias = keyStoreEntryWrapper.getAlias();
+             * X509Certificate cert = (X509Certificate)
+             * clientKeyStore.getKeyStoreCopy().getCertificate(keyStoreAlias); if (
+             * !(cert.getSubjectDN().toString().equals(cert.getIssuerDN().toString())
+             * || cert.getIssuerDN().toString().equals(
+             * SysProperty.getValue("ngsca.issuer.dn") )) ) { return;
+             *  }
+             */
+            String keyStoreAlias = keyStoreEntryWrapper.getAlias();
+            X509Certificate cert = (X509Certificate) clientKeyStore.getCertificate(keyStoreAlias);
+            
+            // check if self signed
+            boolean isSelfSignedCert = false;
+            //if ((cert.getSubjectDN().toString().equals(cert.getIssuerDN().toString()))) {
+            // getIssuerX500Principal() is supports RFC 2253
+            if(cert.getSubjectX500Principal().getName().equals(cert.getIssuerX500Principal().getName())){
+                isSelfSignedCert = true;
+            }
+            // check if cert has known issuer DN
+            boolean hasKnownIssuerDN = false;
+            String[] allKnownDNs = SysProperty.getValue("ngsca.issuer.dn").split(";");
+            for (int i = 0; i < allKnownDNs.length; i++) {
+                String keystoreCertIssuerDN = cert.getIssuerX500Principal().getName(); //cert.getIssuerDN().toString()
+                //System.out.println("Comparing: ["+keystoreCertIssuerDN+"] ["+allKnownDNs[i]+"]");
+                //if (cert.getIssuerDN().toString().equals(allKnownDNs[i])) {
+                if(keystoreCertIssuerDN.equals(allKnownDNs[i])) {
+                    hasKnownIssuerDN = true;
+                    break;
                 }
+            }
+            //System.out.println("isSelfSigned, hasKnownIssuerDN: "+isSelfSignedCert+", "+hasKnownIssuerDN);
 
-                // We do not want to check every possible keystore entry against
-                // our CA as we may have many different certs issued from
-                // different CAs etc, therefore we also return if our certificate
-                // is either;
-                // a) Not Self-signed (as created by this tool and used for
-                //    CSRs where issuer dn == subject dn)
-                //  or
-                // b) Not Issued by our CA
-                //
-                // TODO: - need to check that this is the user's cert if this is
-                // a cert chain (e.g. userCert - eScienceCA - eScience Root).
-                // If this entry is a chain, getCertificate returns the first
-                // element in that chain is returned.
-                /*String keyStoreAlias = keyStoreEntryWrapper.getAlias();
-                X509Certificate cert = (X509Certificate) clientKeyStore.getKeyStore().getCertificate(keyStoreAlias);
-                if ( !(cert.getSubjectDN().toString().equals(cert.getIssuerDN().toString())
-                      ||  cert.getIssuerDN().toString().equals(  SysProperty.getValue("ngsca.issuer.dn") ))  ) {
-                    return;
-                }*/
+            if (isSelfSignedCert || hasKnownIssuerDN) {
+                // ok, we either have a self signed cert (CSR) or the cert 
+                // has a known issuer DN so we will continue on. 
+            } else {
+                return;
+            }
+
+            //String oldStatus = keyStoreEntryWrapper.getServerCertificateCSRInfo().getStatus();
+
+            // Query CA and determine if it recognises this public key, 
+            // if not, return as the CA will not know the status. 
+            PublicKey keystorePublicKey = cert.getPublicKey();
+            ResourcesPublicKey resourcesPublicKey = new ResourcesPublicKey(keystorePublicKey);
+            if (!resourcesPublicKey.isExist()) {
+                return;
+            }
+
+            
+            
+            // doc would be null if not recognized by CA
+            Document doc = resourcesPublicKey.getDocument();
+            NodeList certNodes = (NodeList) extractCertificateExpr.evaluate(doc, XPathConstants.NODESET);
+            NodeList csrNodes = (NodeList) exptractCSR_Expr.evaluate(doc, XPathConstants.NODESET);
+
+            // Ok, this keyStore entry is recognized by our CA so first nullify 
+            // the serverCertCSRInfo before we re-set it.
+            keyStoreEntryWrapper.setServerCertificateCSRInfo(null);
+
+            // For each <certificate/> or <CSR/> node in the
+            // returned XML, create a new <code>CertificateCSRInfo</code> object
+            // populated from the returned XML and the m_keyStore PubKey, and
+            // add it to the corresponding <code>keyStoreEntryWrapper</code>
+            // (note, for certificate nodes, <code>CertificateCSRInfo.isCSR</code> is set to false).
+            
+            // ADD CertificateCSRInfo entries
+            // =============================================
+            if (certNodes.getLength() != 0) {
+                // Iterate all the <certificate> XML nodes
                 
-                
-                boolean isSelfSignedCert = false;
-                String keyStoreAlias = keyStoreEntryWrapper.getAlias();
-                X509Certificate cert = (X509Certificate) clientKeyStore.getKeyStore().getCertificate(keyStoreAlias);
-                if ( (cert.getSubjectDN().toString().equals(cert.getIssuerDN().toString()))  ) {
-                    isSelfSignedCert = true; 
-                }
-                
-                boolean hasAKnownDN = false; 
-                String[] allKnownDNs = SysProperty.getValue("ngsca.issuer.dn").split(";");
-                for (int i = 0; i < allKnownDNs.length; i++) {
-                   if(cert.getIssuerDN().toString().equals(allKnownDNs[i])){
-                       hasAKnownDN = true; 
-                       break; 
-                   }
-               }
-                
-               if( isSelfSignedCert || hasAKnownDN ){
-                   // ok, we either have a self signed cert (CSR) or the cert 
-                   // has a known issuer DN so we will do nothing (i.e. continue on)  
-               } else {
-                   return; 
-               }
-                
-                
-                
-//                //ngsca.issuer.dn= "C=UK,O=eScienceDev,OU=NGS,CN=DevelopmentCA"
-//                String oldStatus = keyStoreEntryWrapper.getServerCertificateCSRInfo().getStatus();
+                for (int i = 0; i < certNodes.getLength(); i++) {
+                    Node _certNode = certNodes.item(i);
+                    if (_certNode.getNodeType() == Node.ELEMENT_NODE) {
+                        Element _certElement = (Element) _certNode;
+                        NodeList _idList = _certElement.getElementsByTagName("id");
+                        Element _idElement = (Element) _idList.item(0);
+                        String _id = _idElement.getChildNodes().item(0).getTextContent();
 
-                // Query CA server and determine if it has a record of this public key
-                PublicKey keystorePublicKey = cert.getPublicKey();
-                ResourcesPublicKey resourcesPublicKey = new ResourcesPublicKey( keystorePublicKey );
-                if( !resourcesPublicKey.isExist() ){
-                    return;
-                }
+                        NodeList _statusList = _certElement.getElementsByTagName("status");
+                        Element _statusElement = (Element) _statusList.item(0);
+                        String _status = _statusElement.getChildNodes().item(0).getTextContent();
 
-                 // doc would be null if not recognized by CA
-                Document doc = resourcesPublicKey.getDocument();
-                NodeList certNodes = (NodeList) extractCertificateExpr.evaluate(doc, XPathConstants.NODESET);
-                NodeList csrNodes = (NodeList)exptractCSR_Expr.evaluate(doc, XPathConstants.NODESET);
+                        NodeList _ownerList = _certElement.getElementsByTagName("owner");
+                        Element _ownerElement = (Element) _ownerList.item(0);
+                        String _owner = _ownerElement.getChildNodes().item(0).getTextContent();
 
-                // Ok, this keyStore entry is applicable so first nullify the
-                // serverCertCSRInfo before we re-set it.
-                keyStoreEntryWrapper.setServerCertificateCSRInfo(null);
-                
-                // ADD CertificateCSRInfo entries
-                // =============================================
-                if (certNodes.getLength() != 0) {
-                    // Iterate all the <certificate> XML nodes
-                    // For each <pre><certificate/> or <CSR/></pre> node in the
-                    // returned XML, create a new <code>CertificateCSRInfo</code> object
-                    // populated from the returned XML info and the m_keyStore PK, and
-                    // add it to the corresponding <code>keyStoreEntryWrapper</code>
-                    // (note, for certificate nodes, <code>CertificateCSRInfo.isCSR</code> is set to false).
+                        NodeList _roleList = _certElement.getElementsByTagName("role");
+                        Element _roleElement = (Element) _roleList.item(0);
+                        String _role = _roleElement.getChildNodes().item(0).getTextContent();
 
-                    for (int i = 0; i < certNodes.getLength(); i++) {
-                        Node _certNode = certNodes.item(i);
-                        if (_certNode.getNodeType() == Node.ELEMENT_NODE) {
-                            Element _certElement = (Element) _certNode;
-                            NodeList _idList = _certElement.getElementsByTagName("id");
-                            Element _idElement = (Element) _idList.item(0);
-                            String _id = _idElement.getChildNodes().item(0).getTextContent();
+                        NodeList _useremailList = _certElement.getElementsByTagName("useremail");
+                        Element _useremailElement = (Element) _useremailList.item(0);
+                        String _useremail = _useremailElement.getChildNodes().item(0).getTextContent();
 
-                            NodeList _statusList = _certElement.getElementsByTagName("status");
-                            Element _statusElement = (Element) _statusList.item(0);
-                            String _status = _statusElement.getChildNodes().item(0).getTextContent();
+                        NodeList _startdateList = _certElement.getElementsByTagName("startdate");
+                        Element _startdateElement = (Element) _startdateList.item(0);
+                        String _startdate = _startdateElement.getChildNodes().item(0).getTextContent();
 
-                            NodeList _ownerList = _certElement.getElementsByTagName("owner");
-                            Element _ownerElement = (Element) _ownerList.item(0);
-                            String _owner = _ownerElement.getChildNodes().item(0).getTextContent();
+                        NodeList _enddateList = _certElement.getElementsByTagName("enddate");
+                        Element _enddateElement = (Element) _enddateList.item(0);
+                        String _enddate = _enddateElement.getChildNodes().item(0).getTextContent();
 
-                            NodeList _roleList = _certElement.getElementsByTagName("role");
-                            Element _roleElement = (Element) _roleList.item(0);
-                            String _role = _roleElement.getChildNodes().item(0).getTextContent();
+                        NodeList _lifedaysList = _certElement.getElementsByTagName("lifedays");
+                        Element _lifedaysElement = (Element) _lifedaysList.item(0);
+                        String _lifedays = _lifedaysElement.getChildNodes().item(0).getTextContent();
 
-                            NodeList _useremailList = _certElement.getElementsByTagName("useremail");
-                            Element _useremailElement = (Element) _useremailList.item(0);
-                            String _useremail = _useremailElement.getChildNodes().item(0).getTextContent();
+                        NodeList _renewList = _certElement.getElementsByTagName("renew");
+                        Element _renewElement = (Element) _renewList.item(0);
+                        String _renew = _renewElement.getChildNodes().item(0).getTextContent();
 
-                            NodeList _startdateList = _certElement.getElementsByTagName("startdate");
-                            Element _startdateElement = (Element) _startdateList.item(0);
-                            String _startdate = _startdateElement.getChildNodes().item(0).getTextContent();
-
-                            NodeList _enddateList = _certElement.getElementsByTagName("enddate");
-                            Element _enddateElement = (Element) _enddateList.item(0);
-                            String _enddate = _enddateElement.getChildNodes().item(0).getTextContent();
-
-                            NodeList _lifedaysList = _certElement.getElementsByTagName("lifedays");
-                            Element _lifedaysElement = (Element) _lifedaysList.item(0);
-                            String _lifedays = _lifedaysElement.getChildNodes().item(0).getTextContent();
-
-                            NodeList _renewList = _certElement.getElementsByTagName("renew");
-                            Element _renewElement = (Element) _renewList.item(0);
-                            String _renew = _renewElement.getChildNodes().item(0).getTextContent();
-
-                            //***Add a new Certificate CertificateCSRInfo to certCSRInfos***
-                            CertificateCSRInfo serverInfo = new CertificateCSRInfo();
-                            serverInfo.setIsCSR(false); // note !
-                            serverInfo.setOwner(_owner);
-                            serverInfo.setStatus(_status);
-                            serverInfo.setRole(_role);
-                            serverInfo.setUserEmail(_useremail);
-                            serverInfo.setId(_id);
-                            serverInfo.setStartDate(_startdate);
-                            serverInfo.setEndDate(_enddate);
-                            serverInfo.setLifeDays(_lifedays);
-                            serverInfo.setRenew(_renew);
-                            serverInfo.setPublickey(EncryptUtil.getEncodedPublicKey(keystorePublicKey));
-                            keyStoreEntryWrapper.setServerCertificateCSRInfo(serverInfo);
-                        }
-                    }
-                } else if(csrNodes.getLength() != 0){
-                    // iterate all the <CSR> nodes
-                    for (int i = 0; i < csrNodes.getLength(); i++) {
-                        Node csrNode = csrNodes.item(i);
-                        if (csrNode.getNodeType() == Node.ELEMENT_NODE) {
-                            Element _csrElement = (Element) csrNode;
-                            NodeList _idList = _csrElement.getElementsByTagName("id");
-                            Element _idElement = (Element) _idList.item(0);
-                            String _id = _idElement.getChildNodes().item(0).getTextContent();
-
-                            NodeList _statusList = _csrElement.getElementsByTagName("status");
-                            Element _statusElement = (Element) _statusList.item(0);
-                            String _status = _statusElement.getChildNodes().item(0).getTextContent();
-                            //if ("NEW".equals(_status) || "RENEW".equals(_status) || "APPROVED".equals(_status) ) reqList.add(_id);
-
-                            NodeList _ownerList = _csrElement.getElementsByTagName("owner");
-                            Element _ownerElement = (Element) _ownerList.item(0);
-                            String _owner = _ownerElement.getChildNodes().item(0).getTextContent();
-
-                            NodeList _roleList = _csrElement.getElementsByTagName("role");
-                            Element _roleElement = (Element) _roleList.item(0);
-                            String _role = _roleElement.getChildNodes().item(0).getTextContent();
-
-                            NodeList _useremailList = _csrElement.getElementsByTagName("useremail");
-                            Element _useremailElement = (Element) _useremailList.item(0);
-                            String _useremail = _useremailElement.getChildNodes().item(0).getTextContent();
-
-                            String description = "Your certificate has an unrecognized status";
-                            if ("DELETED".equals(_status)) {
-                                //deleteKeyStoreFileEntry(keyStoreAlias); // remove from cakeystore.pkcs12 (need to think about deleted/archived)
-                                //return;
-                                description = "Your certificate has been deleted from our CA.";
-                            }
-                            if ("NEW".equals(_status))
-                                description = "Your certificate has been submitted and is awaiting approval.";
-                            if ("RENEW".equals(_status))
-                                description = "Your renewal certificate has been submitted and is awaiting approval.";
-                            if ("APPROVED".equals(_status))
-                                description = "Your certificate has been approved and is waiting for CA operator signing.";
-
-                            //***Add a new CSR CertificateCSRInfo to certCSRInfos***
-                            CertificateCSRInfo serverInfo = new CertificateCSRInfo();
-                            serverInfo.setPublickey(EncryptUtil.getEncodedPublicKey(keystorePublicKey));
-                            serverInfo.setIsCSR(true); // note !
-                            serverInfo.setOwner(_owner);
-                            serverInfo.setRole(_role);
-                            serverInfo.setUserEmail(_useremail);
-                            serverInfo.setId(_id);
-                            serverInfo.setDescription(description);
-                            serverInfo.setStatus(_status);
-                            keyStoreEntryWrapper.setServerCertificateCSRInfo(serverInfo);
-                        }
+                        //***Add a new Certificate CertificateCSRInfo to keyStoreEntryWrapper***
+                        CertificateCSRInfo serverInfo = new CertificateCSRInfo();
+                        serverInfo.setIsCSR(false); // note !
+                        serverInfo.setOwner(_owner);
+                        serverInfo.setStatus(_status);
+                        serverInfo.setRole(_role);
+                        serverInfo.setUserEmail(_useremail);
+                        serverInfo.setId(_id);
+                        serverInfo.setStartDate(_startdate);
+                        serverInfo.setEndDate(_enddate);
+                        serverInfo.setLifeDays(_lifedays);
+                        serverInfo.setRenew(_renew);
+                        serverInfo.setPublickey(EncryptUtil.getEncodedPublicKey(keystorePublicKey));
+                        keyStoreEntryWrapper.setServerCertificateCSRInfo(serverInfo);
                     }
                 }
-//            //} // end of while
-                
-//            String newStatus = keyStoreEntryWrapper.getServerCertificateCSRInfo().getStatus();
-//
-////            System.out.println("==========OLD STATUS: "+oldStatus);
-//            System.out.println("==========NEW STATUS: "+newStatus);
-////            if (oldStatus.equals("APPROVED") && newStatus.equals("VALID")) {
-////                certificateDownloaded = true;
-//            }
+            } else if (csrNodes.getLength() != 0) {
+                // iterate all the <CSR> nodes
+                for (int i = 0; i < csrNodes.getLength(); i++) {
+                    Node csrNode = csrNodes.item(i);
+                    if (csrNode.getNodeType() == Node.ELEMENT_NODE) {
+                        Element _csrElement = (Element) csrNode;
+                        NodeList _idList = _csrElement.getElementsByTagName("id");
+                        Element _idElement = (Element) _idList.item(0);
+                        String _id = _idElement.getChildNodes().item(0).getTextContent();
+
+                        NodeList _statusList = _csrElement.getElementsByTagName("status");
+                        Element _statusElement = (Element) _statusList.item(0);
+                        String _status = _statusElement.getChildNodes().item(0).getTextContent();
+                        //if ("NEW".equals(_status) || "RENEW".equals(_status) || "APPROVED".equals(_status) ) reqList.add(_id);
+
+                        NodeList _ownerList = _csrElement.getElementsByTagName("owner");
+                        Element _ownerElement = (Element) _ownerList.item(0);
+                        String _owner = _ownerElement.getChildNodes().item(0).getTextContent();
+
+                        NodeList _roleList = _csrElement.getElementsByTagName("role");
+                        Element _roleElement = (Element) _roleList.item(0);
+                        String _role = _roleElement.getChildNodes().item(0).getTextContent();
+
+                        NodeList _useremailList = _csrElement.getElementsByTagName("useremail");
+                        Element _useremailElement = (Element) _useremailList.item(0);
+                        String _useremail = _useremailElement.getChildNodes().item(0).getTextContent();
+
+                        String description = "Your certificate has an unrecognized status";
+                        if ("DELETED".equals(_status)) {
+                            //deleteKeyStoreFileEntry(keyStoreAlias); // remove from cakeystore.pkcs12 (need to think about deleted/archived)
+                            //return;
+                            description = "Your certificate has been deleted from our CA.";
+                        }
+                        if ("NEW".equals(_status)) {
+                            description = "Your certificate has been submitted and is awaiting approval.";
+                        }
+                        if ("RENEW".equals(_status)) {
+                            description = "Your renewal certificate has been submitted and is awaiting approval.";
+                        }
+                        if ("APPROVED".equals(_status)) {
+                            description = "Your certificate has been approved and is waiting for CA operator signing.";
+                        }
+
+                        //***Add a new CSR CertificateCSRInfo to keyStoreEntryWrapper***
+                        CertificateCSRInfo serverInfo = new CertificateCSRInfo();
+                        serverInfo.setPublickey(EncryptUtil.getEncodedPublicKey(keystorePublicKey));
+                        serverInfo.setIsCSR(true); // note !
+                        serverInfo.setOwner(_owner);
+                        serverInfo.setRole(_role);
+                        serverInfo.setUserEmail(_useremail);
+                        serverInfo.setId(_id);
+                        serverInfo.setDescription(description);
+                        serverInfo.setStatus(_status);
+                        keyStoreEntryWrapper.setServerCertificateCSRInfo(serverInfo);
+                    }
+                }
+            }
 
         } catch (Exception ep) {
             ep.printStackTrace();
@@ -429,76 +466,88 @@ public class ClientKeyStoreCaServiceWrapper {
 
 
     /**
-     * For each keyStoreEntryWrapper with;
-     *  a) a KEY_PAIR_ENTRY type
-     *  b) a VALID CertificateCSRInfo object (issued by our our online CA)
-     * Then:
-     * Download the cert from the CA server and compare to the PubKey of the
-     * corresponding entry in this.m_keyStore.
-     * If there is a key match, then replace the m_keystore entry with an updated entry
-     * under the same alias using:
-     *  a) the downloaded cert
-     *  b) the private key that already resides in m_keyStore
-     */
-    private boolean updateValidCAIssuedCerts() throws KeyStoreException {
-        boolean updated = false;
-        for (Iterator<KeyStoreEntryWrapper> it = this.keyStoreEntryMap.values().iterator(); it.hasNext();) {
-            KeyStoreEntryWrapper keyStoreEntryWrapper = it.next();
+     * Download any updates for the given KeyStoreEntryWrapper and update 
+     * <code>this.clientKeyStore</code> (note, the keyStore is NOT reStored to disk). 
+     * 
+     * For the given keyStoreEntryWrapper, check the following;
+     *  a) it is a KEY_PAIR_ENTRY type
+     *  b) it has a VALID CertificateCSRInfo object (issued by our our online CA)
+     * If true, then download the cert from the CA server and compare to the PubKey of the
+     * corresponding entry in this.m_keyStore. If there is a key match, then 
+     * replace the keyStore entry with an updated entry under the same alias 
+     * using the downloaded cert and the private key (which already resides in keyStore). 
+     * 
+     * @param keyStoreEntryWrapper 
+     * @return true if <code>this.clientKeyStore</code> was updated, otherwise false. 
+     */ 
+    public boolean updateKeyStoreEntry(KeyStoreEntryWrapper keyStoreEntryWrapper) throws KeyStoreException {
 
-            // we are only interested in replacing the cert with the CA issued
-            // cert if the keyStoreEntryWrapper is:
-            // 1) a KEY_PAIR_ENTRY,
-            // 2) its CertificateCSRInfo is not null and has a VALID status (i.e. it was recognised by our CA online)
-            if (keyStoreEntryWrapper.getEntryType().equals(KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY)
-                    && keyStoreEntryWrapper.getServerCertificateCSRInfo() != null
-                    && "VALID".equals(keyStoreEntryWrapper.getServerCertificateCSRInfo().getStatus())) {
-                
-                // Download the cert from server by passing the id (dont think this
-                // returns a cert chain)
-                X509Certificate downloadedCert = (new CertificateDownload(keyStoreEntryWrapper.getServerCertificateCSRInfo().getId())).getCertificate();
+        // we are only interested in replacing the cert with the CA issued
+        // cert if the keyStoreEntryWrapper is:
+        // 1) a KEY_PAIR_ENTRY,
+        // 2) its CertificateCSRInfo is not null and has a VALID status (i.e. it was recognised by our CA online)
+        if (keyStoreEntryWrapper.getEntryType().equals(KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY)
+                && keyStoreEntryWrapper.getServerCertificateCSRInfo() != null
+                && "VALID".equals(keyStoreEntryWrapper.getServerCertificateCSRInfo().getStatus())) {
 
-
-                if (downloadedCert == null) {
-                    continue; // maybe we temporarily lost connection, so continue.
-                } else {
-                    try {
-                        PublicKey downloadedPublicKey = downloadedCert.getPublicKey();
-                        PublicKey keystorePublicKey = this.clientKeyStore.getKeyStore().getCertificateChain(keyStoreEntryWrapper.getAlias())[0].getPublicKey();
-                        //PublicKey keystorePublicKey = this.m_keystore.getCertificate(keyStoreEntryWrapper.getAlias()).getPublicKey();
-
-                        if (downloadedPublicKey.equals(keystorePublicKey)) {
-                            // Replace the certificate chain
-                            PrivateKey privateKey = (PrivateKey) this.clientKeyStore.getKeyStore().getKey(keyStoreEntryWrapper.getAlias(), mKeystorePASSPHRASE);
-                            X509Certificate[] chain = {downloadedCert};
-                            // Replace keystore entry with the new downloaded cert and its corresponding key.
-                            // (i.e. replaces the self-signed cert that was used to do the CSR).
-                            // TODO: need to check if the newly issued cert contains only the
-                            // user cert? - what about the eSci CA and root certs in the chain ?
-                            // According to javadoc, "If the given alias already exists, the keystore information
-                            // associated with it is overridden by the given key (and possibly certificate chain)".
-                            System.out.println("Refreshing: [" + keyStoreEntryWrapper.getAlias() + "] with downloaded cert");
+            // Download the cert from server by passing the id 
+            // (dont think this returns a cert chain)
+            X509Certificate downloadedCert =
+                    (new CertificateDownload(keyStoreEntryWrapper.getServerCertificateCSRInfo().getId())).getCertificate();
 
 
-                            this.clientKeyStore.getKeyStore().deleteEntry(keyStoreEntryWrapper.getAlias());
-                            this.clientKeyStore.getKeyStore().setKeyEntry(keyStoreEntryWrapper.getAlias(), privateKey, mKeystorePASSPHRASE, chain);
-                            // ok, we have have replaced this cert, so we need to
-                            // update the ketStoreEntryWrapper for this entry.
-                            // Note, no need to update online info (this.initCertCSRInfo_WithOnlineCheck(keyStoreEntryWrapper));
-                            // or the alias as these have not changed. 
-                            keyStoreEntryWrapper.setX500PrincipalName(chain[0].getSubjectX500Principal().toString());
-                            keyStoreEntryWrapper.setIssuerName(chain[0].getIssuerX500Principal().toString());
-                            keyStoreEntryWrapper.setNotAfter(chain[0].getNotAfter());
-                            keyStoreEntryWrapper.setNotBefore(chain[0].getNotBefore());
-                            updated = true; 
+            if (downloadedCert == null) {
+                return false; // maybe we temporarily lost connection
+            } else {
+                try {
+                    PublicKey downloadedPublicKey = downloadedCert.getPublicKey();
+                    Certificate[] ksChain = this.clientKeyStore.getCertificateChain(keyStoreEntryWrapper.getAlias());
+                    if(ksChain == null) {
+                        // the keystore entry may have been deleted in another thread.
+                        return false;
+                    } 
+                    PublicKey keystorePublicKey = ksChain[0].getPublicKey();
+
+                    if (downloadedPublicKey.equals(keystorePublicKey)) {
+                        // Replace the certificate chain
+                        PrivateKey privateKey = (PrivateKey) this.clientKeyStore.getKey(keyStoreEntryWrapper.getAlias(), mKeystorePASSPHRASE);
+                        if(privateKey == null){
+                            // the keystore entry may have been deleted in another thread.
+                            return false; 
                         }
-                    } catch (Exception ex) {
-                        Logger.getLogger(ClientKeyStoreCaServiceWrapper.class.getName()).log(Level.SEVERE, null, ex);
-                        throw new IllegalStateException(ex);
+                        X509Certificate[] chain = {downloadedCert};
+                        // Replace keystore entry with the new downloaded cert and its corresponding key.
+                        // (i.e. replaces the self-signed cert that was used to do the CSR).
+                        // TODO: need to check if the newly issued cert contains only the
+                        // user cert? - what about the eSci CA and root certs in the chain ?
+                        // According to javadoc, "If the given alias already exists, the keystore information
+                        // associated with it is overridden by the given key (and possibly certificate chain)".
+                        System.out.println("Refreshing: [" + keyStoreEntryWrapper.getAlias() + "] with downloaded cert");
+
+                        // Synchronize composite action on same lock so that 
+                        // it is an atomic. The lock  is reentrant so we can call 
+                        // out to nested synchronized methods locked by the same lock. 
+                        synchronized(this.clientKeyStore){ 
+                           this.clientKeyStore.deleteEntry(keyStoreEntryWrapper.getAlias());
+                           this.clientKeyStore.setKeyEntry(keyStoreEntryWrapper.getAlias(), privateKey, mKeystorePASSPHRASE, chain);
+                        }
+                        // ok, we have have replaced this cert, so we need to
+                        // update the ketStoreEntryWrapper for this entry.
+                        // Note, no need to update online info (this.initCertCSRInfo_WithOnlineCheck(keyStoreEntryWrapper));
+                        // or the alias as these have not changed. 
+                        keyStoreEntryWrapper.setX500PrincipalName(chain[0].getSubjectX500Principal().toString());
+                        keyStoreEntryWrapper.setIssuerName(chain[0].getIssuerX500Principal().toString());
+                        keyStoreEntryWrapper.setNotAfter(chain[0].getNotAfter());
+                        keyStoreEntryWrapper.setNotBefore(chain[0].getNotBefore());
+                        return true;
                     }
+                } catch (Exception ex) {
+                    Logger.getLogger(ClientKeyStoreCaServiceWrapper.class.getName()).log(Level.SEVERE, null, ex);
+                    throw new IllegalStateException(ex);
                 }
             }
         }
-        return updated;
+        return false;
     }
 
 

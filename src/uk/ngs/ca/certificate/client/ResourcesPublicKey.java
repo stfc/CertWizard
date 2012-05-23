@@ -6,46 +6,39 @@
 package uk.ngs.ca.certificate.client;
 
 import java.security.PublicKey;
-import org.w3c.dom.Document;
-
-
 import org.restlet.Client;
-import org.restlet.data.Protocol;
-import org.restlet.data.Reference;
-import org.restlet.data.Form;
-import org.restlet.Response;
 import org.restlet.Request;
-import org.restlet.data.Method;
-
-import org.restlet.data.Status;
+import org.restlet.Response;
+import org.restlet.data.*;
 import org.restlet.ext.xml.DomRepresentation;
+import org.w3c.dom.Document;
 import uk.ngs.ca.common.ClientHostName;
 import uk.ngs.ca.common.EncryptUtil;
 import uk.ngs.ca.tools.property.SysProperty;
 
 /**
  *
- * @author xw75
+ * @author xw75 Xiao Wang
  */
 public class ResourcesPublicKey {
 
     private Document document = null;
-
-    String encodedPublicKey = null;
+    private String encodedPublicKey = null;
 
     public ResourcesPublicKey( PublicKey publicKey ){
         this.encodedPublicKey = EncryptUtil.getEncodedPublicKey(publicKey);
     }
-    public ResourcesPublicKey( String encodedPublicKey ){
-        this.encodedPublicKey = encodedPublicKey;
-    }
+    //public ResourcesPublicKey( String encodedPublicKey ){
+    //    this.encodedPublicKey = encodedPublicKey;
+    //}
 
     public boolean isExist(){
-        Document _document = null;
+        Document _document ;
         boolean isExist = false;
         try {
 
-            // call CA server and ask 'do you know about a certficate with this hash'
+            // call CA server and ask 'do you know about a certficate with this pub key'
+            // url = /resources/resource/publickey/<base64encodedpubkey>
             String resourceURL = SysProperty.getValue("uk.ngs.ca.request.resource.publickey");
             resourceURL = resourceURL + "/" + this.encodedPublicKey;
             Client c = new Client(Protocol.HTTPS);

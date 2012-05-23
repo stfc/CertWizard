@@ -4,39 +4,41 @@
  */
 package uk.ngs.ca.common;
 
-import java.security.PublicKey;
-import java.security.PrivateKey;
-
-import java.security.KeyStore;
-import java.security.cert.X509Certificate;
-import java.security.KeyPair;
-import java.security.KeyStoreException;
-import java.util.Enumeration;
-import java.util.Date;
-import java.io.IOException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.security.*;
+import java.security.cert.X509Certificate;
+import java.util.Date;
+import java.util.Enumeration;
 import java.util.logging.Level;
 import org.apache.log4j.Logger;
 import org.bouncycastle.jce.provider.unlimited.PKCS12KeyStoreUnlimited;
 import uk.ngs.ca.tools.property.SysProperty;
 
 /**
- * A wrapper around the '$HOME/.ca/cakeystore.pkcs12' KeyStore file.
- * On class creation, a new PKCS12 key store file is created if it does not
- * already exist. Provides methods for adding/creating/deleting entries from
- * this keyStore file.
+ * A thread safe singleton encapsulating the '$HOME/.ca/cakeystore.pkcs12' KeyStore file.
+ * Provides thread safe methods for adding/creating/deleting entries from
+ * this managed keyStore file. Access to the managed keyStore object is guarded 
+ * by an instance of <code>this</code>. 
  * 
- * @author xw75
+ * @todo DM: Lots, more refactoring is needed, exception swallowing to fix 
+ * @author xw75 (Xiao Wang) 
+ * @author David Meredith (refactoring)
  */
 public final class ClientKeyStore {
     
     private static final Logger myLogger = Logger.getLogger(ClientKeyStore.class);
 
-    // keyStore represents shared mutable state and so must by synchronized.
-    private KeyStore keyStore;
-    private String key_KeyStoreFilePath = null;
+    // keyStore is an in-mem object that represents shared mutable state and 
+    // so access to its entries must by synchronized in order to;  
+    // a) prevent one thread from modifying the state of the object when 
+    // another thread is using it, and 
+    // b) prevent dirty reads by different threads (visiblity) 
+    // The keyStore is confined to this object, it is never leaked/published. 
+    private final KeyStore keyStore; 
+    private final String key_KeyStoreFilePath ;
     private char[] PASSPHRASE = null;
     private String errorMessage = null;
 
@@ -45,9 +47,7 @@ public final class ClientKeyStore {
 
     /**
      * Get a shared singleton <code>ClientKeyStore</code> instance.
-     * @param passphrase for the '$HOME/.ca/cakeystore.pkcs12' keystore file. If
-     * a new passphrase is given that is different from  the previous,
-     * a new instance is created and returned.
+     * @param passphrase for the '$HOME/.ca/cakeystore.pkcs12' keystore file. 
      * @return
      * @throws IllegalStateException if there is problem creating or loading the KeyStore
      */
@@ -65,11 +65,10 @@ public final class ClientKeyStore {
             clientKeyStore = new ClientKeyStore(passphrase);
         }
         return clientKeyStore;
-        //return new ClientKeyStore(passphrase);
     }
 
     /**
-     * Force non-instantiability with private constructor
+     * Force non-instantiation with private constructor
      *
      * If $HOME/.ca/cakeystore.pkcs12 already exists, load it otherwise
      * create an empty pkcs12 file.
@@ -80,15 +79,15 @@ public final class ClientKeyStore {
         String caDir = System.getProperty("user.home") + File.separator + ".ca";
         this.PASSPHRASE = passphrase;
         this.key_KeyStoreFilePath = caDir + File.separator + SysProperty.getValue("ngsca.key.keystore.file");
-        this.loadKeyStoreFromFile();
-
+        this.keyStore = this.getKeyStoreCopy();
     }
+    
 
     /**
      * Change the keystore password
      * @param passphrase
      */
-    public void reStorePassword(char[] passphrase) {
+    public synchronized void reStorePassword(char[] passphrase) {
         this.PASSPHRASE = passphrase;
         this.reStore();
     }
@@ -102,23 +101,28 @@ public final class ClientKeyStore {
     }
 
     /**
-     * Load <code>this.keyStore</code> from file if it exists otherwise touch
-     * the file.
+     * Create a new KeyStore instance by loading state from the 
+     * '$HOME/.ca/cakeystore.pkcs12' file. If file does not exist, then 
+     * load an empty keyStore. This newly created KeyStore object is a copy of 
+     * the KeyStore that is managed in this class. 
+     * 
+     * @return A newly created KeyStore 
      */
-    private void loadKeyStoreFromFile(){
+    public KeyStore getKeyStoreCopy(){
         try {
-            this.keyStore = PKCS12KeyStoreUnlimited.getInstance();
+            KeyStore ks = PKCS12KeyStoreUnlimited.getInstance();
             myLogger.debug("[ClientKeyStore] get keystore ...");
             FileInputStream fis = null;
             try {
                 File f = new File(this.key_KeyStoreFilePath);
                 if (f.exists() && f.length() != 0L) {
                     fis = new FileInputStream(key_KeyStoreFilePath);
-                    this.keyStore.load(fis, this.PASSPHRASE);
+                    ks.load(fis, this.PASSPHRASE);
                 } else {
-                    this.keyStore.load(null, null);
-                    reStore(); // touch it
+                    ks.load(null, null);
+                    //reStore(); // create empty keystore
                 }
+                return ks; 
             } finally {
                 try {
                     if (fis != null) {
@@ -133,23 +137,59 @@ public final class ClientKeyStore {
         }
     }
 
-   
-    /**
-     * @return a handle to the <code>KeyStore</code> object managed by this class
-     */
-    public KeyStore getKeyStore(){
-        // hmm, releasing internal state here, not good but necessary without
-        // massive amounts of re-coding.
-        return this.keyStore; 
-    }
 
-
-
-    public String getErrorMessage(){
+    public synchronized String getErrorMessage(){
         return this.errorMessage;
     }
 
-    public boolean isExistPublicKey(PublicKey publicKey) {
+
+
+    /**
+     * Save the managed keyStore file to its default location and re-init
+     * the managed key store <code>this.keyStore</code>.
+     * @return
+     */
+    public synchronized boolean reStore() {
+        FileOutputStream fos = null;
+        try {
+            File f = new File(this.key_KeyStoreFilePath);
+            fos = new FileOutputStream(f);
+            // store will overwrite the file if it already exists
+            this.keyStore.store(fos, PASSPHRASE); 
+
+            // TODO - Do we Need to re-load this.keyStore object from file?
+            // the act of persisting then reloading seems to re-organize the
+            // keystore entries so that Trusted certs that exist in an
+            // imported cert chain are also stored as standalone entries in the
+            // keyStore file? or was this threading issues ? 
+            //this.keyStore = this.getKeyStoreCopy();
+            return true;
+            
+        } catch (Exception ep) {
+            ep.printStackTrace();
+            errorMessage = ep.getMessage();
+            return false;
+        } finally {
+            try {
+                if (fos != null) {
+                    fos.close();
+                }
+            } catch (IOException ex) {
+                java.util.logging.Logger.getLogger(ClientKeyStore.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+
+    /*
+     * DM: Methods below provide thread-safe read/write access to the keystore and 
+     * its contained entries since all code paths that access the encapsulated 
+     * keystore are guarded by this classes intrinsic lock. 
+     * This is known as 'instance confinement' and the java 'monitor pattern' 
+     */
+   
+    
+    
+    public synchronized boolean isExistPublicKey(PublicKey publicKey) {
         try {
             Enumeration aliases = this.keyStore.aliases();
             while (aliases.hasMoreElements()) {
@@ -167,7 +207,7 @@ public final class ClientKeyStore {
         return false;
     }
 
-    public boolean isExistPrivateKey(PrivateKey privateKey) {
+    public synchronized boolean isExistPrivateKey(PrivateKey privateKey) {
         try {
             Enumeration aliases = this.keyStore.aliases();
              while (aliases.hasMoreElements()) {
@@ -185,7 +225,7 @@ public final class ClientKeyStore {
     }
 
 
-    public PrivateKey getPrivateKey(PublicKey publicKey) {
+    public synchronized PrivateKey getPrivateKey(PublicKey publicKey) {
         try {
             Enumeration aliases = this.keyStore.aliases();
             while (aliases.hasMoreElements()) {
@@ -205,11 +245,11 @@ public final class ClientKeyStore {
     }
 
     /**
-     * create a new keypair in the keystore file and save to file.
+     * Create a new key pair in the keyStore file and save to file.
      * @param alias a suggested alias (can be null)
      * @return alias
      */
-    public String createNewKeyPair(String alias, String ou, String l, String cn) {
+    public synchronized String createNewKeyPair(String alias, String ou, String l, String cn) {
         try {
             KeyPair keyPair = CAKeyPair.getNewKeyPair();
             // the self signed certificate has some hardwired values - why?
@@ -228,7 +268,7 @@ public final class ClientKeyStore {
         }
     }
 
-    public String getAlias( X509Certificate cert ){
+    public synchronized String getAlias( X509Certificate cert ){
         try{
             return this.keyStore.getCertificateAlias(cert);
         }catch( Exception ep ){
@@ -238,7 +278,7 @@ public final class ClientKeyStore {
     }
 
 
-    public boolean addNewKey(PrivateKey privateKey, X509Certificate cert) {
+    public synchronized boolean addNewKey(PrivateKey privateKey, X509Certificate cert) {
         if ((privateKey == null) || (cert == null)) {
             return false;
         }
@@ -259,7 +299,7 @@ public final class ClientKeyStore {
         }
     }
 
-    public X509Certificate getX509Certificate(String alias) {
+    public synchronized X509Certificate getX509Certificate(String alias) {
         try {
             X509Certificate cert = (X509Certificate) this.keyStore.getCertificate(alias);
             return cert;
@@ -269,7 +309,7 @@ public final class ClientKeyStore {
         }
     }
         
-    public PublicKey getPublicKey(String alias) {
+    public synchronized PublicKey getPublicKey(String alias) {
         try {
             X509Certificate cert = (X509Certificate) this.keyStore.getCertificate(alias);
             return cert.getPublicKey();
@@ -279,7 +319,7 @@ public final class ClientKeyStore {
         }
     }
 
-    public PrivateKey getPrivateKey(String alias) {
+    public synchronized PrivateKey getPrivateKey(String alias) {
         try {
             return (PrivateKey) this.keyStore.getKey(alias, PASSPHRASE);
         } catch (Exception ep) {
@@ -289,7 +329,7 @@ public final class ClientKeyStore {
     }
 
 
-    public boolean removeKey(PrivateKey privateKey) {
+    public synchronized boolean removeKey(PrivateKey privateKey) {
         boolean isSuccess = true;
         try {
             if (isExistPrivateKey(privateKey)) {
@@ -298,7 +338,7 @@ public final class ClientKeyStore {
                     String alias = (String) aliases.nextElement();
                     PrivateKey _privateKey = (PrivateKey) this.keyStore.getKey(alias, PASSPHRASE);
                     if (privateKey.equals(_privateKey)) {
-                       this.keyStore.deleteEntry(alias);
+                       this.keyStore.deleteEntry(alias); 
                     }
                 }
                 reStore();
@@ -310,50 +350,83 @@ public final class ClientKeyStore {
             return isSuccess;
         }
     }
-
-
+    
+    
     /**
-     * Save the managed keyStore file to its default location and re-init
-     * <code>this.keyStore</code>.
-     * @return
+     * @see java.security.KeyStore#deleteEntry(java.lang.String)  
      */
-    public boolean reStore() {
-        //System.out.println("in reStore");
-        FileOutputStream fos = null;
-        try {
-            File f = new File(this.key_KeyStoreFilePath);
-            fos = new FileOutputStream(f);
-            // presumabley, store will overwrite the file if it already exists
-            this.keyStore.store(fos, PASSPHRASE);
-
-            // Need to re-load this.keyStore pointer object from file because
-            // the act of persisting then reloading seems to re-organize the
-            // keystore entries so that Trusted certs that exist in an
-            // imported cert chain are also stored as standalone entries in the
-            // keyStore file.
-            this.loadKeyStoreFromFile();
-
-            return true;
-        } catch (Exception ep) {
-            ep.printStackTrace();
-            errorMessage = ep.getMessage();
-            // not sure we want to explicitly delete the user's keyStore file
-            // bit too dangerous.
-            /*File file = new File(this.key_KeyStoreFilePath);
-            if (file.exists()) {
-                return file.delete();
-            }*/
-            return false;
-        } finally {
-            try {
-                if (fos != null) {
-                    fos.close();
-                }
-            } catch (IOException ex) {
-                java.util.logging.Logger.getLogger(ClientKeyStore.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
+    public synchronized void deleteEntry(String alias) throws KeyStoreException {
+        this.keyStore.deleteEntry(alias);
     }
 
+    /**
+     * @see java.security.KeyStore#isCertificateEntry(java.lang.String)  
+     */
+    public synchronized boolean isCertificateEntry(String alias) throws KeyStoreException {
+        return this.keyStore.isCertificateEntry(alias);
+    }
+
+    /**
+     * @see java.security.KeyStore#isKeyEntry(java.lang.String) 
+     */
+    public synchronized boolean isKeyEntry(String alias) throws KeyStoreException {
+        return this.keyStore.isKeyEntry(alias);
+    }
+    
+    /**
+     * @see java.security.KeyStore#aliases() 
+     */
+    public synchronized Enumeration<String> aliases() throws KeyStoreException {
+        return this.keyStore.aliases();
+    }
+    
+    /**
+     * @see java.security.KeyStore#getCertificate(java.lang.String) 
+     */
+    public synchronized java.security.cert.Certificate getCertificate(String alias) throws KeyStoreException {
+        return this.keyStore.getCertificate(alias);
+    }
+
+    /**
+     * @see java.security.KeyStore#getCertificateChain(java.lang.String) 
+     */
+    public synchronized java.security.cert.Certificate[] getCertificateChain(String alias) throws KeyStoreException {
+        return this.keyStore.getCertificateChain(alias);
+    }
+
+    /**
+     * @see java.security.KeyStore#getCreationDate(java.lang.String) 
+     */
+    public synchronized Date getCreationDate(String alias) throws KeyStoreException {
+        return this.keyStore.getCreationDate(alias);
+    }
+
+    /**
+     * @see java.security.KeyStore#getKey(java.lang.String, char[]) 
+     */
+    public synchronized Key getKey(String alias, char[] pass) throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException {
+        return this.keyStore.getKey(alias, pass);
+    }
+
+    /**
+     * @see java.security.KeyStore#setKeyEntry(java.lang.String, byte[], java.security.cert.Certificate[]) 
+     */
+    public synchronized void setKeyEntry(String alias, Key key, char[] password, java.security.cert.Certificate[] chain) throws KeyStoreException {
+        this.keyStore.setKeyEntry(alias, key, password, chain);
+    }
+
+    /**
+     * @see java.security.KeyStore#containsAlias(java.lang.String) 
+     */
+    public synchronized boolean containsAlias(String alias) throws KeyStoreException {
+        return this.keyStore.containsAlias(alias);
+    }
+
+    /**
+     * @see java.security.KeyStore#setCertificateEntry(java.lang.String, java.security.cert.Certificate) 
+     */
+    public synchronized void setCertificateEntry(String alias, java.security.cert.Certificate cert) throws KeyStoreException {
+        this.keyStore.setCertificateEntry(alias, cert);
+    }
 
 }

@@ -6,24 +6,24 @@ package uk.ngs.ca.certificate.management;
 
 /**
  *
- * @author xw75
+ * @author xw75 (Xiao Wang)
  */
 public class CertificateCSRInfo {
 
-    private String owner = null;
-    private String role = null;
+    private volatile String owner = null;
+    private volatile String role = null;
     
     // The status returned by the server. TODO: 
-    private String status = null;
-    private String useremail = null;
-    private String id = null;
-    private String startdate = null;
-    private String enddate = null;
-    private String lifedays = null;
-    private String renew = null;
-    private String description = null;
-    private boolean isCSR = false;
-    private String publickey = null;
+    private volatile String status = null;
+    private volatile String useremail = null;
+    private volatile String id = null;
+    private volatile String startdate = null;
+    private volatile String enddate = null;
+    private volatile String lifedays = null;
+    private volatile String renew = null;
+    private volatile String description = null;
+    private volatile boolean isCSR = false;
+    private volatile String publickey = null;
 
     public CertificateCSRInfo() {
     }
