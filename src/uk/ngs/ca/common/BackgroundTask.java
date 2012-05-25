@@ -4,6 +4,7 @@
  */
 package uk.ngs.ca.common;
 
+import java.util.Observable;
 import java.util.concurrent.*;
 
 /**
@@ -19,7 +20,7 @@ import java.util.concurrent.*;
  * 
  * @author David Meredith
  */
-public abstract class BackgroundTask<V> implements Runnable, Future<V> {
+public abstract class BackgroundTask<V> extends Observable implements Runnable, Future<V> {
     
     // manage our own instance of Computation FutureTask 
     private final FutureTask<V> computation = new Computation(); 

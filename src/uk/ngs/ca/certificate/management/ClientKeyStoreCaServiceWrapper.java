@@ -148,13 +148,16 @@ public class ClientKeyStoreCaServiceWrapper {
     
     
     /**
-     * Request an online update of every relevant keyStore entry and update the keyStore accordingly. 
+     * Request an online update of every keyStore entry and update the keyStore accordingly. 
+     * Note, the keyStore is NOT reStored to disk. 
      * This method is long running and should run in a background thread. 
      * The data model it modifies is itself thread safe (delegation of thread safety to model).
      * 
+     * @return true if the keyStoreEntry was updated in the keyStore, otherwise false. 
      * @throws KeyStoreException 
      */
-    public void onlineUpdateKeyStore() throws KeyStoreException {
+    public boolean onlineUpdateKeyStore() throws KeyStoreException {
+        boolean updateOccurred = false; 
         // If online (can simply comment out the followng calls to disable initialisation online).
         if(PingService.getPingService().isPingService()){
             // Append the CertificateCSRInfo instances to each KeyStoreEntryWrapper
@@ -162,43 +165,37 @@ public class ClientKeyStoreCaServiceWrapper {
             
             // Update any self-signed CSR certs with the CA issued certs. Only
             // need to reStore keyStore if we did actually update a cert.
-            boolean updateOccurred = false; 
             for (Iterator<KeyStoreEntryWrapper> it = this.keyStoreEntryMap.values().iterator(); it.hasNext();) {
                 if(this.updateKeyStoreEntry(it.next())){
                     updateOccurred = true; 
                 }
             }
-            if(updateOccurred){
+            /*if(updateOccurred){
                 // If either a self-signed CSR cert or a VALID CA issued cert
                 // was updated/replaced with a new/updated CA issued certificate
                 // (i.e. occuring on new cert applications, renewals, online update),
                 // then reStore keyStore to persist changes.
                 this.clientKeyStore.reStore();
-            }
+            }*/
         }
+        return updateOccurred; 
     }
     
     /**
      * Request an online update of the given keyStore entry object and update the keyStore accordingly. 
-     * This method is long running and should run in a background thread. 
+     * Note, the keyStore is NOT reStored to disk. 
+     * This method is long running and could be run in a background thread. 
      * The data model it modifies is itself thread safe (delegation of thread safety to model).
      * 
      * @param keyStoreEntryWrapper
+     * @return true if the keyStoreEntry was updated in the keyStore, otherwise false. 
      * @throws KeyStoreException 
      */
-    /*public void onlineUpdateKeyStoreEntry(KeyStoreEntryWrapper keyStoreEntryWrapper) throws KeyStoreException {
-        if (PingService.getPingService().isPingService()) {
-            this.checkEntryForUpdates(keyStoreEntryWrapper);
-            if (this.updateKeyStoreEntry(keyStoreEntryWrapper)) {
-                // If either a self-signed CSR cert or a VALID CA issued cert
-                // was updated/replaced with a new/updated CA issued certificate
-                // (i.e. occuring on new cert applications, renewals, online update),
-                // then reStore keyStore to persist changes.
-                this.clientKeyStore.reStore();
-            }
-        }
-    }*/
-
+    public boolean onlineUpdateKeyStoreEntry(KeyStoreEntryWrapper keyStoreEntryWrapper) throws KeyStoreException {
+         this.checkEntryForUpdates(keyStoreEntryWrapper);
+         return this.updateKeyStoreEntry(keyStoreEntryWrapper); 
+    }
+    
     /**
      * Get the managed ClientKeyStore instance 
      * @return
@@ -255,7 +252,7 @@ public class ClientKeyStoreCaServiceWrapper {
      * 
      * @param keyStoreEntryWrapper 
      */
-    public void checkEntryForUpdates(KeyStoreEntryWrapper keyStoreEntryWrapper) {
+    private void checkEntryForUpdates(KeyStoreEntryWrapper keyStoreEntryWrapper) {
         try {
             // return if not KEY_PAIR_ENTRY
             if (!keyStoreEntryWrapper.getEntryType().equals(KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY)) {
