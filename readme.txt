@@ -4,8 +4,9 @@ Requirements
 ===============
 Java JDK 1.6 +
 Apache Ant 1.8+
-netbeans 6.8+ (optional - you don't need netbeans to build/compile this project
-    since netbeans uses 100% apache ant to build netbeans projects).
+netbeans 7.1+ (optional - you don't need netbeans to build/compile this project
+  since netbeans uses 100% apache ant to build netbeans projects, but it is 
+  very useful for building GUIs).
 
 
 CertWizard is a java client tool to access and manage user certificates. 
@@ -79,7 +80,6 @@ are rather poorly written and involves much legacy).
 - Display a different icon for self-signed CSRs 
 - When exporting certs, need to change the perms on *nix box much like 
   when installing the pem files.
-- Default the keysize from 1024 to 2048. 
 - OnLineUserCertificateReKey.java and CSRRequest.java both test for HTTP 202 
   return codes (when doing a renew or new csr). This is wrong! (the server is 
   also wrong). We should NOT be using 202 to return error codes ! certwiz and 
