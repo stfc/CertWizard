@@ -2,7 +2,7 @@ README
 
 Requirements
 ===============
-Java JDK 1.5 +
+Java JDK 1.6 +
 Apache Ant 1.8+
 netbeans 6.8+ (optional - you don't need netbeans to build/compile this project
     since netbeans uses 100% apache ant to build netbeans projects).
