@@ -5,106 +5,77 @@
 package uk.ngs.ca.certificate;
 
 import java.io.StringReader;
-import org.restlet.Client;
-import org.restlet.data.Protocol;
-import org.restlet.data.Reference;
-import org.restlet.data.Form;
-import org.restlet.data.MediaType;
-import org.restlet.Response;
-import org.restlet.Request;
-import org.restlet.data.Method;
-import org.restlet.data.Status;
-import org.restlet.data.Parameter;
-
-
-import org.bouncycastle.asn1.x509.X509Name;
-import org.bouncycastle.openssl.PEMWriter;
-import org.bouncycastle.jce.PKCS10CertificationRequest;
-import org.bouncycastle.asn1.DERSet;
-
 import java.io.StringWriter;
-import java.util.Date;
 import java.math.BigInteger;
-
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.dom.DOMSource;
-
-import javax.security.auth.x500.X500Principal;
-import java.security.cert.CertificateParsingException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Random;
-
-import java.security.interfaces.RSAPublicKey;
-
-import uk.ngs.ca.tools.property.SysProperty;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.CertificateParsingException;
+import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPublicKey;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.Random;
+import javax.security.auth.x500.X500Principal;
 import javax.xml.parsers.DocumentBuilderFactory;
+import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.jce.PKCS10CertificationRequest;
+import org.bouncycastle.openssl.PEMWriter;
+import org.restlet.Client;
+import org.restlet.Request;
+import org.restlet.Response;
+import org.restlet.data.*;
 import org.restlet.ext.xml.DomRepresentation;
 import org.restlet.representation.Representation;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
-import uk.ngs.ca.common.HashUtil;
-import uk.ngs.ca.common.ClientKeyStore;
 import uk.ngs.ca.common.ClientHostName;
+import uk.ngs.ca.common.ClientKeyStore;
+import uk.ngs.ca.common.HashUtil;
 import uk.ngs.ca.common.SystemStatus;
+import uk.ngs.ca.tools.property.SysProperty;
 
 /**
  * This class renews certificate under online.
- * @author xw75
+ * @author xw75 (Xiao Wang)
  */
 public class OnLineUserCertificateReKey {
 
     public static String CSRURL = SysProperty.getValue("uk.ngs.ca.request.csr.url");
     public static String USERAGENT = SysProperty.getValue("uk.ngs.ca.request.useragent");
     public String SIG_ALG = SysProperty.getValue("ngsca.cert.signature.algorithm");
-    private char[] PASSPHRASE;
-    X509Certificate CERTIFICATE = null;
-    ClientKeyStore clientKeyStore = null;
+    X509Certificate renewalCert = null;
+    private ClientKeyStore clientKeyStore = null;
     String ERRORMESSAGE = "";
     String DETAILERRORMESSAGE = "";
     private Document DOCUMENT = null;
     private PKCS10CertificationRequest PKCS10REQUEST = null;
-    private String alias = null;
+    private String newCsrAlias = null;
 
-    public OnLineUserCertificateReKey(char[] passphrase, String alias) {
+    public OnLineUserCertificateReKey(char[] passphrase, String newCsrAlias, X509Certificate renewalCert) {
         this.clientKeyStore = ClientKeyStore.getClientkeyStore(passphrase);
-        this.PASSPHRASE = passphrase;
-        this.alias = alias;
+        this.newCsrAlias = newCsrAlias;
+        this.renewalCert = renewalCert;
     }
 
-    public void addCertificate(X509Certificate certificate) {
-        this.CERTIFICATE = certificate;
-    }
-
-    public OnLineUserCertificateReKey(X509Certificate certificate, char[] passphrase) {
-        this.CERTIFICATE = certificate;
-        this.PASSPHRASE = passphrase;
-        this.clientKeyStore = ClientKeyStore.getClientkeyStore(passphrase);
-    }
 
     /**
      * Checks if selected certificate is valid. Only valid certificate can be renewed.
      * @return true if valid, otherwise false.
      */
     public boolean isValidReKey() {
-        if ((!SystemStatus.getInstance().getIsOnline()) || (this.CERTIFICATE == null)) {
+        if ((!SystemStatus.getInstance().getIsOnline()) || (this.renewalCert == null)) {
             return false;
         }
         try {
-            this.CERTIFICATE.checkValidity();
-            PublicKey publicKey = this.CERTIFICATE.getPublicKey();
+            this.renewalCert.checkValidity();
+            PublicKey publicKey = this.renewalCert.getPublicKey();
             PrivateKey privateKey = this.clientKeyStore.getPrivateKey(publicKey);
             if (!this.clientKeyStore.isExistPublicKey(publicKey)) {
                 return false;
@@ -180,7 +151,7 @@ public class OnLineUserCertificateReKey {
         return subString;
     }
 
-    private BigInteger hex2BigInteger(String s) {
+    /*private BigInteger hex2BigInteger(String s) {
         String digits = "0123456789ABCDEF";
         s = s.toUpperCase();
         BigInteger b = new BigInteger("0");
@@ -193,7 +164,7 @@ public class OnLineUserCertificateReKey {
             b = b.add(_b);
         }
         return b;
-    }
+    }*/
 
     public boolean doPosts() {
         Client client = new Client(Protocol.HTTPS);
@@ -218,7 +189,7 @@ public class OnLineUserCertificateReKey {
             //we will do the response action from here.
             if (_opaqueP == null) {
 
-                PrivateKey _privateKey = this.clientKeyStore.getPrivateKey(this.CERTIFICATE.getPublicKey());
+                PrivateKey _privateKey = this.clientKeyStore.getPrivateKey(this.renewalCert.getPublicKey());
 
                 String _keyid = _keyidP.getValue();
                 int index = _keyid.indexOf(".");
@@ -339,7 +310,7 @@ public class OnLineUserCertificateReKey {
      * Calls CA server to renew the certificate
      * @return true if successful, otherwise false.
      */
-    public boolean doLaunchneedtomove() {
+    /*public boolean doLaunchneedtomove() {
         String requestID = null;
 
         Client c = new Client(Protocol.HTTPS);
@@ -409,7 +380,7 @@ public class OnLineUserCertificateReKey {
             return false;
         }
 
-    }
+    }*/
 
     /**
      * setup header. CSRResource will check if there is PPPK. if there is PPPK,
@@ -441,7 +412,7 @@ public class OnLineUserCertificateReKey {
             d.appendChild(rootElement);
 
             Element eltName = d.createElement("Request");
-            eltName.appendChild(d.createTextNode(getCSR()));
+            eltName.appendChild(d.createTextNode(getCSR_AddToKeyStore()));
             rootElement.appendChild(eltName);
 
             eltName = d.createElement("PIN");
@@ -454,7 +425,7 @@ public class OnLineUserCertificateReKey {
 
             // We include the keyid string as the <PublicKey> element so that 
             // the server can then issue a 401 response challenge for this pubkey. 
-            RSAPublicKey _publicKey = (RSAPublicKey) this.CERTIFICATE.getPublicKey();
+            RSAPublicKey _publicKey = (RSAPublicKey) this.renewalCert.getPublicKey();
             String modulusString = _publicKey.getModulus().toString(16);
             String exponentString = _publicKey.getPublicExponent().toString(16);
             String keyString = modulusString + "." + exponentString;
@@ -489,7 +460,7 @@ public class OnLineUserCertificateReKey {
     }
 
     private X509Name getDN() {
-        String dn = this.CERTIFICATE.getSubjectDN().getName();
+        String dn = this.renewalCert.getSubjectDN().getName();
 
         String C = _retrieveDataFromDN(dn, "C=");
         String O = _retrieveDataFromDN(dn, "O=");
@@ -501,25 +472,24 @@ public class OnLineUserCertificateReKey {
         String name = "CN=" + CN + ", L=" + L + ", OU=" + OU + ", O=" + O + ", C=" + C;
         return new X509Name(name);
         //we need to reverse back, otherwise renew doesn't work. It is strange.
-        //       return new X509Name(CERTIFICATE.getSubjectDN().getName());
+        //       return new X509Name(renewalCert.getSubjectDN().getName());
     }
 
     public String getAlias(){
-        return this.alias;
+        return this.newCsrAlias;
     }
 
-    private String getCSR() {
+    private String getCSR_AddToKeyStore() {
         try {
             if (this.PKCS10REQUEST == null) {
-                String dn = this.CERTIFICATE.getSubjectDN().getName();
+                String dn = this.renewalCert.getSubjectDN().getName();
                 String OU = _retrieveDataFromDN(dn, "OU=");
                 String L = _retrieveDataFromDN(dn, "L=");
                 String CN = _retrieveDataFromDN(dn, "CN=");
-                String ali = this.clientKeyStore.createNewKeyPair(alias, OU, L, CN);
+                String ali = this.clientKeyStore.createNewKeyPair(newCsrAlias, OU, L, CN);
                 PublicKey _publicKey = this.clientKeyStore.getPublicKey(ali);
                 PrivateKey _privateKey = this.clientKeyStore.getPrivateKey(ali);
-//                this.alias = ali;
-                  this.PKCS10REQUEST = new PKCS10CertificationRequest(this.SIG_ALG, new X500Principal(getDN().toString()), _publicKey, new DERSet(), _privateKey);
+                this.PKCS10REQUEST = new PKCS10CertificationRequest(this.SIG_ALG, new X500Principal(getDN().toString()), _publicKey, new DERSet(), _privateKey);
             }
             StringWriter writer = new StringWriter();
             PEMWriter pemWrite = new PEMWriter(writer);
@@ -537,7 +507,7 @@ public class OnLineUserCertificateReKey {
     private String getEmail() {
         try {
             //but in here we are retrieveing email from Extension....
-            Collection col = this.CERTIFICATE.getSubjectAlternativeNames();
+            Collection col = this.renewalCert.getSubjectAlternativeNames();
             if (!(col == null)) {
                 Iterator iterator = col.iterator();
                 while (iterator.hasNext()) {

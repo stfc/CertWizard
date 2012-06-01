@@ -4,22 +4,19 @@
  */
 package uk.ngs.ca.certificate;
 
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
-import java.util.Observable;
-
-import java.security.PublicKey;
 import java.security.PrivateKey;
-
-import uk.ngs.ca.common.HashUtil;
-import uk.ngs.ca.common.ClientKeyStore;
+import java.security.PublicKey;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import uk.ngs.ca.certificate.client.CSRRequest;
+import uk.ngs.ca.common.ClientKeyStore;
+import uk.ngs.ca.common.HashUtil;
 
 /**
  * This class requests a new certificate under online
- * @author xw75
+ * @author xw75 (Xiao Wang) 
  */
-public class OnLineUserCertificateRequest extends Observable{
+public class OnLineUserCertificateRequest /*extends Observable*/{
 
     private String RA = null;
     private String Name = null;
@@ -37,10 +34,10 @@ public class OnLineUserCertificateRequest extends Observable{
     /**
      * Notifies MainWindow any modification
      */
-    public void notifyObserver(){
+    /*public void notifyObserver(){
         setChanged();
         notifyObservers( this.Alias );
-    }
+    }*/
 
     /**
      * Calls CA server to request certificate
@@ -73,7 +70,7 @@ public class OnLineUserCertificateRequest extends Observable{
             CSRRequest csrRequest = new CSRRequest(csrString, hashPIN1, this.Email);
             this.MESSAGE = csrRequest.getMessage();
             return csrRequest.isCSRREquestSuccess();
-             
+            
             //return true;
         } else {
             this.MESSAGE = "Please check you input parameters.";

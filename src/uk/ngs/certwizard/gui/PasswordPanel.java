@@ -11,7 +11,6 @@
 package uk.ngs.certwizard.gui;
 
 import help_panel_html.LoadHtmlResource;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
@@ -168,14 +167,14 @@ public class PasswordPanel extends javax.swing.JPanel  {
                                 .add(jLabel2))))
                     .add(layout.createSequentialGroup()
                         .addContainerGap()
-                        .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 826, Short.MAX_VALUE)))
+                        .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 806, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
-                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 274, Short.MAX_VALUE)
+                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 285, Short.MAX_VALUE)
                 .add(18, 18, 18)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
                     .add(jLabel1)
@@ -241,6 +240,7 @@ public class PasswordPanel extends javax.swing.JPanel  {
         
         final MainWindowPanel mainpane = new MainWindowPanel(passphrase);
         parentPanel.add(mainpane, "MainWindowPanel");
+        
         
         
         parentPanel.addComponentListener(new ComponentListener() {

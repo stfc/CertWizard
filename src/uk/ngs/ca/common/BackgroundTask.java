@@ -12,11 +12,13 @@ import java.util.concurrent.*;
  * and progress call backs. Subclasses need only implement <tt>compute()</tt>
  * which is called in the background thread. You MAY optionally override 
  * <tt>onCompletion()</tt> and <tt>onProgress()</tt> which are invoked in the 
- * GUI Event Dispatch Thread. 
+ * AWT Event Dispatch Thread. 
  * In a subclass, you can call <tt>setProgress</tt> method from <tt>compute</tt>
  * method to indicate progress numerically. 
  * <p>
- * Taken from JAVA Concurrency in Practice by Brian Goetz. 
+ * Modified from JAVA Concurrency in Practice by Brian Goetz. This class
+ * provides very similar functionality to <tt>SwingWorker</tt> introduced in 
+ * JKD1.6. 
  * 
  * @author David Meredith
  */
@@ -24,6 +26,33 @@ public abstract class BackgroundTask<V> extends Observable implements Runnable, 
     
     // manage our own instance of Computation FutureTask 
     private final FutureTask<V> computation = new Computation(); 
+    
+     /**
+     * current state.
+     */
+    protected volatile StateValue state = StateValue.PENDING;;
+
+    
+    /**
+     * Values for the {@code state} bound property.
+     */
+    public enum StateValue {
+
+        /**
+         * Initial state.
+         */
+        PENDING,
+        /**
+         * is {@code STARTED} before invoking {@code doInBackground}.
+         */
+        STARTED,
+        /**
+         * is {@code DONE} after {@code doInBackground}
+         * method is finished.
+         */
+        DONE
+    }
+    
     
     /**
      * Since Computation extends FutureTask, we can override <tt>done</tt> and run  
@@ -37,7 +66,8 @@ public abstract class BackgroundTask<V> extends Observable implements Runnable, 
             // upon running, execute the given <tt>Callable</tt> instance.
             super(new Callable<V>() {
                 public V call() throws Exception {
-                    return BackgroundTask.this.compute();
+                    state = StateValue.STARTED; 
+                    return BackgroundTask.this.doInBackground();
                 }
             });
         }
@@ -52,6 +82,7 @@ public abstract class BackgroundTask<V> extends Observable implements Runnable, 
          */
         @Override
         protected final void done() {
+            state = StateValue.DONE;
             // call onCompletion() in the GUI Event Dispatch Thread
             GuiExecutor.instance().execute(new Runnable() {
 
@@ -77,6 +108,15 @@ public abstract class BackgroundTask<V> extends Observable implements Runnable, 
     } // end of Computation class 
     
     /**
+     * Returns the {@code SwingWorker} state bound property.
+     *
+     * @return the current state
+     */
+    public final StateValue getState() {
+        return this.state;
+    }
+    
+    /**
      * Call this method from within your overridden <tt>compute</tt> method
      * to indicate progress numerically. 
      * 
@@ -97,7 +137,7 @@ public abstract class BackgroundTask<V> extends Observable implements Runnable, 
      * @return The result type returned by this FutureTask's <tt>get</tt> method
      * @throws Exception 
      */
-    protected abstract V compute() throws Exception; 
+    protected abstract V doInBackground() throws Exception; 
     
     
     /**

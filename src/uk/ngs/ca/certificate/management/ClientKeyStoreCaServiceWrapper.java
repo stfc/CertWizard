@@ -91,7 +91,7 @@ public class ClientKeyStoreCaServiceWrapper {
      * 
      * @throws KeyStoreException
      */
-    public void reloadKeyStoreFromFile() throws KeyStoreException {
+    public void reStoreReload() throws KeyStoreException {
         // keyStore object entries may have been modified, so
         // need to re-load this.keyStore pointer object from file because
         // the act of persisting then reloading seems to re-organize the
@@ -104,46 +104,58 @@ public class ClientKeyStoreCaServiceWrapper {
         Enumeration<String> keystoreAliases = this.clientKeyStore.aliases();
         while (keystoreAliases.hasMoreElements()) {
             String sAlias = keystoreAliases.nextElement();
-            String x500PrincipalName = "Unknown"; // provide a default incase
-            String issuerName = "Unknown";
-            Date notBefore = null, notAfter = null;
-
-            // Lets correspond to the java keytool entry types, see:
-            // http://download.oracle.com/javase/1.4.2/docs/tooldocs/windows/keytool.html
-            KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE type;
-            
-            if (this.clientKeyStore.isCertificateEntry(sAlias)) {
-                // A single public key certificate belonging and signed by another party
-                type = KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.TRUST_CERT_ENTRY;
-                X509Certificate trustedCert = (X509Certificate) this.clientKeyStore.getCertificate(sAlias);
-                x500PrincipalName = trustedCert.getSubjectX500Principal().toString();
-                issuerName = trustedCert.getIssuerX500Principal().toString();
-                notAfter = trustedCert.getNotAfter();
-                notBefore = trustedCert.getNotBefore();
-                
-            } else if (this.clientKeyStore.isKeyEntry(sAlias) && this.clientKeyStore.getCertificateChain(sAlias) != null
-                    && this.clientKeyStore.getCertificateChain(sAlias).length != 0) {
-                // A private key accompanied by the certificate "chain" for the corresponding public key
-                type = KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY;
-                // get the first in the chain - we know it has a value.
-                X509Certificate cert = (X509Certificate) this.clientKeyStore.getCertificateChain(sAlias)[0];
-                x500PrincipalName = cert.getSubjectX500Principal().toString();
-                issuerName = cert.getIssuerX500Principal().toString();
-                notAfter = cert.getNotAfter();
-                notBefore = cert.getNotBefore();
-
-            } else {
-                // Still a keyEntry but with no corresponding cert chain.
-                type = KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_ENTRY;
-            }
-            // create and add the KeyStoreEntryWrapper.
-            KeyStoreEntryWrapper keyStoreEntry = new KeyStoreEntryWrapper(sAlias, type, this.clientKeyStore.getCreationDate(sAlias));
-            keyStoreEntry.setNotAfter(notAfter);
-            keyStoreEntry.setNotBefore(notBefore);
-            keyStoreEntry.setX500PrincipalName(x500PrincipalName);
-            keyStoreEntry.setIssuerName(issuerName);
-            this.keyStoreEntryMap.put(sAlias, keyStoreEntry);   
+            this.keyStoreEntryMap.put(sAlias, this.createKeyStoreEntryWrapper(sAlias));    
         }    
+    }
+    
+    /**
+     * Using the given keyStore alias, create a new <tt>KeyStoreEntryWrapper</tt>
+     * from the corresponding entry stored in the managed keyStore. 
+     * 
+     * @param sAlias
+     * @return
+     * @throws KeyStoreException 
+     */
+    public KeyStoreEntryWrapper createKeyStoreEntryWrapper(String sAlias) throws KeyStoreException {
+        String x500PrincipalName = "Unknown"; // provide a default incase
+        String issuerName = "Unknown";
+        Date notBefore = null, notAfter = null;
+
+        // Lets correspond to the java keytool entry types, see:
+        // http://download.oracle.com/javase/1.4.2/docs/tooldocs/windows/keytool.html
+        KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE type;
+
+        if (this.clientKeyStore.isCertificateEntry(sAlias)) {
+            // A single public key certificate belonging and signed by another party
+            type = KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.TRUST_CERT_ENTRY;
+            X509Certificate trustedCert = (X509Certificate) this.clientKeyStore.getCertificate(sAlias);
+            x500PrincipalName = trustedCert.getSubjectX500Principal().toString();
+            issuerName = trustedCert.getIssuerX500Principal().toString();
+            notAfter = trustedCert.getNotAfter();
+            notBefore = trustedCert.getNotBefore();
+
+        } else if (this.clientKeyStore.isKeyEntry(sAlias) && this.clientKeyStore.getCertificateChain(sAlias) != null
+                && this.clientKeyStore.getCertificateChain(sAlias).length != 0) {
+            // A private key accompanied by the certificate "chain" for the corresponding public key
+            type = KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY;
+            // get the first in the chain - we know it has a value.
+            X509Certificate cert = (X509Certificate) this.clientKeyStore.getCertificateChain(sAlias)[0];
+            x500PrincipalName = cert.getSubjectX500Principal().toString();
+            issuerName = cert.getIssuerX500Principal().toString();
+            notAfter = cert.getNotAfter();
+            notBefore = cert.getNotBefore();
+
+        } else {
+            // Still a keyEntry but with no corresponding cert chain.
+            type = KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_ENTRY;
+        }
+        // create and add the KeyStoreEntryWrapper.
+        KeyStoreEntryWrapper keyStoreEntry = new KeyStoreEntryWrapper(sAlias, type, this.clientKeyStore.getCreationDate(sAlias));
+        keyStoreEntry.setNotAfter(notAfter);
+        keyStoreEntry.setNotBefore(notBefore);
+        keyStoreEntry.setX500PrincipalName(x500PrincipalName);
+        keyStoreEntry.setIssuerName(issuerName);
+        return keyStoreEntry;
     }
     
     
@@ -215,8 +227,8 @@ public class ClientKeyStoreCaServiceWrapper {
 
     /**
      * Delete the key store entry identified by the given alias from the
-     * KeyStore file and from <code>this.KeyStoreEntryMap</code> and
-     * reStore (persist) the file.
+     * KeyStore and from <code>this.KeyStoreEntryMap</code>. 
+     * Important: does reStore (persist) the file.
      * @param alias
      * @throws KeyStoreException
      */

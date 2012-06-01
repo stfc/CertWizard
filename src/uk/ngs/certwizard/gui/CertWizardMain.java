@@ -101,6 +101,7 @@ public class CertWizardMain extends javax.swing.JFrame {
 
         this.getContentPane().add(BorderLayout.CENTER, this.tabbedPane);
         this.getContentPane().add(BorderLayout.SOUTH, this.onlineStatusPanel);
+        this.pack();
     }
 
     private void initTabbedPane() {
@@ -245,11 +246,11 @@ public class CertWizardMain extends javax.swing.JFrame {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 863, Short.MAX_VALUE)
+            .addGap(0, 678, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 527, Short.MAX_VALUE)
+            .addGap(0, 385, Short.MAX_VALUE)
         );
 
         pack();

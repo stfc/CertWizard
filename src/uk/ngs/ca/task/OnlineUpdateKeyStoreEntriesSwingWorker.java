@@ -8,7 +8,6 @@ import java.security.KeyStoreException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.SwingWorker;
@@ -19,7 +18,7 @@ import uk.ngs.certwizard.gui.MainWindowPanel;
 
 /**
  *
- * @author djm76
+ * @author David Meredith 
  */
 public class OnlineUpdateKeyStoreEntriesSwingWorker extends SwingWorker<Void, Object[]> {
 
@@ -27,7 +26,7 @@ public class OnlineUpdateKeyStoreEntriesSwingWorker extends SwingWorker<Void, Ob
     private final ClientKeyStoreCaServiceWrapper caKeyStoreModel;
     //private final AtomicBoolean runningFlag; 
     private final MainWindowPanel pane;
-    
+
     
     public OnlineUpdateKeyStoreEntriesSwingWorker(final Map<String, KeyStoreEntryWrapper> updateEntriesByAlias,
             ClientKeyStoreCaServiceWrapper caKeyStoreModel, MainWindowPanel pane) {
@@ -54,7 +53,7 @@ public class OnlineUpdateKeyStoreEntriesSwingWorker extends SwingWorker<Void, Ob
                 if (isCancelled()) {
                     break;
                 }
-                Thread.sleep(2000); // to test 
+                //Thread.sleep(2000); // to test 
                 //if(false){
                 if (caKeyStoreModel.onlineUpdateKeyStoreEntry(keyStoreEntryWrapper)) {
                     updated = true;
@@ -82,13 +81,13 @@ public class OnlineUpdateKeyStoreEntriesSwingWorker extends SwingWorker<Void, Ob
 
     @Override
     public void done() {
-        System.out.println("done in swing worker");
-        pane.updateUI();
+        //System.out.println("done in swing worker");
+        pane.updateGUI();
     }
 
     @Override
     protected void process(List<Object[]> chunks) {
-        System.out.println("process called in swing worker");
-        pane.updateUI();
+        //System.out.println("process called in swing worker");
+        pane.updateGUI();
     }
 }

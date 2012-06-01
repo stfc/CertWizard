@@ -32,27 +32,19 @@
     <DimensionLayout dim="0">
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" attributes="0">
+              <EmptySpace min="-2" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Group type="102" alignment="1" attributes="0">
+                  <Group type="102" attributes="0">
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Group type="102" attributes="0">
-                              <EmptySpace max="-2" attributes="0"/>
-                              <Component id="jPanel1" min="-2" max="-2" attributes="0"/>
-                          </Group>
-                          <Group type="102" alignment="1" attributes="0">
-                              <EmptySpace min="-2" pref="12" max="-2" attributes="0"/>
-                              <Component id="jScrollPane1" min="-2" pref="191" max="-2" attributes="0"/>
-                          </Group>
+                          <Component id="jPanel1" min="-2" max="-2" attributes="0"/>
+                          <Component id="jScrollPane1" alignment="1" min="-2" pref="168" max="-2" attributes="0"/>
                       </Group>
                       <EmptySpace type="unrelated" max="-2" attributes="0"/>
                       <Component id="pnlAllDetails" max="32767" attributes="0"/>
                   </Group>
-                  <Group type="102" attributes="0">
-                      <EmptySpace max="-2" attributes="0"/>
-                      <Component id="jPanel2" max="32767" attributes="0"/>
-                  </Group>
+                  <Component id="jPanel2" max="32767" attributes="0"/>
               </Group>
-              <EmptySpace max="-2" attributes="0"/>
+              <EmptySpace min="-2" pref="44" max="-2" attributes="0"/>
           </Group>
       </Group>
     </DimensionLayout>
@@ -70,7 +62,11 @@
                   </Group>
                   <Group type="102" attributes="0">
                       <Component id="pnlAllDetails" min="-2" pref="338" max="-2" attributes="0"/>
+                      <EmptySpace min="0" pref="3" max="32767" attributes="0"/>
+                  </Group>
+                  <Group type="102" attributes="0">
                       <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
+                      <Component id="pnlAllDetails" min="-2" pref="338" max="-2" attributes="0"/>
                   </Group>
               </Group>
               <EmptySpace min="-2" pref="8" max="-2" attributes="0"/>
@@ -119,7 +115,7 @@
       <SubComponents>
         <Component class="javax.swing.JButton" name="btnNewCertificateRequest">
           <Properties>
-            <Property name="text" type="java.lang.String" value="Apply For New Cert"/>
+            <Property name="text" type="java.lang.String" value="Apply For Cert"/>
             <Property name="toolTipText" type="java.lang.String" value="Apply for a new certificate from the UK eScience CA. The certificate will be added to your keystore. "/>
           </Properties>
           <Events>
@@ -130,7 +126,7 @@
         </Component>
         <Component class="javax.swing.JButton" name="btnImportCertificate">
           <Properties>
-            <Property name="text" type="java.lang.String" value="Import Cert From File"/>
+            <Property name="text" type="java.lang.String" value="Import Cert"/>
             <Property name="toolTipText" type="java.lang.String" value="Import an existing certificate from a .p12/.pfx file (this file is normally exported from a web browser). "/>
           </Properties>
           <Events>
@@ -469,8 +465,9 @@
             <Property name="icon" type="javax.swing.Icon" editor="org.netbeans.modules.form.editors2.IconEditor">
               <Image iconType="3" name="/help_panel_html/images/ajax-refresh-icon.gif"/>
             </Property>
-            <Property name="text" type="java.lang.String" value="Refresh"/>
-            <Property name="toolTipText" type="java.lang.String" value="Refresh the status of your certificates by fetching status updates from the UK eScience CA. "/>
+            <Property name="text" type="java.lang.String" value="Selected"/>
+            <Property name="toolTipText" type="java.lang.String" value="Refresh the status of the selected certificate. "/>
+            <Property name="enabled" type="boolean" value="false"/>
           </Properties>
           <Events>
             <EventHandler event="mouseEntered" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="btnRefreshMouseEntered"/>
@@ -617,8 +614,9 @@
                   <EmptySpace min="-2" max="-2" attributes="0"/>
                   <Component id="btnChangePasswd" min="-2" max="-2" attributes="0"/>
                   <EmptySpace min="-2" pref="25" max="-2" attributes="0"/>
-                  <Component id="jComboBox1" pref="513" max="32767" attributes="0"/>
-                  <EmptySpace min="-2" max="-2" attributes="0"/>
+                  <Component id="jComboBox1" max="32767" attributes="0"/>
+                  <EmptySpace max="-2" attributes="0"/>
+                  <Component id="btnRefreshAll" min="-2" max="-2" attributes="0"/>
               </Group>
           </Group>
         </DimensionLayout>
@@ -626,9 +624,12 @@
           <Group type="103" groupAlignment="0" attributes="0">
               <Group type="102" alignment="1" attributes="0">
                   <EmptySpace max="-2" attributes="0"/>
-                  <Group type="103" groupAlignment="3" attributes="0">
-                      <Component id="jComboBox1" alignment="3" min="-2" pref="28" max="-2" attributes="0"/>
-                      <Component id="btnChangePasswd" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Group type="103" groupAlignment="0" attributes="0">
+                      <Component id="btnRefreshAll" alignment="0" min="-2" max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="3" attributes="0">
+                          <Component id="jComboBox1" alignment="3" min="-2" pref="28" max="-2" attributes="0"/>
+                          <Component id="btnChangePasswd" alignment="3" min="-2" max="-2" attributes="0"/>
+                      </Group>
                   </Group>
                   <EmptySpace max="32767" attributes="0"/>
               </Group>
@@ -638,8 +639,9 @@
       <SubComponents>
         <Component class="javax.swing.JButton" name="btnChangePasswd">
           <Properties>
-            <Property name="text" type="java.lang.String" value="Change Keystore Password"/>
+            <Property name="text" type="java.lang.String" value="Change Password"/>
             <Property name="toolTipText" type="java.lang.String" value="Your certificates are stored in a password protected keystore file."/>
+            <Property name="actionCommand" type="java.lang.String" value="Change KeyStore Password"/>
           </Properties>
           <Events>
             <EventHandler event="mouseEntered" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="btnChangePasswdMouseEntered"/>
@@ -658,6 +660,18 @@
             <EventHandler event="mouseExited" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="jComboBox1MouseExited"/>
             <EventHandler event="itemStateChanged" listener="java.awt.event.ItemListener" parameters="java.awt.event.ItemEvent" handler="jComboBox1ItemStateChanged"/>
             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jComboBox1ActionPerformed"/>
+          </Events>
+        </Component>
+        <Component class="javax.swing.JButton" name="btnRefreshAll">
+          <Properties>
+            <Property name="icon" type="javax.swing.Icon" editor="org.netbeans.modules.form.editors2.IconEditor">
+              <Image iconType="3" name="/help_panel_html/images/ajax-refresh-icon.gif"/>
+            </Property>
+            <Property name="toolTipText" type="java.lang.String" value="Refresh all keystore certificates"/>
+            <Property name="enabled" type="boolean" value="false"/>
+          </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnRefreshAllActionPerformed"/>
           </Events>
         </Component>
       </SubComponents>

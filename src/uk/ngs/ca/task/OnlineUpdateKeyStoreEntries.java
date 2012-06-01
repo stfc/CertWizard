@@ -7,7 +7,6 @@ package uk.ngs.ca.task;
 import java.security.KeyStoreException;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import uk.ngs.ca.certificate.client.PingService;
@@ -24,47 +23,22 @@ public class OnlineUpdateKeyStoreEntries extends BackgroundTask<Void> {
 
     private final Map<String, KeyStoreEntryWrapper> updateEntriesByAlias;
     private final ClientKeyStoreCaServiceWrapper caKeyStoreModel;
-    private final AtomicBoolean runningFlag;
-    /**
-     * current state.
-     */
-    private volatile StateValue state;
+    //private final AtomicBoolean runningFlag;
+   
 
-    /**
-     * Values for the {@code state} bound property.
-     */
-    public enum StateValue {
-
-        /**
-         * Initial {@code SwingWorker} state.
-         */
-        PENDING,
-        /**
-         * {@code SwingWorker} is {@code STARTED} before invoking {@code doInBackground}.
-         */
-        STARTED,
-        /**
-         * {@code SwingWorker} is {@code DONE} after {@code doInBackground}
-         * method is finished.
-         */
-        DONE
-    }
 
     public OnlineUpdateKeyStoreEntries(final Map<String, KeyStoreEntryWrapper> updateEntriesByAlias,
-            ClientKeyStoreCaServiceWrapper caKeyStoreModel, AtomicBoolean runningFlag) {
+            ClientKeyStoreCaServiceWrapper caKeyStoreModel) {
         this.updateEntriesByAlias = updateEntriesByAlias;
         this.caKeyStoreModel = caKeyStoreModel;
-        this.runningFlag = runningFlag;
-        this.state = StateValue.PENDING;
+        //this.runningFlag = runningFlag;
     }
 
     @Override
-    protected Void compute() throws Exception {
+    protected Void doInBackground() throws Exception {
 
         try {
-            this.state = StateValue.STARTED;
-
-            runningFlag.set(true);
+            //runningFlag.set(true);
             if (!PingService.getPingService().isPingService()) {
                 return null; // no point if not online 
             }
@@ -97,19 +71,11 @@ public class OnlineUpdateKeyStoreEntries extends BackgroundTask<Void> {
         } catch (KeyStoreException ex) {
             Logger.getLogger(MainWindowPanel.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
-            this.state = StateValue.DONE;
         }
         return null;
     }
 
-    /**
-     * Returns the {@code SwingWorker} state bound property.
-     *
-     * @return the current state
-     */
-    public final StateValue getState() {
-        return this.state;
-    }
+
 
     @Override
     public void onCompletion(Void result, Throwable exception, boolean cancelled) {
@@ -120,7 +86,7 @@ public class OnlineUpdateKeyStoreEntries extends BackgroundTask<Void> {
         //runningOnlineUpdateTask = null;
         //onlineUpdateTaskRunning.set(false); 
         //updateGUI(); 
-        runningFlag.set(false);
+        //runningFlag.set(false);
         this.doNotifyObservers();
     }
 

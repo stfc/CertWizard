@@ -5,7 +5,6 @@
  */
 package uk.ngs.certwizard.gui;
 
-import javax.swing.JOptionPane;
 import java.awt.Color;
 import java.awt.Toolkit;
 import java.net.URL;
@@ -13,15 +12,14 @@ import java.security.KeyStoreException;
 import java.util.Observer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
-
-import uk.ngs.ca.info.CAInfo;
+import java.util.regex.Pattern;
+import javax.swing.JOptionPane;
 import uk.ngs.ca.certificate.OnLineUserCertificateRequest;
 import uk.ngs.ca.certificate.client.PingService;
 import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
 import uk.ngs.ca.common.MyPattern;
-import uk.ngs.ca.common.ClientKeyStore;
+import uk.ngs.ca.info.CAInfo;
 //import uk.ngs.ca.certificate.client.PingService;
 
 /**
@@ -402,6 +400,7 @@ public class Apply extends javax.swing.JDialog {
                             + "\nPlease try again.", messageTitle, JOptionPane.INFORMATION_MESSAGE);
                 }else{
                     System.out.println("doing online CSR now");
+                    // creates a new keypair for the CSR and reStores the keystore file 
                     this.onlineCSRCompletedOK = onLineCertRequest.doOnLineCSR();
                     if (onlineCSRCompletedOK) {
                         messageTitle = "Request Successful";
@@ -410,6 +409,7 @@ public class Apply extends javax.swing.JDialog {
                         if(this.observer != null){
                            this.observer.update(null, this);
                         }
+ 
                         JOptionPane.showMessageDialog(this, onLineCertRequest.getMessage(), messageTitle, JOptionPane.INFORMATION_MESSAGE);
                         this.dispose();
                     } else {
@@ -418,10 +418,7 @@ public class Apply extends javax.swing.JDialog {
                         System.out.println(onLineCertRequest.getMessage());
                         //need to clear up the CSR Request created!
                        try {
-                           ClientKeyStoreCaServiceWrapper keyStoreCaWrapper = ClientKeyStoreCaServiceWrapper.getInstance(passphrase);
-                           keyStoreCaWrapper.deleteEntry(this.aliasTextField.getText());
-                           
-//                            ClientKeyStore.getClientkeyStore(passphrase).getKeyStoreCopy().deleteEntry(this.aliasTextField.getText());
+                           ClientKeyStoreCaServiceWrapper.getInstance(passphrase).deleteEntry(this.aliasTextField.getText());
                         } catch (KeyStoreException ex) {
                             Logger.getLogger(MainWindowPanel.class.getName()).log(Level.SEVERE, null, ex);
                             JOptionPane.showMessageDialog(this, "Unable to delete KeyStore entry. Please contact helpdesk and quote this message! " + ex.getMessage(), "Unable to clear up request", JOptionPane.ERROR_MESSAGE);
