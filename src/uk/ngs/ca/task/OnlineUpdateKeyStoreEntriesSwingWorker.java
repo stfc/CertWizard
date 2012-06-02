@@ -17,7 +17,7 @@ import uk.ngs.ca.certificate.management.KeyStoreEntryWrapper;
 import uk.ngs.certwizard.gui.MainWindowPanel;
 
 /**
- *
+ * 
  * @author David Meredith 
  */
 public class OnlineUpdateKeyStoreEntriesSwingWorker extends SwingWorker<Void, Object[]> {
@@ -82,12 +82,12 @@ public class OnlineUpdateKeyStoreEntriesSwingWorker extends SwingWorker<Void, Ob
     @Override
     public void done() {
         //System.out.println("done in swing worker");
-        pane.updateGUI();
+        pane.updateKeyStoreGuiComponents();
     }
 
     @Override
     protected void process(List<Object[]> chunks) {
         //System.out.println("process called in swing worker");
-        pane.updateGUI();
+        pane.updateKeyStoreGuiComponents();
     }
 }

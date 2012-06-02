@@ -2,6 +2,8 @@ package uk.ngs.certwizard.gui;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -63,7 +65,7 @@ import uk.ngs.ca.util.CertificateExportUtil;
  */
 public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
-    private ImageIcon[] images;
+    private ImageIcon[] images; 
     private String stringMotD = "Hit the Refresh button to fetch the latest message of the Day";
     private final CAMotd motd = new CAMotd();
     private char[] PASSPHRASE;
@@ -121,20 +123,8 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             Logger.getLogger(MainWindowPanel.class.getName()).log(Level.SEVERE, null, ex);
             JOptionPane.showMessageDialog(null, "Unable to load KeyStore: " + ex.getMessage(), "Unable to load KeyStore", JOptionPane.ERROR_MESSAGE);
         }
-        this.updateGUI();
-
-        // set to the first visible cert/key entry (rather than showing e.g. trust root certs). 
-        if (!this.caKeyStoreModel.getKeyStoreEntryMap().isEmpty()) {
-            for (int index = 0; index < this.jComboBox1.getItemCount(); index++) {
-                KeyStoreEntryWrapper selectedKSEWComboBox = (KeyStoreEntryWrapper) this.jComboBox1.getItemAt(index);
-                if (KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY.equals(selectedKSEWComboBox.getEntryType())) {
-                    this.jComboBox1.setSelectedIndex(index);
-                    break;
-                }
-            }
-
-        }
-
+        this.updateKeyStoreGuiComponents();
+        this.setComboFirstCertEntry();
     }
 
     /**
@@ -176,22 +166,54 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
         onlineUpdateTask = new OnlineUpdateKeyStoreEntriesSwingWorker(
                 caKeyStoreModel.getKeyStoreEntryMap(), caKeyStoreModel, this);
+        onlineUpdateTask.addPropertyChangeListener(new OnlineUpdateTaskPropertyListener()); 
         onlineUpdateTask.execute();
     }
 
+    /**
+     * Handle onlineUpdateTask property changes (runs in AWT Event thread) 
+     */
+    private class OnlineUpdateTaskPropertyListener implements PropertyChangeListener {
+
+        public void propertyChange(PropertyChangeEvent e) {
+            String propertyName = e.getPropertyName();
+            if ("progress".equals(propertyName)) {
+                // not handled currently 
+            } else if ("state".equals(propertyName)) {
+                //System.out.println("state change is: "+onlineUpdateTask.getState());
+                if(SwingWorker.StateValue.DONE.equals(onlineUpdateTask.getState())){
+                    updateOnlineUpdateComponents(false); 
+                } else if(SwingWorker.StateValue.PENDING.equals(onlineUpdateTask.getState())){
+                    updateOnlineUpdateComponents(true); 
+                } else if(SwingWorker.StateValue.STARTED.equals(onlineUpdateTask.getState())){
+                    updateOnlineUpdateComponents(true); 
+                }
+            }
+        }
+    }
+    
+    
+    private void updateOnlineUpdateComponents(boolean running) {
+        if (running) {
+            btnCancelOnlineUpdate.setEnabled(true);
+            labelOnlineUpdate.setText("Updating Online...");
+            btnRefreshAll.setEnabled(false);
+        } else {
+            btnCancelOnlineUpdate.setEnabled(false);
+            labelOnlineUpdate.setText("");
+            btnRefreshAll.setEnabled(true);
+        }
+    }
     
     /**
-     * The GUI is updated when invoked by another observable class.
+     * The keyStore GUI components are updated when invoked by an observable.
      *
      * @param observable the observable object.
-     * @param obj an argument passed to the
-     * <code>notifyObservers</code> method.
+     * @param obj an argument passed to the <code>notifyObservers</code> method.
      */
     public void update(Observable observable, Object obj) {
-        /*if (observable != null && observable instanceof OnlineUpdateKeyStoreEntries) {
-            this.updateGUI();
-        }*/
-        this.updateGUI();
+        /*if (observable != null && observable instanceof OnlineUpdateKeyStoreEntries) {}*/
+        this.updateKeyStoreGuiComponents();
     }
 
     /**
@@ -222,15 +244,12 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     }
 
     /**
-     * Update the entire main panel GUI (including combo and other GUI
-     * components) according to the current state of
-     * <code>this.caKeyStoreModel</code>. Important, there is no reStore/reload
-     * of keystore !
+     * Update the GUI according to the current state of <code>this.caKeyStoreModel</code>.
+     * Important, there is no reStore/reload of keyStore. The update of the GUI
+     * components is guaranteed to be executed in the AWT event thread. 
      */
-    public final void updateGUI() {
-        // ensure we always run in the AWT Event thread. 
+    public final void updateKeyStoreGuiComponents() {
         GuiExecutor.instance().execute(new Runnable() {
-
             public void run() {
                 reloadCombo();
                 updateGUIPanel();
@@ -239,10 +258,8 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     }
 
     /**
-     * Update combo based on current state of
-     * <code>this.keyStoreCaWrapper<code>
-     * (note, no reload of keystore !). The combo elements are rendered using
-     * the CombBoxRenderer inner class.
+     * Reload combo from <code>this.caKeyStoreModel.getKeyStoreEntryMap()<code>
+     * (note, no reload of keystore !). Combo elements are rendered with CombBoxRenderer inner class.
      */
     private void reloadCombo() {
         int preSelectedIndex = this.jComboBox1.getSelectedIndex();
@@ -265,7 +282,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     /**
      * Set the selected combo item according to the given alias. 
-     * @param alias 
      */
     private void setComboSelected(String alias) {
         for (int index = 0; index < this.jComboBox1.getItemCount(); index++) {
@@ -278,21 +294,24 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     }
     
     /**
-     * Update other GUI components based on current state of
-     * <code>this.keyStoreCaWrapper<code>
-     * (note, no reload of keystore !)
+     * Set to the first visible cert/key entry (rather than showing e.g. trust root cert). 
+     */
+    private void setComboFirstCertEntry() {
+        if (!this.caKeyStoreModel.getKeyStoreEntryMap().isEmpty()) {
+            for (int index = 0; index < this.jComboBox1.getItemCount(); index++) {
+                KeyStoreEntryWrapper selectedKSEWComboBox = (KeyStoreEntryWrapper) this.jComboBox1.getItemAt(index);
+                if (KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY.equals(selectedKSEWComboBox.getEntryType())) {
+                    this.jComboBox1.setSelectedIndex(index);
+                    break;
+                }
+            }
+        }
+    }
+    
+    /**
+     * Update other GUI components based on selected combo item (note, no reload of keystore !)
      */
     private void updateGUIPanel() {
-        //if (this.onlineUpdateTask != null && (this.onlineUpdateTask.getState().equals(StateValue.STARTED)
-        //        ||this.onlineUpdateTask.getState().equals(StateValue.PENDING))) {
-        if (this.onlineUpdateTask != null && !this.onlineUpdateTask.isDone()) {
-            this.btnRefreshAll.setEnabled(false);
-            this.btnRefresh.setEnabled(false);
-        } else {
-            this.btnRefreshAll.setEnabled(true);
-            this.btnRefresh.setEnabled(true);
-        }
-
         // nullify/clear the gui components first
         this.vFrom.setText("");
         this.vTo.setText("");
@@ -625,7 +644,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                             this.caKeyStoreModel.getClientKeyStore().reStore();
                             KeyStoreEntryWrapper newCsrEntry = this.caKeyStoreModel.createKeyStoreEntryWrapper(newCsrRenewalAlias);
                             this.caKeyStoreModel.getKeyStoreEntryMap().put(newCsrRenewalAlias, newCsrEntry);                          
-                            this.updateGUI();
+                            this.updateKeyStoreGuiComponents();
                             this.setComboSelected(newCsrRenewalAlias);                         
                             // start background task to online update the newly imported 
                             // keystore entry and update the GUI 
@@ -699,7 +718,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                     Logger.getLogger(MainWindowPanel.class.getName()).log(Level.SEVERE, null, ex);
                     JOptionPane.showMessageDialog(this, "Problem Revoking Certificate: \n" + ex.getMessage(), "Unable to delete KeyStore entry", JOptionPane.ERROR_MESSAGE);
                 }
-                this.updateGUI();
+                this.updateKeyStoreGuiComponents();
 
                 WaitDialog.hideDialog();
 
@@ -866,7 +885,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             this.caKeyStoreModel.getClientKeyStore().reStore();
             KeyStoreEntryWrapper newCsrEntry = this.caKeyStoreModel.createKeyStoreEntryWrapper(newImportAlias);
             this.caKeyStoreModel.getKeyStoreEntryMap().put(newImportAlias, newCsrEntry);
-            this.updateGUI();
+            this.updateKeyStoreGuiComponents();
             this.setComboSelected(newImportAlias);
             // start background task to online update the newly imported 
             // keystore entry and update the GUI 
@@ -992,7 +1011,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 try {
                     // delete calls reStore 
                     this.caKeyStoreModel.deleteEntry(((KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem()).getAlias());
-                    this.updateGUI();
+                    this.updateKeyStoreGuiComponents();
                 } catch (KeyStoreException ex) {
                     Logger.getLogger(MainWindowPanel.class.getName()).log(Level.SEVERE, null, ex);
                     JOptionPane.showMessageDialog(this, "Unable to delete KeyStore entry: " + ex.getMessage(), "Unable to delete KeyStore entry", JOptionPane.ERROR_MESSAGE);
@@ -1177,10 +1196,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 if (certfos != null) {
                     certfos.close();
                 }
-            } catch (Exception ex) {/*
-                 * do nothing
-                 */
-
+            } catch (Exception ignore) {
             }
         }
     }
@@ -1260,7 +1276,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             changedKSEW.setAlias(sAliasNew);
             this.caKeyStoreModel.getKeyStoreEntryMap().remove(sAliasOld);
             this.caKeyStoreModel.getKeyStoreEntryMap().put(sAliasNew, changedKSEW);
-            this.updateGUI();
+            this.updateKeyStoreGuiComponents();
             WaitDialog.hideDialog();
 
         } catch (Exception ex) {
@@ -1271,9 +1287,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     }
 
     /**
-     * Start a background task to online update the keyStore entries and update
-     * the GUI.
-     *
+     * Start a background task to online update the keyStore entries and update GUI. 
      * @param all
      */
     private void doRefreshActionAsBackgroundTask(boolean all) {
@@ -1284,25 +1298,34 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         if (this.jComboBox1.getSelectedIndex() == -1) {
             JOptionPane.showMessageDialog(this, "There are no certificate in the keystore", "No certificate in the keystore!", JOptionPane.WARNING_MESSAGE);
         } else {
+            Map<String, KeyStoreEntryWrapper> updateEntries;
             if (all) {
-                this.onlineUpdateTask = new OnlineUpdateKeyStoreEntriesSwingWorker(
-                        this.caKeyStoreModel.getKeyStoreEntryMap(), caKeyStoreModel, this);
-                onlineUpdateTask.execute();
+                updateEntries = this.caKeyStoreModel.getKeyStoreEntryMap();
             } else {
                 KeyStoreEntryWrapper selectedKSEW = (KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem();
-                Map<String, KeyStoreEntryWrapper> updateEntries = new HashMap(1);
+                updateEntries = new HashMap(1);
                 updateEntries.put(selectedKSEW.getAlias(), selectedKSEW);
-                //this.onlineUpdateTask = new OnlineUpdateKeyStoreEntries(updateEntries, this.caKeyStoreModel, this.onlineUpdateTaskRunning);
-                //this.onlineUpdateTask.addObserver(this); 
-                //this.invokeOnceBackgroundExec.execute(onlineUpdateTask);
-                this.onlineUpdateTask = new OnlineUpdateKeyStoreEntriesSwingWorker(
-                        updateEntries, caKeyStoreModel, this);
-                onlineUpdateTask.execute();
             }
+            //this.onlineUpdateTask = new OnlineUpdateKeyStoreEntries(updateEntries, this.caKeyStoreModel, this.onlineUpdateTaskRunning);
+            //this.onlineUpdateTask.addObserver(this); 
+            //this.invokeOnceBackgroundExec.execute(onlineUpdateTask);
+            this.onlineUpdateTask = new OnlineUpdateKeyStoreEntriesSwingWorker(
+                    updateEntries, caKeyStoreModel, this);
+            this.onlineUpdateTask.addPropertyChangeListener(new OnlineUpdateTaskPropertyListener());
+            this.onlineUpdateTask.execute();
             this.btnRefreshAll.setEnabled(false);
-            this.btnRefresh.setEnabled(false);
         }
     }
+    
+    /**
+     * Cancel the background online update task (if running) 
+     */
+    private void doCancelOnlineUpdateAction(){
+        if(this.onlineUpdateTask != null){
+            this.onlineUpdateTask.cancel(true); 
+        }
+    }
+    
 
     /**
      * Let the user choose a file to import from. Based on Portecle.
@@ -1367,9 +1390,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                     + "If you are connected to the Internet but still unable to connect to the CA Server, please check your firewall\n"
                     + "settings and ensure you allow Java to access to the Internet. If problem still persists, please contact\n"
                     + "the helpdesk at support@grid-support.ac.uk.", "Server Connection Fault", JOptionPane.ERROR_MESSAGE);
-            //            stringMotD = "You are working offline.\n\nThe certificate can not be renewed offline.";
             setRedMOD(stringMotDOffline);
-            //            this.btnRefresh.setText("Connect");
         }
         return online;
     }
@@ -1383,7 +1404,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jRadioButton1 = new javax.swing.JRadioButton();
         jPanel1 = new javax.swing.JPanel();
         btnNewCertificateRequest = new javax.swing.JButton();
         btnImportCertificate = new javax.swing.JButton();
@@ -1406,7 +1426,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         vTo = new javax.swing.JTextField();
         jLabel6 = new javax.swing.JLabel();
         rDue = new javax.swing.JTextField();
-        btnRefresh = new javax.swing.JButton();
         btnRenew = new javax.swing.JButton();
         btnRevoke = new javax.swing.JButton();
         btnChangeAlias = new javax.swing.JButton();
@@ -1414,30 +1433,19 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         btnExport = new javax.swing.JButton();
         btnDelete = new javax.swing.JButton();
         viewCertDetailsButton = new javax.swing.JButton();
-        jLabel7 = new javax.swing.JLabel();
-        jLabel11 = new javax.swing.JLabel();
+        jLabel12 = new javax.swing.JLabel();
         jScrollPane1 = new javax.swing.JScrollPane();
         TextMOD = new javax.swing.JTextArea();
         jPanel2 = new javax.swing.JPanel();
         btnChangePasswd = new javax.swing.JButton();
         jComboBox1 = new javax.swing.JComboBox();
         btnRefreshAll = new javax.swing.JButton();
-
-        jRadioButton1.setText("jRadioButton1");
+        btnCancelOnlineUpdate = new javax.swing.JButton();
+        labelOnlineUpdate = new javax.swing.JLabel();
 
         setMinimumSize(new java.awt.Dimension(0, 0));
-        addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                formMouseExited(evt);
-            }
-        });
 
-        jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder("Add a Certificate to Keystore"));
-        jPanel1.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                jPanel1MouseExited(evt);
-            }
-        });
+        jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder("Add Certificate to Keystore"));
 
         btnNewCertificateRequest.setText("Apply For Cert");
         btnNewCertificateRequest.setToolTipText("Apply for a new certificate from the UK eScience CA. The certificate will be added to your keystore. ");
@@ -1500,11 +1508,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         subjectDnTextField.setAutoscrolls(true);
         subjectDnTextField.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
         subjectDnTextField.setMaximumSize(new java.awt.Dimension(2, 18));
-        subjectDnTextField.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                subjectDnTextFieldActionPerformed(evt);
-            }
-        });
 
         jLabel1.setText("Subject DN:");
 
@@ -1517,11 +1520,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         caCertStatusTextField.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
         caCertStatusTextField.setText("Unknown");
         caCertStatusTextField.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
-        caCertStatusTextField.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                caCertStatusTextFieldActionPerformed(evt);
-            }
-        });
 
         jLabel2.setText("Status:");
 
@@ -1538,21 +1536,11 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
         vFrom.setEditable(false);
         vFrom.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
-        vFrom.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                vFromActionPerformed(evt);
-            }
-        });
 
         jLabel5.setText("Days Remain:");
 
         dRemaining.setEditable(false);
         dRemaining.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
-        dRemaining.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                dRemainingActionPerformed(evt);
-            }
-        });
 
         jLabel4.setText("Valid To:");
 
@@ -1563,29 +1551,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
         rDue.setEditable(false);
         rDue.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
-        rDue.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                rDueActionPerformed(evt);
-            }
-        });
-
-        btnRefresh.setIcon(new javax.swing.ImageIcon(getClass().getResource("/help_panel_html/images/ajax-refresh-icon.gif"))); // NOI18N
-        btnRefresh.setText("Selected");
-        btnRefresh.setToolTipText("Refresh the status of the selected certificate. ");
-        btnRefresh.setEnabled(false);
-        btnRefresh.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                btnRefreshMouseEntered(evt);
-            }
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                btnRefreshMouseExited(evt);
-            }
-        });
-        btnRefresh.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnRefreshActionPerformed(evt);
-            }
-        });
 
         btnRenew.setIcon(new javax.swing.ImageIcon(getClass().getResource("/help_panel_html/images/icon_renew.GIF"))); // NOI18N
         btnRenew.setText("Renew");
@@ -1690,7 +1655,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         });
 
         viewCertDetailsButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/help_panel_html/images/view_icon.gif"))); // NOI18N
-        viewCertDetailsButton.setText("View Details");
         viewCertDetailsButton.setToolTipText("View the selected certificate details");
         viewCertDetailsButton.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
@@ -1706,9 +1670,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             }
         });
 
-        jLabel7.setText("Certificate");
-
-        jLabel11.setText("Actions:");
+        jLabel12.setText("Actions:");
 
         org.jdesktop.layout.GroupLayout pnlAllDetailsLayout = new org.jdesktop.layout.GroupLayout(pnlAllDetails);
         pnlAllDetails.setLayout(pnlAllDetailsLayout);
@@ -1742,37 +1704,31 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                                 .add(dRemaining, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 174, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                             .add(pnlAllDetailsLayout.createSequentialGroup()
                                 .add(certificateTypeLabel)
-                                .add(0, 0, Short.MAX_VALUE))
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .add(viewCertDetailsButton, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 32, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                             .add(org.jdesktop.layout.GroupLayout.TRAILING, caCertStatusTextField)
                             .add(subjectDnTextField, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .add(issuerDnTextField)
                             .add(aliasTextField)))
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, pnlAllDetailsLayout.createSequentialGroup()
-                        .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                            .add(jLabel7)
-                            .add(jLabel11))
+                    .add(pnlAllDetailsLayout.createSequentialGroup()
+                        .add(jLabel12)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                            .add(pnlAllDetailsLayout.createSequentialGroup()
-                                .add(btnRefresh, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 106, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                .add(btnRenew, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 106, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                .add(btnRevoke, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 104, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                .add(btnChangeAlias, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 131, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                             .add(pnlAllDetailsLayout.createSequentialGroup()
                                 .add(btnInstall, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 106, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                                 .add(btnExport, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 106, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                .add(btnDelete, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 106, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                .add(btnDelete, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 106, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                            .add(pnlAllDetailsLayout.createSequentialGroup()
+                                .add(btnRenew, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 106, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                .add(viewCertDetailsButton, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 131, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
-                        .addContainerGap())))
+                                .add(btnRevoke, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 104, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                .add(btnChangeAlias, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 131, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))))))
         );
 
-        pnlAllDetailsLayout.linkSize(new java.awt.Component[] {btnDelete, btnExport, btnInstall, btnRefresh, btnRenew, btnRevoke}, org.jdesktop.layout.GroupLayout.HORIZONTAL);
+        pnlAllDetailsLayout.linkSize(new java.awt.Component[] {btnChangeAlias, btnDelete, btnExport, btnInstall, btnRenew, btnRevoke}, org.jdesktop.layout.GroupLayout.HORIZONTAL);
 
         pnlAllDetailsLayout.linkSize(new java.awt.Component[] {dRemaining, rDue}, org.jdesktop.layout.GroupLayout.HORIZONTAL);
 
@@ -1798,7 +1754,8 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                 .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(jLabel10)
-                    .add(certificateTypeLabel))
+                    .add(certificateTypeLabel)
+                    .add(viewCertDetailsButton))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                 .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
@@ -1814,29 +1771,30 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                         .add(rDue, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                     .add(jLabel4)
                     .add(vTo, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .add(33, 33, 33)
-                .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(btnRefresh, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 26, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(btnRenew, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 26, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(btnRevoke, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 27, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(btnChangeAlias, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 27, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(jLabel7))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                        .add(btnInstall, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 27, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .add(btnExport, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 26, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .add(btnDelete, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 26, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .add(viewCertDetailsButton))
-                    .add(jLabel11))
-                .add(21, 21, 21))
+                    .add(pnlAllDetailsLayout.createSequentialGroup()
+                        .add(39, 39, 39)
+                        .add(jLabel12)
+                        .add(61, 61, 61))
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, pnlAllDetailsLayout.createSequentialGroup()
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                        .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                            .add(btnRenew, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 26, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                            .add(btnRevoke, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 27, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                            .add(btnChangeAlias, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 27, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                        .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                            .add(btnInstall, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 27, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                            .add(btnExport, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 26, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                            .add(btnDelete, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 26, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                        .add(28, 28, 28))))
         );
 
         pnlAllDetailsLayout.linkSize(new java.awt.Component[] {issuerDnTextField, subjectDnTextField}, org.jdesktop.layout.GroupLayout.VERTICAL);
 
         pnlAllDetailsLayout.linkSize(new java.awt.Component[] {dRemaining, rDue, vFrom, vTo}, org.jdesktop.layout.GroupLayout.VERTICAL);
 
-        pnlAllDetailsLayout.linkSize(new java.awt.Component[] {btnDelete, btnExport, btnInstall, btnRefresh, btnRenew, btnRevoke}, org.jdesktop.layout.GroupLayout.VERTICAL);
+        pnlAllDetailsLayout.linkSize(new java.awt.Component[] {btnDelete, btnExport, btnInstall, btnRenew, btnRevoke}, org.jdesktop.layout.GroupLayout.VERTICAL);
 
         pnlAllDetailsLayout.linkSize(new java.awt.Component[] {btnChangeAlias, viewCertDetailsButton}, org.jdesktop.layout.GroupLayout.VERTICAL);
 
@@ -1903,7 +1861,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 .add(25, 25, 25)
                 .add(jComboBox1, 0, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(btnRefreshAll))
+                .add(btnRefreshAll, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 37, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -1917,6 +1875,17 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
+        btnCancelOnlineUpdate.setIcon(new javax.swing.ImageIcon(getClass().getResource("/net/sf/portecle/images/action/exit.gif"))); // NOI18N
+        btnCancelOnlineUpdate.setEnabled(false);
+        btnCancelOnlineUpdate.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnCancelOnlineUpdateActionPerformed(evt);
+            }
+        });
+
+        labelOnlineUpdate.setText("...");
+        labelOnlineUpdate.setToolTipText("");
+
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -1925,13 +1894,20 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 .addContainerGap()
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(layout.createSequentialGroup()
-                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                            .add(jPanel1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                            .add(org.jdesktop.layout.GroupLayout.TRAILING, jScrollPane1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 168, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
+                            .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 168, Short.MAX_VALUE)
+                            .add(jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
-                        .add(pnlAllDetails, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                            .add(layout.createSequentialGroup()
+                                .add(0, 0, Short.MAX_VALUE)
+                                .add(labelOnlineUpdate, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 104, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                .add(btnCancelOnlineUpdate, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 35, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                .add(6, 6, 6))
+                            .add(pnlAllDetails, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                     .add(jPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .add(44, 44, 44))
+                .add(13, 13, 13))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -1945,119 +1921,93 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(jScrollPane1))
                     .add(layout.createSequentialGroup()
-                        .add(pnlAllDetails, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 338, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .add(0, 3, Short.MAX_VALUE))
-                    .add(layout.createSequentialGroup()
-                        .add(0, 0, Short.MAX_VALUE)
-                        .add(pnlAllDetails, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 338, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
+                        .add(pnlAllDetails, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 332, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                            .add(btnCancelOnlineUpdate)
+                            .add(labelOnlineUpdate))
+                        .add(0, 0, Short.MAX_VALUE)))
                 .add(8, 8, 8))
         );
     }// </editor-fold>//GEN-END:initComponents
 
     private void jComboBox1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBox1ActionPerformed
-        // 
         this.updateGUIPanel();
     }//GEN-LAST:event_jComboBox1ActionPerformed
 
     private void btnNewCertificateRequestActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNewCertificateRequestActionPerformed
-        // 
         this.doApplyForNewCertificateAction();
     }//GEN-LAST:event_btnNewCertificateRequestActionPerformed
 
     private void btnImportCertificateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnImportCertificateActionPerformed
-        // 
         this.doImportCertificateAction();
     }//GEN-LAST:event_btnImportCertificateActionPerformed
 
     private void btnExportActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExportActionPerformed
-        // 
         this.doExportAction();
     }//GEN-LAST:event_btnExportActionPerformed
 
     private void btnRenewActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRenewActionPerformed
-        // 
         this.doRenewAction();
     }//GEN-LAST:event_btnRenewActionPerformed
 
     private void btnRevokeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRevokeActionPerformed
-        // 
         this.doRevokeAction();
     }//GEN-LAST:event_btnRevokeActionPerformed
 
     private void btnDeleteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDeleteActionPerformed
-        //
         this.doDeleteAction();
     }//GEN-LAST:event_btnDeleteActionPerformed
 
     private void btnNewCertificateRequestMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnNewCertificateRequestMouseEntered
-        // 
         setMOD("Request a new user certificate");
     }//GEN-LAST:event_btnNewCertificateRequestMouseEntered
 
-    private void formMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_formMouseExited
-        // TODO add your handling code here:
-    }//GEN-LAST:event_formMouseExited
-
-    private void jPanel1MouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jPanel1MouseExited
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jPanel1MouseExited
-
     private void btnNewCertificateRequestMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnNewCertificateRequestMouseExited
-        // 
         this.mouseExitedActionPerformed(evt);
     }//GEN-LAST:event_btnNewCertificateRequestMouseExited
 
     private void btnImportCertificateMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnImportCertificateMouseEntered
-        // TODO add your handling code here:
         setMOD("Import an existing certificate file into the certificate wizard.");
     }//GEN-LAST:event_btnImportCertificateMouseEntered
 
     private void jComboBox1MouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jComboBox1MouseEntered
-        // TODO add your handling code here:
         setMOD("Your current certificates and certificate requests.");
     }//GEN-LAST:event_jComboBox1MouseEntered
 
     private void btnRenewMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnRenewMouseEntered
-        // TODO add your handling code here:
         setMOD("Renew the selected certificate 30 days before it expires (the certificate must be valid).");
     }//GEN-LAST:event_btnRenewMouseEntered
 
     private void btnExportMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnExportMouseEntered
-        // TODO add your handling code here:
         setMOD("Export the selected certificate to a file for back up, or for use in other tools."
                 + "You will be prompted to create a password to protect your exported certificate");
     }//GEN-LAST:event_btnExportMouseEntered
 
     private void btnRevokeMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnRevokeMouseEntered
-        // TODO add your handling code here:
         setMOD("Revoke your certificate if it is compromised or invalid.");
     }//GEN-LAST:event_btnRevokeMouseEntered
 
     private void btnDeleteMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnDeleteMouseEntered
-        // TODO add your handling code here:
         setMOD("Remove your certificate from the tool. "
                 + "This will not delete any other copies of the certificate from your computer.");
     }//GEN-LAST:event_btnDeleteMouseEntered
 
     private void btnInstallActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnInstallActionPerformed
-        // TODO add your handling code here:
         this.doInstallPemsSelectedCertificateAction();
     }//GEN-LAST:event_btnInstallActionPerformed
 
     private void btnInstallMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnInstallMouseEntered
-        // TODO add your handling code here:
         setMOD("Install the selected certificate to local PEM files: \n\n"
                 + "'$HOME/.globus/usercert.pem' \n"
                 + "'$HOME/.globus/usercert.pem' ");
     }//GEN-LAST:event_btnInstallMouseEntered
 
     private void btnInstallMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnInstallMouseExited
-        // TODO add your handling code here:
         this.mouseExitedActionPerformed(evt);
     }//GEN-LAST:event_btnInstallMouseExited
 
     private void btnImportCertificateMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnImportCertificateMouseExited
-        // TODO add your handling code here:
         this.mouseExitedActionPerformed(evt);
     }//GEN-LAST:event_btnImportCertificateMouseExited
 
@@ -2065,33 +2015,27 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         if (SystemStatus.getInstance().getIsOnline()) {
             setMOD(stringMotD);
         } else {
-//            stringMotD = "You are working offline.\n\nPlease note that working offline only display valid certificates. Please select working online, if you want to access all certificates.";
             setRedMOD(stringMotDOffline);
         }
     }
 
     private void jComboBox1MouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jComboBox1MouseExited
-        // TODO add your handling code here:
         this.mouseExitedActionPerformed(evt);
     }//GEN-LAST:event_jComboBox1MouseExited
 
     private void btnRenewMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnRenewMouseExited
-        // TODO add your handling code here:
         this.mouseExitedActionPerformed(evt);
     }//GEN-LAST:event_btnRenewMouseExited
 
     private void btnExportMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnExportMouseExited
-        // TODO add your handling code here:
         this.mouseExitedActionPerformed(evt);
     }//GEN-LAST:event_btnExportMouseExited
 
     private void btnRevokeMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnRevokeMouseExited
-        // TODO add your handling code here:
         this.mouseExitedActionPerformed(evt);
     }//GEN-LAST:event_btnRevokeMouseExited
 
     private void btnDeleteMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnDeleteMouseExited
-        // TODO add your handling code here:
         this.mouseExitedActionPerformed(evt);
     }//GEN-LAST:event_btnDeleteMouseExited
 
@@ -2099,92 +2043,66 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         // TODO add your handling code here:
     }//GEN-LAST:event_jComboBox1ItemStateChanged
 
-    private void btnRefreshActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRefreshActionPerformed
-        doRefreshActionAsBackgroundTask(false);
-    }//GEN-LAST:event_btnRefreshActionPerformed
-
-    private void btnRefreshMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnRefreshMouseEntered
-        // TODO add your handling code here:
-        setMOD("Retrieve certificate information from the CA Server and update the status of the certificates stored in the Certificate Wizard");
-    }//GEN-LAST:event_btnRefreshMouseEntered
-
-    private void btnRefreshMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnRefreshMouseExited
-        // TODO add your handling code here:
-        this.mouseExitedActionPerformed(evt);
-    }//GEN-LAST:event_btnRefreshMouseExited
-
     private void viewCertDetailsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_viewCertDetailsButtonActionPerformed
-        // TODO add your handling code here:
         this.doViewCertificateDetailsAction();
     }//GEN-LAST:event_viewCertDetailsButtonActionPerformed
 
-    private void dRemainingActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_dRemainingActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_dRemainingActionPerformed
-
     private void btnChangeAliasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnChangeAliasActionPerformed
-        // TODO add your handling code here:
         this.doChangeAliasAction();
     }//GEN-LAST:event_btnChangeAliasActionPerformed
 
-    private void caCertStatusTextFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_caCertStatusTextFieldActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_caCertStatusTextFieldActionPerformed
-
-    private void rDueActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rDueActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_rDueActionPerformed
-
-    private void subjectDnTextFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_subjectDnTextFieldActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_subjectDnTextFieldActionPerformed
-
     private void btnChangePasswdActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnChangePasswdActionPerformed
-        // TODO add your handling code here:
         this.doChangePasswdAction();
     }//GEN-LAST:event_btnChangePasswdActionPerformed
 
     private void btnChangePasswdMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnChangePasswdMouseEntered
-        // TODO add your handling code here:
         setMOD("Change the Certificate Wizard global password used to protect all your certificates in Certificate Wizard");
 
     }//GEN-LAST:event_btnChangePasswdMouseEntered
 
     private void btnChangePasswdMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnChangePasswdMouseExited
-        // TODO add your handling code here:
         this.mouseExitedActionPerformed(evt);
     }//GEN-LAST:event_btnChangePasswdMouseExited
 
     private void btnChangeAliasMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnChangeAliasMouseExited
-        // TODO add your handling code here:
         this.mouseExitedActionPerformed(evt);
     }//GEN-LAST:event_btnChangeAliasMouseExited
 
     private void viewCertDetailsButtonMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_viewCertDetailsButtonMouseExited
-        // TODO add your handling code here:
         this.mouseExitedActionPerformed(evt);
 
     }//GEN-LAST:event_viewCertDetailsButtonMouseExited
 
     private void btnChangeAliasMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnChangeAliasMouseEntered
-        // TODO add your handling code here:
         setMOD("Give the selected certificate a unique user friendly name (Alias)");
     }//GEN-LAST:event_btnChangeAliasMouseEntered
 
     private void viewCertDetailsButtonMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_viewCertDetailsButtonMouseEntered
-        // TODO add your handling code here:
         setMOD("View further details of the selected certificate. If you have imported and selected a certificate chain, "
                 + "you will be able to view details of the individual certificates contained in the certificate chain.");
     }//GEN-LAST:event_viewCertDetailsButtonMouseEntered
 
-    private void vFromActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_vFromActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_vFromActionPerformed
-
     private void btnRefreshAllActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRefreshAllActionPerformed
-        doRefreshActionAsBackgroundTask(true);
-
+        //Custom button text
+        Object[] options = {"All", "Selected Only"};
+        int n = JOptionPane.showOptionDialog(this,
+                "Refresh all certificates or selected certificate only ",
+                "Refresh certificate status with UK CA",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[1]);
+        if(JOptionPane.YES_OPTION == n){
+            doRefreshActionAsBackgroundTask(true);
+        } else {
+            doRefreshActionAsBackgroundTask(false);
+        }
     }//GEN-LAST:event_btnRefreshAllActionPerformed
+
+    private void btnCancelOnlineUpdateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCancelOnlineUpdateActionPerformed
+        doCancelOnlineUpdateAction(); 
+    }//GEN-LAST:event_btnCancelOnlineUpdateActionPerformed
 
     private void setRedMOD(String text) {
         TextMOD.setForeground(Color.RED);
@@ -2200,6 +2118,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextArea TextMOD;
     private javax.swing.JTextField aliasTextField;
+    private javax.swing.JButton btnCancelOnlineUpdate;
     private javax.swing.JButton btnChangeAlias;
     private javax.swing.JButton btnChangePasswd;
     private javax.swing.JButton btnDelete;
@@ -2207,7 +2126,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private javax.swing.JButton btnImportCertificate;
     private javax.swing.JButton btnInstall;
     private javax.swing.JButton btnNewCertificateRequest;
-    private javax.swing.JButton btnRefresh;
     private javax.swing.JButton btnRefreshAll;
     private javax.swing.JButton btnRenew;
     private javax.swing.JButton btnRevoke;
@@ -2218,19 +2136,18 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private javax.swing.JComboBox jComboBox1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
-    private javax.swing.JLabel jLabel11;
+    private javax.swing.JLabel jLabel12;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
-    private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
     private javax.swing.JLabel jLabel9;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
-    private javax.swing.JRadioButton jRadioButton1;
     private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JLabel labelOnlineUpdate;
     private javax.swing.JPanel pnlAllDetails;
     private javax.swing.JTextField rDue;
     private javax.swing.JTextField subjectDnTextField;
