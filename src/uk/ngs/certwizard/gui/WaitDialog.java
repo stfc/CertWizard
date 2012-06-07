@@ -19,15 +19,10 @@ package uk.ngs.certwizard.gui;
  *
  */
 
-import javax.swing.JFrame;
-import java.awt.Dimension;
-import javax.swing.JLabel;
-import java.awt.Rectangle;
-
-import java.awt.Font;
+import java.awt.*;
 import java.net.URL;
-import java.awt.SystemColor;
-import java.awt.Toolkit;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
 
 /**
  * This class is used to display the Wait Dialog. This Dialog is displayed
@@ -45,6 +40,7 @@ public class WaitDialog extends JFrame  {
   Rectangle bounds;
 
 
+  
 
   // single instance of this class, used through out the scope of the application
   private static WaitDialog dlg = new  WaitDialog();
@@ -92,21 +88,12 @@ public class WaitDialog extends JFrame  {
    * This static method uses pre-created dialog, positions it in the center
    * and displays it to the user.
    */
-  public static void showDialog(String type) {
-      if(type == null)
+  public static void showDialog(String message) {
+      if(message == null)
         jLabel2.setText("Please wait...");
-      else if (type.equals("Apply"))
-        jLabel2.setText("Submitting your certificate request...");
-      else if (type.equals("Renew"))
-        jLabel2.setText("Submitting your certificate renewal request...");
-      else if (type.equals("Revoke"))
-        jLabel2.setText("Submitting your revocation request...");
-      else if (type.equals("Refresh"))
-        jLabel2.setText("Your certificate list is being updated...");
-      else if (type.equals("General"))
-        jLabel2.setText("Please wait...");
-      else
-        jLabel2.setText("Please wait...");
+      else {
+        jLabel2.setText(message);   
+      }
 
     dlg.setLocation( (int)dlg.bounds.getWidth() / 2 - 200, (int)dlg.bounds.getHeight()/2 - 75);
     dlg.setVisible(true);

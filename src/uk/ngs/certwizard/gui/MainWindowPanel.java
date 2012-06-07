@@ -6,8 +6,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -21,17 +19,15 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.*;
-import net.sf.portecle.*;
-import net.sf.portecle.crypto.KeyStoreType;
-import net.sf.portecle.crypto.KeyStoreUtil;
+import net.sf.portecle.DGetAlias;
+import net.sf.portecle.DViewCertificate;
+import net.sf.portecle.FPortecle;
 import net.sf.portecle.crypto.X509CertUtil;
 import net.sf.portecle.gui.LastDir;
 import net.sf.portecle.gui.SwingHelper;
 import net.sf.portecle.gui.error.DThrowable;
 import net.sf.portecle.gui.password.DGetNewPassword;
 import net.sf.portecle.gui.password.DGetPassword;
-import org.bouncycastle.openssl.PEMReader;
-import org.bouncycastle.openssl.PasswordFinder;
 import org.bouncycastle.util.encoders.Base64;
 import org.globus.common.CoGProperties;
 import org.globus.gsi.bc.BouncyCastleOpenSSLKey;
@@ -50,6 +46,7 @@ import uk.ngs.ca.common.SystemStatus;
 import uk.ngs.ca.task.OnlineUpdateKeyStoreEntriesSwingWorker;
 import uk.ngs.ca.tools.property.SysProperty;
 import uk.ngs.ca.util.CertificateExportUtil;
+import uk.ngs.ca.util.CertificateImportUtil;
 
 /**
  * GUI for displaying the keyStore entries in the user's
@@ -92,7 +89,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private OnlineUpdateKeyStoreEntriesSwingWorker onlineUpdateTask = new OnlineUpdateKeyStoreEntriesSwingWorker(null, null, null);
     //private ScheduledExecutorService messageOfDayExecutor = Executors.newSingleThreadScheduledExecutor();
 
-    private CertificateExportUtil certExportUtil; 
+   
     
     /**
      * Creates new form MainWindowPanel
@@ -108,7 +105,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
         try {
             this.caKeyStoreModel = ClientKeyStoreCaServiceWrapper.getInstance(this.PASSPHRASE);
-            this.certExportUtil = new CertificateExportUtil(PASSPHRASE);
         } catch (KeyStoreException ex) {
             Logger.getLogger(MainWindowPanel.class.getName()).log(Level.SEVERE, null, ex);
             // TODO still need to sort out exceptions and show an error dialog here with the problem
@@ -118,12 +114,12 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
         // populate the keystore by reading local file  
         try {
-            caKeyStoreModel.reStoreReload();
+            this.caKeyStoreModel.loadFromFile();
         } catch (KeyStoreException ex) {
             Logger.getLogger(MainWindowPanel.class.getName()).log(Level.SEVERE, null, ex);
             JOptionPane.showMessageDialog(null, "Unable to load KeyStore: " + ex.getMessage(), "Unable to load KeyStore", JOptionPane.ERROR_MESSAGE);
         }
-        this.updateKeyStoreGuiComponents();
+        this.updateKeyStoreGuiFromModel();
         this.setComboFirstCertEntry();
     }
 
@@ -133,7 +129,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
      * the certificate wizard is available.
      */
     public void doPostConstruct() {
-        certExportUtil.setParentComponent(this); 
         
         if (this.caKeyStoreModel.getKeyStoreEntryMap().isEmpty()) {
             JOptionPane.showMessageDialog(this,
@@ -157,11 +152,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         //messageOfDayExecutor.scheduleWithFixedDelay(new MessageOfDayTask(), 0, 30, TimeUnit.MINUTES);
 
         // Start thread executors to update cert/csr combo list and MOD 
-        //this.runningOnlineUpdateTask = this.backgroundExec.submit(new OnlineUpdateKeyStoreEntries()); 
-        //runningOnlineUpdateTask = new OnlineUpdateKeyStoreEntries(caKeyStoreModel.getKeyStoreEntryMap(), caKeyStoreModel, onlineUpdateTaskRunning); 
-        //runningOnlineUpdateTask.addObserver(this); 
-        //BackgroundTask<Void> runningOnlineUpdateTask = new OnlineUpdateKeyStoreEntries(caKeyStoreModel.getKeyStoreEntryMap());
-        //this.invokeOnceBackgroundExec.execute(runningOnlineUpdateTask); 
         //this.schedBackgroundExec.scheduleWithFixedDelay(runningOnlineUpdateTask, 0, 1, TimeUnit.MINUTES); 
 
         onlineUpdateTask = new OnlineUpdateKeyStoreEntriesSwingWorker(
@@ -200,7 +190,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             btnCancelOnlineUpdate.setEnabled(true);
             jProgressBar1.setEnabled(true);
             jProgressBar1.setIndeterminate(true); 
-            labelOnlineUpdate.setText("Updating Online...");
+            labelOnlineUpdate.setText("Updating...");
             btnRefreshAll.setEnabled(false); 
         } else {
             btnCancelOnlineUpdate.setEnabled(false);
@@ -220,7 +210,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
      */
     public void update(Observable observable, Object obj) {
         /*if (observable != null && observable instanceof OnlineUpdateKeyStoreEntries) {}*/
-        this.updateKeyStoreGuiComponents();
+        this.updateKeyStoreGuiFromModel();
     }
 
     /**
@@ -255,10 +245,10 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
      * Important, there is no reStore/reload of keyStore. The update of the GUI
      * components is guaranteed to be executed in the AWT event thread. 
      */
-    public final void updateKeyStoreGuiComponents() {
+    public final void updateKeyStoreGuiFromModel() {
         GuiExecutor.instance().execute(new Runnable() {
             public void run() {
-                reloadCombo();
+                reloadComboFromModel();
                 updateGUIPanel();
             }
         });
@@ -268,7 +258,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
      * Reload combo from <code>this.caKeyStoreModel.getKeyStoreEntryMap()<code>
      * (note, no reload of keystore !). Combo elements are rendered with CombBoxRenderer inner class.
      */
-    private void reloadCombo() {
+    private void reloadComboFromModel() {
         int preSelectedIndex = this.jComboBox1.getSelectedIndex();
         this.jComboBox1.removeAllItems();
         Collection<KeyStoreEntryWrapper> keyStoreEntries = this.caKeyStoreModel.getKeyStoreEntryMap().values();
@@ -277,7 +267,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         }
         if (this.jComboBox1.getItemCount() > 0) {
             // show the previously selected index. 
-            if (preSelectedIndex <= this.jComboBox1.getItemCount()) {
+            if (preSelectedIndex < this.jComboBox1.getItemCount()) {
                 this.jComboBox1.setSelectedIndex(preSelectedIndex);
             } else {
                 this.jComboBox1.setSelectedIndex(0);
@@ -290,11 +280,11 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     /**
      * Set the selected combo item according to the given alias. 
      */
-    private void setComboSelected(String alias) {
+    private void setComboSelectedItemByAlias(String alias) {
         for (int index = 0; index < this.jComboBox1.getItemCount(); index++) {
             KeyStoreEntryWrapper selectedKSEWComboBox = (KeyStoreEntryWrapper) this.jComboBox1.getItemAt(index);
             if (alias.equals(selectedKSEWComboBox.getAlias())) {
-                this.jComboBox1.setSelectedIndex(index);
+                this.jComboBox1.setSelectedIndex(index); 
                 break;
             }
         }
@@ -586,7 +576,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     // contacting the CA service online
     ///////////////////////////////////////////////////////////////////////////
     /**
-     * Called by the Renew button.
+     * Called by the Renew button. 
      */
     private void doRenewAction()  {
         if (this.confirmBackgroundTaskRunning()) {
@@ -644,38 +634,37 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 // Submit the renewal request saving the new csr renewal under the 
                 // new alias in the keystore. The existing cert that is selected 
                 // for renewal is left untouched.  
-                WaitDialog.showDialog("Renew");
+                WaitDialog.showDialog("Please wait for renewal to complete");
                 String cert_id = selectedKSEW.getServerCertificateCSRInfo().getId();
                 CertificateDownload certDownload = new CertificateDownload(cert_id);
                 OnLineUserCertificateReKey rekey = new OnLineUserCertificateReKey(PASSPHRASE, newCsrRenewalAlias, certDownload.getCertificate());
-                boolean isValidRekey = rekey.isValidReKey();
+                boolean isReadyForReKey = rekey.isValidReKey();
 
-                if (isValidRekey) {
-                    // does not reStore keyStore but does add a new entry for CSR 
+                if (isReadyForReKey) {
+                    // Submit renewal here (does not reStore keyStore but does add a new entry for CSR) 
                     boolean submittedOk = rekey.doPosts(); 
                     WaitDialog.hideDialog();
                     if (submittedOk) {
                         JOptionPane.showMessageDialog(this, "The renewal request has been submitted", "Renewal request successful", JOptionPane.INFORMATION_MESSAGE);
 
                         try {
-                            // Persist the keystore to file and reload the entire keyStoreEntry Map
-                            // (we therefore lose any previous online CA state). 
-                            //this.caKeyStoreModel.reStoreReload();
-
-                            // Instead reStore and add a new keystore entry 
-                            // rather than reloading all the entries!  
-                            this.caKeyStoreModel.getClientKeyStore().reStore();
-                            KeyStoreEntryWrapper newCsrEntry = this.caKeyStoreModel.createKeyStoreEntryWrapper(newCsrRenewalAlias);
-                            this.caKeyStoreModel.getKeyStoreEntryMap().put(newCsrRenewalAlias, newCsrEntry);                          
-                            this.updateKeyStoreGuiComponents();
-                            this.setComboSelected(newCsrRenewalAlias);                         
-                            // start background task to online update the newly imported 
-                            // keystore entry and update the GUI 
-                            this.doRefreshActionAsBackgroundTask(false);
+                            // Persist the keystore to file 
+                            this.caKeyStoreModel.getClientKeyStore().reStore();                       
                             
+                            // Add a new keystore entry to the model (don't
+                            // reload all the entries from model as exsisting online
+                            // state of the different entries will be lost) 
+                            KeyStoreEntryWrapper newCsrEntry = this.caKeyStoreModel.createKSEntryWrapperInstanceFromEntry(newCsrRenewalAlias);
+                            this.caKeyStoreModel.getKeyStoreEntryMap().put(newCsrRenewalAlias, newCsrEntry);                          
+                            this.reloadComboFromModel();
+                            this.setComboSelectedItemByAlias(newCsrRenewalAlias);                         
+                                           
+                            if (caKeyStoreModel.onlineUpdateKeyStoreEntry(newCsrEntry)) {
+                                // Don't need to reStore (no online state is saved to file)
+                                //caKeyStoreModel.getClientKeyStore().reStore(); 
+                            }        
                         } catch(KeyStoreException ex){
-                            Logger.getLogger(MainWindowPanel.class.getName()).log(Level.SEVERE, null, ex);
-                            JOptionPane.showMessageDialog(this, "Problem Renewing Certificate: \n" + ex.getMessage(), "Rewnew Error", JOptionPane.ERROR_MESSAGE);
+                            DThrowable.showAndWait(null, "Problem Saving Renewal Certificate", ex);
                         }
 
                     } else {
@@ -683,7 +672,8 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                         String moreMessage = rekey.getDetailErrorMessage();
                         JOptionPane.showMessageDialog(this, moreMessage, messageTitle, JOptionPane.ERROR_MESSAGE);
                     }
-
+                    this.updateKeyStoreGuiFromModel();
+                    
                 } else {
                     WaitDialog.hideDialog();
                     JOptionPane.showMessageDialog(this, "The selected certificate is not valid to renew", "wrong certificate", JOptionPane.WARNING_MESSAGE);
@@ -697,7 +687,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     }
 
     /**
-     * Called by the Revoke button.
+     * Called by the Revoke button. 
      */
     private void doRevokeAction() {
         if (this.confirmBackgroundTaskRunning()) {
@@ -731,25 +721,21 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 boolean revoked = revokeRequest.doPosts();
 
                 // Just reload the selected entry rather than refreshing all 
-                //this.reloadKeystoreUpdateGUI(true);
                 try {
                     if (caKeyStoreModel.onlineUpdateKeyStoreEntry(selectedKSEW)) {
-                        // i don't think we need to reStore (no online state is saved to file)
+                        // Don't need to reStore (no online state is saved to file)
                         //caKeyStoreModel.getClientKeyStore().reStore(); 
                     }
                 } catch (KeyStoreException ex) {
-                    Logger.getLogger(MainWindowPanel.class.getName()).log(Level.SEVERE, null, ex);
-                    JOptionPane.showMessageDialog(this, "Problem Revoking Certificate: \n" + ex.getMessage(), "Unable to delete KeyStore entry", JOptionPane.ERROR_MESSAGE);
+                    DThrowable.showAndWait(null, "Problem Revoking Certificate", ex);
                 }
-                this.updateKeyStoreGuiComponents();
+                this.updateKeyStoreGuiFromModel();
 
                 WaitDialog.hideDialog();
 
                 if (revoked) {
                     JOptionPane.showMessageDialog(this, revokeRequest.getMessage(), "Certificate revoked", JOptionPane.INFORMATION_MESSAGE);
-                } else {
-                    JOptionPane.showMessageDialog(this, revokeRequest.getMessage(), "Problem revoking certificate", JOptionPane.ERROR_MESSAGE);
-                }
+                } 
             }
         } else {
             JOptionPane.showMessageDialog(this, "Only VALID certificates issued by the UK CA can be revoked",
@@ -761,165 +747,35 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
      * Let the user import a key pair a PKCS #12 keystore or a PEM bundle. 
      * Based on Portecle.
      *
-     * @see FPortecle#importKeyPair()
+     * @see FPortecle#importKeyPair() 
      */
     private void doImportCertificateAction() {
         // prevent import when background thread is refreshing. 
         if (this.confirmBackgroundTaskRunning()) {
             return;
         }
-
-        // Let the user choose a file to import from
-        File fKeyPairFile = chooseImportFileHelper();
-        if (fKeyPairFile == null) {
-            return; // user cancelled
-        }
-
-        // Not a file?
-        if (!fKeyPairFile.isFile()) {
-            JOptionPane.showMessageDialog(this,
-                    MessageFormat.format(RB.getString("FPortecle.NotFile.message"), fKeyPairFile),
-                    RB.getString("FPortecle.ImportKeyPair.Title"), JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        // log all the exceptions that may occur
-        ArrayList<Exception> exceptions = new ArrayList<Exception>();
-        KeyStore tempStore = null;
-        PEMReader reader = null;
         try {
-            PasswordFinder passwordFinder = new PasswordFinder() {
+            CertificateImportUtil util = new CertificateImportUtil(this, PASSPHRASE);
+            String newHeadCertImportAlias = util.doImportCertificateAction();
+            if(newHeadCertImportAlias != null){
+                // Update the status of the newly imported head cert. 
+                this.reloadComboFromModel();
+                this.setComboSelectedItemByAlias(newHeadCertImportAlias);
 
-                private int passwordNumber = 1;
-
-                @Override
-                public char[] getPassword() {
-                    // Get the user to enter the private key password
-                    DGetPassword dGetPassword =
-                            new DGetPassword(null, MessageFormat.format(
-                            RB.getString("FPortecle.PrivateKeyPassword.Title"),
-                            new Object[]{String.valueOf(passwordNumber)}));
-                    dGetPassword.setLocationRelativeTo(getParent());
-                    SwingHelper.showAndWait(dGetPassword);
-                    char[] cPassword = dGetPassword.getPassword();
-                    passwordNumber++;
-                    return cPassword;
+                KeyStoreEntryWrapper kew = (KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem();
+                if (caKeyStoreModel.onlineUpdateKeyStoreEntry(kew)) {
+                    // we don't need to reStore (no online state is saved to keystore file)
+                    //caKeyStoreModel.getClientKeyStore().reStore(); 
                 }
-            };
-
-            reader = new PEMReader(new FileReader(fKeyPairFile.getPath()), passwordFinder);
-            tempStore = KeyStoreUtil.loadEntries(reader);
-            if (tempStore.size() == 0) {
-                tempStore = null;
+                // don't want to reload keystore because any online state (CertificateCSRInfo) 
+                // for the existing keyStoreEntryWrapperS will be lost. 
+                //this.caKeyStoreModel.loadFromFile(); 
             }
-        } catch (Exception e) {
-            exceptions.add(e);
-        } finally {
-            if (reader != null) {
-                try {
-                    reader.close();
-                } catch (IOException e) { /*
-                     * do nothing
-                     */
-
-                }
-            }
-        }
-
-        // Treat as PKCS #12 keystore
-        if (tempStore == null) {
-
-            // Get the user to enter the PKCS #12 keystore's password
-            DGetPassword dGetPassword =
-                    new DGetPassword(null, RB.getString("FPortecle.Pkcs12Password.Title"));
-            dGetPassword.setLocationRelativeTo(this);
-            SwingHelper.showAndWait(dGetPassword);
-            char[] cPkcs12Password = dGetPassword.getPassword();
-            if (cPkcs12Password == null) {
-                return;
-            }
-
-            // Load the PKCS #12 keystore
-            // DM: important note, the KeyStoreUtil.java class has been modified
-            // so that it uses the unlimited strength pkcs12 provider so that
-            // unlimited length passwords can be used (circumvents manually
-            // installing the unlimited strength Jurisdiction policy files from
-            // oracle). 
-            try {
-                tempStore = KeyStoreUtil.loadKeyStore(fKeyPairFile, cPkcs12Password, KeyStoreType.PKCS12);
-            } catch (Exception e) {
-                exceptions.add(e);
-            }
-        }
-
-        if (tempStore == null && !exceptions.isEmpty()) {
-            int iSelected =
-                    SwingHelper.showConfirmDialog(this,
-                    MessageFormat.format(RB.getString("FPortecle.NoOpenKeyPairFile.message"), fKeyPairFile),
-                    RB.getString("FPortecle.ImportKeyPairFile.Title"));
-            if (iSelected == JOptionPane.YES_OPTION) {
-                for (Exception e : exceptions) {
-                    DThrowable.showAndWait(null, null, e);
-                }
-            }
-            return;
-        }
-
-        try {
-            // Display the import key pair dialog supplying the PKCS #12 keystore to it
-            DImportKeyPair dImportKeyPair = new DImportKeyPair(null, tempStore);
-            dImportKeyPair.setLocationRelativeTo(this);
-            SwingHelper.showAndWait(dImportKeyPair);
-
-            // Get the private key and certificate chain of the key pair
-            Key privateKey = dImportKeyPair.getPrivateKey();
-            Certificate[] certs = dImportKeyPair.getCertificateChain();
-
-            if (privateKey == null || certs == null) {
-                // User did not select a key pair for import
-                return;
-            }
-
-            // Get an alias for the new keystore entry
-            String newImportAlias = dImportKeyPair.getAlias();
-            if (newImportAlias == null) {
-                newImportAlias = X509CertUtil.getCertificateAlias(X509CertUtil.convertCertificate(certs[0]));
-            }
-
-            newImportAlias = getNewEntryAliasHelper(newImportAlias, "FPortecle.KeyPairEntryAlias.Title", false);
-            if (newImportAlias == null) {
-                return;
-            }
-
-            // Check entry does not already exist in the keystore
-            if (this.caKeyStoreModel.getClientKeyStore().containsAlias(newImportAlias)) {
-                JOptionPane.showMessageDialog(
-                        this,
-                        MessageFormat.format("The keystore already contains an entry with the alias " + newImportAlias + "\n"
-                        + "Please enter a unique alias", newImportAlias),
-                        RB.getString("FPortecle.RenameEntry.Title"), JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            // Place the private key and certificate chain into the keystore 
-            this.caKeyStoreModel.getClientKeyStore().setKeyEntry(newImportAlias, privateKey, this.PASSPHRASE, certs);
-
-            // reStore and add a new keystore entry rather than reloading all the entries!  
-            this.caKeyStoreModel.getClientKeyStore().reStore();
-            KeyStoreEntryWrapper newCsrEntry = this.caKeyStoreModel.createKeyStoreEntryWrapper(newImportAlias);
-            this.caKeyStoreModel.getKeyStoreEntryMap().put(newImportAlias, newCsrEntry);
-            this.updateKeyStoreGuiComponents();
-            this.setComboSelected(newImportAlias);
-            // start background task to online update the newly imported 
-            // keystore entry and update the GUI 
-            this.doRefreshActionAsBackgroundTask(false);
-       
-            // Display success message
-            JOptionPane.showMessageDialog(this, RB.getString("FPortecle.KeyPairImportSuccessful.message"),
-                    RB.getString("FPortecle.ImportKeyPair.Title"), JOptionPane.INFORMATION_MESSAGE);
+            
         } catch (Exception ex) {
-            DThrowable.showAndWait(null, null, ex);
+            DThrowable.showAndWait(null, "Problem Importing Certificate", ex);
         }
+        this.updateKeyStoreGuiFromModel();
     }
 
     /**
@@ -930,9 +786,27 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             return;
         }
         if (isOnlinePing()) {
-            Apply apply = new Apply(this, PASSPHRASE);
+            Apply apply = new Apply(PASSPHRASE);
             apply.setModal(true);
             apply.setVisible(true);
+            
+            // if a new CSR entry was added to the keystore, set as selected
+            if (apply.getStoredAlias() != null) {
+                
+                // reload the combo entries before we select the selected entry
+                this.reloadComboFromModel();
+                this.setComboSelectedItemByAlias(apply.getStoredAlias());
+                try {
+                    KeyStoreEntryWrapper kew = (KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem();
+                    if (caKeyStoreModel.onlineUpdateKeyStoreEntry(kew)) {
+                        // we don't need to reStore (no online state is saved to keystore file)
+                        //caKeyStoreModel.getClientKeyStore().reStore(); 
+                    }
+                } catch (KeyStoreException ex) {
+                    DThrowable.showAndWait(null, "Problem Applying for Certificate", ex);
+                }
+            }
+            this.updateKeyStoreGuiFromModel();
         }
     }
 
@@ -959,7 +833,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
      *
      */
     private void doChangePasswdAction() {
-
         //ask for the current password first.
         DGetPassword dGetPassword =
                 new DGetPassword(null, "Enter the current Keystore Password");
@@ -1003,19 +876,14 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         //set the new keystore password: set in passphrase.property as well as
         //the variable PASSPHRASE. Finally call the reStorePassword method in
         //ClientKeyStore to restore the keystore with the new password.
-        try {
-            String _pswdProperty = SysProperty.getValue("uk.ngs.ca.passphrase.property");
-            String _pswd = new String(cPKCS12Password);
-            System.setProperty(_pswdProperty, _pswd);
-            this.PASSPHRASE = cPKCS12Password;
-            this.caKeyStoreModel.getClientKeyStore().reStorePassword(PASSPHRASE);
-            this.certExportUtil = new CertificateExportUtil(PASSPHRASE);
+        String _pswdProperty = SysProperty.getValue("uk.ngs.ca.passphrase.property");
+        String _pswd = new String(cPKCS12Password);
+        System.setProperty(_pswdProperty, _pswd);
+        this.PASSPHRASE = cPKCS12Password;
+        this.caKeyStoreModel.getClientKeyStore().reStorePassword(PASSPHRASE);
 
-            JOptionPane.showMessageDialog(this, "Key Store password has successfully been changed",
+        JOptionPane.showMessageDialog(this, "Key Store password has successfully been changed",
                     "Password Change Successful", JOptionPane.INFORMATION_MESSAGE);
-        } catch (KeyStoreException ex) {
-            DThrowable.showAndWait(null, null, ex);
-        }
     }
     
     /**
@@ -1034,7 +902,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 try {
                     // delete calls reStore 
                     this.caKeyStoreModel.deleteEntry(((KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem()).getAlias());
-                    this.updateKeyStoreGuiComponents();
+                    this.updateKeyStoreGuiFromModel();
                 } catch (KeyStoreException ex) {
                     Logger.getLogger(MainWindowPanel.class.getName()).log(Level.SEVERE, null, ex);
                     JOptionPane.showMessageDialog(this, "Unable to delete KeyStore entry: " + ex.getMessage(), "Unable to delete KeyStore entry", JOptionPane.ERROR_MESSAGE);
@@ -1110,7 +978,13 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         }
         // Get the entry
         String sAlias = selectedKSEW.getAlias();
-        return certExportUtil.doExportAction(sAlias); 
+        try {
+            CertificateExportUtil certExportUtil = new CertificateExportUtil(this, PASSPHRASE);
+            return certExportUtil.doExportAction(sAlias);
+        } catch (KeyStoreException ex) {
+            DThrowable.showAndWait(null, null, ex);
+        }
+        return false;
     }
 
     /**
@@ -1299,7 +1173,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             changedKSEW.setAlias(sAliasNew);
             this.caKeyStoreModel.getKeyStoreEntryMap().remove(sAliasOld);
             this.caKeyStoreModel.getKeyStoreEntryMap().put(sAliasNew, changedKSEW);
-            this.updateKeyStoreGuiComponents();
+            this.updateKeyStoreGuiFromModel();
             WaitDialog.hideDialog();
 
         } catch (Exception ex) {
@@ -1311,7 +1185,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     /**
      * Start a background task to online update the keyStore entries and update GUI. 
-     * @param all
+     * 
+     * @param all if true updates all entries, otherwise will only attempt to update 
+     * the currently selected entry. 
      */
     private void doRefreshActionAsBackgroundTask(boolean all) {
         if (this.confirmBackgroundTaskRunning()) {
@@ -1319,7 +1195,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         }
 
         if (this.jComboBox1.getSelectedIndex() == -1) {
-            JOptionPane.showMessageDialog(this, "There are no certificates in the keystore", "No certificate in the keystore!", JOptionPane.WARNING_MESSAGE);
+            //JOptionPane.showMessageDialog(this, "There are no certificates in the keystore", "No certificate in the keystore!", JOptionPane.WARNING_MESSAGE);
         } else {
             Map<String, KeyStoreEntryWrapper> updateEntries;
             if (all) {
@@ -1351,27 +1227,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     
 
     /**
-     * Let the user choose a file to import from. Based on Portecle.
-     *
-     * @see FPortecle#chooseImportFile()
-     * @return The chosen file or null if none was chosen
-     */
-    private File chooseImportFileHelper() {
-        JFileChooser chooser = FileChooserFactory.getKeyPairFileChooser(null);
-        File fLastDir = m_lastDir.getLastDir();
-        if (fLastDir != null) {
-            chooser.setCurrentDirectory(fLastDir);
-        }
-        chooser.setDialogTitle(RB.getString("FPortecle.ImportKeyPairFile.Title"));
-        chooser.setMultiSelectionEnabled(false);
-        int iRtnValue = chooser.showDialog(this, RB.getString("FPortecle.ImportKeyPairFile.button"));
-        if (iRtnValue == JFileChooser.APPROVE_OPTION) {
-            return chooser.getSelectedFile();
-        }
-        return null;
-    }
-
-    /**
      * Gets a new entry alias from user, handling overwrite issues. Based on
      * Portecle.
      *
@@ -1397,9 +1252,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             if (sAlias == null) {
                 return null;
             }
-
             return sAlias;
-
         }
     }
 
@@ -1921,14 +1774,14 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(layout.createSequentialGroup()
                         .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
-                            .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 168, Short.MAX_VALUE)
+                            .add(jScrollPane1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
                             .add(jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                         .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                             .add(pnlAllDetails, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .add(layout.createSequentialGroup()
                                 .add(0, 0, Short.MAX_VALUE)
-                                .add(labelOnlineUpdate, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 104, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                .add(labelOnlineUpdate, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 111, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                                 .add(jProgressBar1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 56, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
@@ -1950,14 +1803,11 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                         .add(jScrollPane1))
                     .add(layout.createSequentialGroup()
                         .add(pnlAllDetails, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 332, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                            .add(labelOnlineUpdate, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .add(layout.createSequentialGroup()
-                                .add(0, 0, Short.MAX_VALUE)
-                                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                                    .add(jProgressBar1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                    .add(btnCancelOnlineUpdate, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 19, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))))))
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 8, Short.MAX_VALUE)
+                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                            .add(org.jdesktop.layout.GroupLayout.TRAILING, jProgressBar1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                            .add(org.jdesktop.layout.GroupLayout.TRAILING, btnCancelOnlineUpdate, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 19, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                            .add(org.jdesktop.layout.GroupLayout.TRAILING, labelOnlineUpdate, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 14, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))))
                 .add(8, 8, 8))
         );
     }// </editor-fold>//GEN-END:initComponents

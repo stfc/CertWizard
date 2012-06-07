@@ -174,7 +174,7 @@ public class PasswordPanel extends javax.swing.JPanel  {
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
-                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 285, Short.MAX_VALUE)
+                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 315, Short.MAX_VALUE)
                 .add(18, 18, 18)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
                     .add(jLabel1)
@@ -239,10 +239,7 @@ public class PasswordPanel extends javax.swing.JPanel  {
         this.setVisible(false); 
         
         final MainWindowPanel mainpane = new MainWindowPanel(passphrase);
-        parentPanel.add(mainpane, "MainWindowPanel");
-        
-        
-        
+
         parentPanel.addComponentListener(new ComponentListener() {
 
             public void componentResized(ComponentEvent e) {
@@ -255,6 +252,8 @@ public class PasswordPanel extends javax.swing.JPanel  {
             }
 
             public void componentShown(ComponentEvent e) {
+                mainpane.setPreferredSize(new Dimension(e.getComponent().getWidth(), e.getComponent().getHeight()));
+                revalidate();
                 //throw new UnsupportedOperationException("Not supported yet.");
             }
 
@@ -262,7 +261,10 @@ public class PasswordPanel extends javax.swing.JPanel  {
                 //throw new UnsupportedOperationException("Not supported yet.");
             }
         });
-        // 
+        
+        parentPanel.add(mainpane, "MainWindowPanel");
+        // force an initial resizing 
+        mainpane.setPreferredSize(new Dimension(parentPanel.getWidth(), parentPanel.getHeight()));
         mainpane.doPostConstruct();
     }
 

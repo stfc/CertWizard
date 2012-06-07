@@ -25,7 +25,7 @@ import uk.ngs.ca.tools.property.SysProperty;
  * 
  * @todo DM: Lots, more refactoring is needed, exception swallowing to fix 
  * @author xw75 (Xiao Wang) 
- * @author David Meredith (refactoring)
+ * @author David Meredith (refactoring - still lots to fix)
  */
 public final class ClientKeyStore {
     
@@ -37,7 +37,7 @@ public final class ClientKeyStore {
     // another thread is using it, and 
     // b) prevent dirty reads by different threads (visiblity) 
     // The keyStore is confined to this object, it is never leaked/published. 
-    private final KeyStore keyStore; 
+    private volatile KeyStore keyStore; 
     private final String key_KeyStoreFilePath ;
     private char[] PASSPHRASE = null;
     private String errorMessage = null;
@@ -156,13 +156,13 @@ public final class ClientKeyStore {
             fos = new FileOutputStream(f);
             // store will overwrite the file if it already exists
             this.keyStore.store(fos, PASSPHRASE); 
-
-            // TODO - Do we Need to re-load this.keyStore object from file?
+            
+            // We Need to re-load this.keyStore object from file - 
             // the act of persisting then reloading seems to re-organize the
             // keystore entries so that Trusted certs that exist in an
             // imported cert chain are also stored as standalone entries in the
-            // keyStore file? or was this threading issues ? 
-            //this.keyStore = this.getKeyStoreCopy();
+            // keyStore file? 
+            this.keyStore = this.getKeyStoreCopy();
             return true;
             
         } catch (Exception ep) {

@@ -51,14 +51,12 @@ public class CertificateExportUtil {
     private ClientKeyStoreCaServiceWrapper caKeyStoreModel = null;
     private Component parentCompoent;
 
-    public CertificateExportUtil(char[] passphrase) throws KeyStoreException {
+    public CertificateExportUtil(Component parentCompoent, char[] passphrase) throws KeyStoreException {
         this.PASSPHRASE = passphrase;
+        this.parentCompoent = parentCompoent;
         this.caKeyStoreModel = ClientKeyStoreCaServiceWrapper.getInstance(this.PASSPHRASE);
     }
 
-    public void setParentComponent(Component parentCompoent) {
-        this.parentCompoent = parentCompoent;
-    }
 
     /**
      * Let the user export the selected entry. Based on Portecle.

@@ -34,15 +34,16 @@ public class Apply extends javax.swing.JDialog {
     private String[] RAs;
 
     private final Pattern emailPattern = Pattern.compile("[-\\.a-zA-Z0-9_]+@[-a-zA-Z0-9\\.]+\\.[a-z]+");
-    private boolean onlineCSRCompletedOK = false;
-    private Observer observer;
+  
+    //private Observer observer;
     private char[] passphrase;
+    private String storedAlias; 
 
     /** Creates new form Apply */
-    public Apply(Observer observer, char[] passphrase) {
+    public Apply(/*Observer observer,*/ char[] passphrase) {
         this.passphrase = passphrase;
         initComponents();
-        this.observer = observer;
+        //this.observer = observer;
 
         onLineCertRequest = new OnLineUserCertificateRequest(passphrase);
         //onLineCertRequest.addObserver(mainWindowPanel);
@@ -61,11 +62,13 @@ public class Apply extends javax.swing.JDialog {
         jLabel6.setVisible(false);
     }
 
+
+    
     /**
-     * @return true if the last online CSR completed ok, otherwise return false.
+     * @return 
      */
-    public boolean getLastCSRCompletedOK(){
-        return this.onlineCSRCompletedOK;
+    public String getStoredAlias(){
+        return this.storedAlias; 
     }
 
     /** This method is called from within the constructor to
@@ -316,7 +319,7 @@ public class Apply extends javax.swing.JDialog {
     }*/
 
     private void btnApplyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnApplyActionPerformed
-        this.onlineCSRCompletedOK = false;
+     
         //WaitDialog.showDialog("Apply");
         boolean complete = true;
         String text = "";
@@ -399,35 +402,29 @@ public class Apply extends javax.swing.JDialog {
                             + "\nPlease also ensure that it is in the form of name.surname@example.com or similar"
                             + "\nPlease try again.", messageTitle, JOptionPane.INFORMATION_MESSAGE);
                 }else{
-                    System.out.println("doing online CSR now");
                     // creates a new keypair for the CSR and reStores the keystore file 
-                    this.onlineCSRCompletedOK = onLineCertRequest.doOnLineCSR();
-                    if (onlineCSRCompletedOK) {
+                    this.storedAlias = onLineCertRequest.doOnLineCsrUpdateKeyStore(); 
+                              
+                    if (this.storedAlias != null) {
                         messageTitle = "Request Successful";
-                        //notify mainwindow only success.
-                        //onLineCertRequest.notifyObserver();
-                        if(this.observer != null){
-                           this.observer.update(null, this);
-                        }
- 
                         JOptionPane.showMessageDialog(this, onLineCertRequest.getMessage(), messageTitle, JOptionPane.INFORMATION_MESSAGE);
-                        this.dispose();
+                        
                     } else {
                         messageTitle = "Request UnSuccessful";
-                        this.onlineCSRCompletedOK = false;
-                        System.out.println(onLineCertRequest.getMessage());
-                        //need to clear up the CSR Request created!
-                       try {
-                           ClientKeyStoreCaServiceWrapper.getInstance(passphrase).deleteEntry(this.aliasTextField.getText());
+                        try {
+                            //need to clear up the CSR if created in the keyStore
+                            if(ClientKeyStoreCaServiceWrapper.getInstance(passphrase).getClientKeyStore().containsAlias(this.storedAlias)){
+                               ClientKeyStoreCaServiceWrapper.getInstance(passphrase).deleteEntry(this.storedAlias);
+                            }
                         } catch (KeyStoreException ex) {
                             Logger.getLogger(MainWindowPanel.class.getName()).log(Level.SEVERE, null, ex);
-                            JOptionPane.showMessageDialog(this, "Unable to delete KeyStore entry. Please contact helpdesk and quote this message! " + ex.getMessage(), "Unable to clear up request", JOptionPane.ERROR_MESSAGE);
+                            JOptionPane.showMessageDialog(this, "Unable to clear up failed KeyStore CSR entry. Please contact helpdesk and quote this message! " + ex.getMessage(), "Unable to clear up CSR request", JOptionPane.ERROR_MESSAGE);
                         }
                         JOptionPane.showMessageDialog(this, onLineCertRequest.getMessage(), messageTitle, JOptionPane.INFORMATION_MESSAGE);
                     }
+                    this.dispose();                
                 }
         }
-        //WaitDialog.hideDialog();
     }//GEN-LAST:event_btnApplyActionPerformed
 
     private boolean isValidEmail(String email) {

@@ -91,32 +91,26 @@ public class ClientKeyStoreCaServiceWrapper {
      * 
      * @throws KeyStoreException
      */
-    public void reStoreReload() throws KeyStoreException {
-        // keyStore object entries may have been modified, so
-        // need to re-load this.keyStore pointer object from file because
-        // the act of persisting then reloading seems to re-organize the
-        // keystore entries so that Trusted certs that exist in an
-        // imported cert chain are also stored as standalone entries in the
-        // keyStore file.
-        this.clientKeyStore.reStore();
-        // Now refresh the keyStore entry map
+    public void loadFromFile() throws KeyStoreException {
         this.keyStoreEntryMap.clear(); 
         Enumeration<String> keystoreAliases = this.clientKeyStore.aliases();
         while (keystoreAliases.hasMoreElements()) {
             String sAlias = keystoreAliases.nextElement();
-            this.keyStoreEntryMap.put(sAlias, this.createKeyStoreEntryWrapper(sAlias));    
+            //System.out.println("reloading: "+sAlias);
+            this.keyStoreEntryMap.put(sAlias, this.createKSEntryWrapperInstanceFromEntry(sAlias));    
         }    
     }
     
     /**
      * Using the given keyStore alias, create a new <tt>KeyStoreEntryWrapper</tt>
-     * from the corresponding entry stored in the managed keyStore. 
+     * from the corresponding entry stored in the managed keyStore. Note, this 
+     * does not put the KeyStoreEntryWrapper into the keyStore. 
      * 
      * @param sAlias
      * @return
      * @throws KeyStoreException 
      */
-    public KeyStoreEntryWrapper createKeyStoreEntryWrapper(String sAlias) throws KeyStoreException {
+    public KeyStoreEntryWrapper createKSEntryWrapperInstanceFromEntry(String sAlias) throws KeyStoreException {
         String x500PrincipalName = "Unknown"; // provide a default incase
         String issuerName = "Unknown";
         Date notBefore = null, notAfter = null;
@@ -194,7 +188,7 @@ public class ClientKeyStoreCaServiceWrapper {
     }
     
     /**
-     * Request an online update of the given keyStore entry object and update the keyStore accordingly. 
+     * Requests an online update of the given keyStore entry object and updates the keyStore accordingly. 
      * Note, the keyStore is NOT reStored to disk. 
      * This method is long running and could be run in a background thread. 
      * The data model it modifies is itself thread safe (delegation of thread safety to model).

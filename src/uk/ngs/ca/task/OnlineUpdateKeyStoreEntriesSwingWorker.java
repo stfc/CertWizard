@@ -84,12 +84,12 @@ public class OnlineUpdateKeyStoreEntriesSwingWorker extends SwingWorker<Void, Ob
     @Override
     public void done() {
         //System.out.println("done in swing worker");
-        pane.updateKeyStoreGuiComponents();
+        pane.updateKeyStoreGuiFromModel();
     }
 
     @Override
     protected void process(List<Object[]> chunks) {
         //System.out.println("process called in swing worker");
-        pane.updateKeyStoreGuiComponents();
+        pane.updateKeyStoreGuiFromModel();
     }
 }
