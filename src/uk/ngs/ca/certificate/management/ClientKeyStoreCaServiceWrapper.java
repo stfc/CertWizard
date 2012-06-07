@@ -30,9 +30,11 @@ import uk.ngs.ca.common.EncryptUtil;
 import uk.ngs.ca.tools.property.SysProperty;
 
 /**
- * Shared singleton that wraps the managed '$HOME/.ca/cakeystore.pkcs12' keyStore file. 
- * The class checks the keyStore entries against the CA server for their current 
- * status (according to the CA).
+ * Shared singleton that wraps the managed <tt>'$HOME/.ca/cakeystore.pkcs12'</tt> keyStore file. 
+ * <p>
+ * This class is the applications shared data model. In addition to wrapping the keyStore file, it 
+ * provides methods for checking the keyStore entries against the CA server for their current 
+ * status according to the CA.
  *
  * @author Xiao Wang
  * @author David Meredith (modifications - lots still to refactor)

@@ -233,7 +233,9 @@ public class PasswordPanel extends javax.swing.JPanel  {
         System.setProperty(_pswdProperty, _pswd);
 
         LocalBackup localBackup = new LocalBackup();
-        localBackup.isSuccess();
+        if(!localBackup.isSuccess()){
+            JOptionPane.showMessageDialog(this, localBackup.getMessage(), "Failed to make backup file", JOptionPane.WARNING_MESSAGE);
+        }
 
         //getCertPanel.remove(this);
         this.setVisible(false); 

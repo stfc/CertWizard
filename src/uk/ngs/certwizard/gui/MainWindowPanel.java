@@ -70,10 +70,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private String stringMotDOffline = "You are working offline.\n\nYou will not be able to apply-for, renew or revoke "
             + "your certificates until a connection has been established. "
             + "Hit the Refresh button to try and reconnect.\n\nTo configure CertWizard's connection see:\nhttp://ngs.ac.uk/tools/certwizard";
-    /**
-     * The last directory accessed by the application
-     */
-    private final LastDir m_lastDir = new LastDir();
+
     /**
      * Portecle Resource bundle base name
      */
