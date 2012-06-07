@@ -17,6 +17,10 @@ import uk.ngs.ca.certificate.management.KeyStoreEntryWrapper;
 import uk.ngs.certwizard.gui.MainWindowPanel;
 
 /**
+ * For all the entries in the given <tt>ClientKeyStoreCaServiceWrapper</tt> 
+ * perform an online status update against the CA. 
+ * The task runs in a background worker thread while the <tt>done()</tt> and <tt>process()</tt> 
+ * methods are executed in the AWT event dispatch thread to perform GUI updates. 
  * 
  * @author David Meredith 
  */
@@ -24,7 +28,6 @@ public class OnlineUpdateKeyStoreEntriesSwingWorker extends SwingWorker<Void, Ob
 
     private final Map<String, KeyStoreEntryWrapper> updateEntriesByAlias;
     private final ClientKeyStoreCaServiceWrapper caKeyStoreModel;
-    //private final AtomicBoolean runningFlag; 
     private final MainWindowPanel pane;
 
     
@@ -32,7 +35,6 @@ public class OnlineUpdateKeyStoreEntriesSwingWorker extends SwingWorker<Void, Ob
             ClientKeyStoreCaServiceWrapper caKeyStoreModel, MainWindowPanel pane) {
         this.updateEntriesByAlias = updateEntriesByAlias;
         this.caKeyStoreModel = caKeyStoreModel;
-        //this.runningFlag = runningFlag;
         this.pane = pane;
     }
 

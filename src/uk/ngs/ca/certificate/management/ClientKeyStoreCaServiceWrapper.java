@@ -258,8 +258,8 @@ public class ClientKeyStoreCaServiceWrapper {
      * KeyStoreEntryWrapper's member CertificateCSRInfo object (does not update the keyStore). 
      * <p/>
      * If keyStoreEntryWrapper has KEY_PAIR_ENTRY type, get the PublicKey and
-     * query our CA to see if it has a record of that PubKey.
-     * If recognised, create a new <code>CertificateCSRInfo</code> from the PubKey and the
+     * query our CA to see if it has a record of that PubKey. If recognized, 
+     * create a new <code>CertificateCSRInfo</code> from the PubKey and the
      * server response (XML) and add as a member object of the <code>keyStoreEntryWrapper</code>.
      * 
      * @param keyStoreEntryWrapper 
@@ -296,8 +296,6 @@ public class ClientKeyStoreCaServiceWrapper {
             
             // check if self signed
             boolean isSelfSignedCert = false;
-            //if ((cert.getSubjectDN().toString().equals(cert.getIssuerDN().toString()))) {
-            // getIssuerX500Principal() is supports RFC 2253
             if(cert.getSubjectX500Principal().getName().equals(cert.getIssuerX500Principal().getName())){
                 isSelfSignedCert = true;
             }
@@ -305,9 +303,8 @@ public class ClientKeyStoreCaServiceWrapper {
             boolean hasKnownIssuerDN = false;
             String[] allKnownDNs = SysProperty.getValue("ngsca.issuer.dn").split(";");
             for (int i = 0; i < allKnownDNs.length; i++) {
-                String keystoreCertIssuerDN = cert.getIssuerX500Principal().getName(); //cert.getIssuerDN().toString()
+                String keystoreCertIssuerDN = cert.getIssuerX500Principal().getName(); 
                 //System.out.println("Comparing: ["+keystoreCertIssuerDN+"] ["+allKnownDNs[i]+"]");
-                //if (cert.getIssuerDN().toString().equals(allKnownDNs[i])) {
                 if(keystoreCertIssuerDN.equals(allKnownDNs[i])) {
                     hasKnownIssuerDN = true;
                     break;
@@ -330,9 +327,7 @@ public class ClientKeyStoreCaServiceWrapper {
             ResourcesPublicKey resourcesPublicKey = new ResourcesPublicKey(keystorePublicKey);
             if (!resourcesPublicKey.isExist()) {
                 return;
-            }
-
-            
+            }  
             
             // doc would be null if not recognized by CA
             Document doc = resourcesPublicKey.getDocument();
@@ -341,7 +336,7 @@ public class ClientKeyStoreCaServiceWrapper {
 
             // Ok, this keyStore entry is recognized by our CA so first nullify 
             // the serverCertCSRInfo before we re-set it.
-            keyStoreEntryWrapper.setServerCertificateCSRInfo(null);
+            //keyStoreEntryWrapper.setServerCertificateCSRInfo(null);
 
             // For each <certificate/> or <CSR/> node in the
             // returned XML, create a new <code>CertificateCSRInfo</code> object
@@ -352,8 +347,7 @@ public class ClientKeyStoreCaServiceWrapper {
             // ADD CertificateCSRInfo entries
             // =============================================
             if (certNodes.getLength() != 0) {
-                // Iterate all the <certificate> XML nodes
-                
+                // Iterate all the <certificate> XML nodes           
                 for (int i = 0; i < certNodes.getLength(); i++) {
                     Node _certNode = certNodes.item(i);
                     if (_certNode.getNodeType() == Node.ELEMENT_NODE) {
@@ -398,7 +392,7 @@ public class ClientKeyStoreCaServiceWrapper {
                         CertificateCSRInfo serverInfo = new CertificateCSRInfo();
                         serverInfo.setIsCSR(false); // note !
                         serverInfo.setOwner(_owner);
-                        serverInfo.setStatus(_status);
+                        serverInfo.setStatus(_status); // could be VALID or another status
                         serverInfo.setRole(_role);
                         serverInfo.setUserEmail(_useremail);
                         serverInfo.setId(_id);
@@ -423,8 +417,7 @@ public class ClientKeyStoreCaServiceWrapper {
                         NodeList _statusList = _csrElement.getElementsByTagName("status");
                         Element _statusElement = (Element) _statusList.item(0);
                         String _status = _statusElement.getChildNodes().item(0).getTextContent();
-                        //if ("NEW".equals(_status) || "RENEW".equals(_status) || "APPROVED".equals(_status) ) reqList.add(_id);
-
+                        
                         NodeList _ownerList = _csrElement.getElementsByTagName("owner");
                         Element _ownerElement = (Element) _ownerList.item(0);
                         String _owner = _ownerElement.getChildNodes().item(0).getTextContent();
@@ -439,19 +432,20 @@ public class ClientKeyStoreCaServiceWrapper {
 
                         String description = "Your certificate has an unrecognized status";
                         if ("DELETED".equals(_status)) {
-                            //deleteKeyStoreFileEntry(keyStoreAlias); // remove from cakeystore.pkcs12 (need to think about deleted/archived)
-                            //return;
                             description = "Your certificate has been deleted from our CA.";
                         }
-                        if ("NEW".equals(_status)) {
+                        else if ("NEW".equals(_status)) {
                             description = "Your certificate has been submitted and is awaiting approval.";
                         }
-                        if ("RENEW".equals(_status)) {
+                        else if ("RENEW".equals(_status)) {
                             description = "Your renewal certificate has been submitted and is awaiting approval.";
                         }
-                        if ("APPROVED".equals(_status)) {
-                            description = "Your certificate has been approved and is waiting for CA operator signing.";
+                        else if ("APPROVED".equals(_status)) {
+                            description = "Your certificate has been approved and is awaiting CA operator signing.";
                         }
+                        //else if("VALID".equals(_status)){
+                           // VALID is not an enum status for a CSR, only for a cert 
+                        //}
 
                         //***Add a new CSR CertificateCSRInfo to keyStoreEntryWrapper***
                         CertificateCSRInfo serverInfo = new CertificateCSRInfo();
@@ -463,6 +457,8 @@ public class ClientKeyStoreCaServiceWrapper {
                         serverInfo.setId(_id);
                         serverInfo.setDescription(description);
                         serverInfo.setStatus(_status);
+                        // note we do not set the public key or date info if this
+                        // is a CSR, but we do for a cert 
                         keyStoreEntryWrapper.setServerCertificateCSRInfo(serverInfo);
                     }
                 }
@@ -477,7 +473,7 @@ public class ClientKeyStoreCaServiceWrapper {
     /**
      * Download any updates for the given KeyStoreEntryWrapper and update 
      * <code>this.clientKeyStore</code> (note, the keyStore is NOT reStored to disk). 
-     * 
+     * <p>
      * For the given keyStoreEntryWrapper, check the following;
      *  a) it is a KEY_PAIR_ENTRY type
      *  b) it has a VALID CertificateCSRInfo object (issued by our our online CA)
@@ -517,6 +513,12 @@ public class ClientKeyStoreCaServiceWrapper {
                     } 
                     PublicKey keystorePublicKey = ksChain[0].getPublicKey();
 
+                    // TODO: we only want to update the clientKeyStore IF there 
+                    // were changes to the cert. We do not want to replace 
+                    // each/every cert that has a known public key 
+                    // (maybe we can test to see if this is a CSR 
+                    // and it has now been issued as a cert - i think this is 
+                    // the only time when we need to replace the cert in the keystore!). 
                     if (downloadedPublicKey.equals(keystorePublicKey)) {
                         // Replace the certificate chain
                         PrivateKey privateKey = (PrivateKey) this.clientKeyStore.getKey(keyStoreEntryWrapper.getAlias(), mKeystorePASSPHRASE);

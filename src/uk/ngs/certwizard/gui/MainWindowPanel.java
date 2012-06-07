@@ -166,14 +166,14 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
         onlineUpdateTask = new OnlineUpdateKeyStoreEntriesSwingWorker(
                 caKeyStoreModel.getKeyStoreEntryMap(), caKeyStoreModel, this);
-        onlineUpdateTask.addPropertyChangeListener(new OnlineUpdateTaskPropertyListener()); 
+        onlineUpdateTask.addPropertyChangeListener(onlineUpdateTaskPropertyListener); 
         onlineUpdateTask.execute();
     }
 
     /**
      * Handle onlineUpdateTask property changes (runs in AWT Event thread) 
-     */
-    private class OnlineUpdateTaskPropertyListener implements PropertyChangeListener {
+     */    
+    private PropertyChangeListener onlineUpdateTaskPropertyListener = new PropertyChangeListener() {
 
         public void propertyChange(PropertyChangeEvent e) {
             String propertyName = e.getPropertyName();
@@ -181,25 +181,32 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 // not handled currently 
             } else if ("state".equals(propertyName)) {
                 //System.out.println("state change is: "+onlineUpdateTask.getState());
-                if(SwingWorker.StateValue.DONE.equals(onlineUpdateTask.getState())){
-                    updateOnlineUpdateComponents(false); 
-                } else if(SwingWorker.StateValue.PENDING.equals(onlineUpdateTask.getState())){
-                    updateOnlineUpdateComponents(true); 
-                } else if(SwingWorker.StateValue.STARTED.equals(onlineUpdateTask.getState())){
-                    updateOnlineUpdateComponents(true); 
+                if (SwingWorker.StateValue.DONE.equals(onlineUpdateTask.getState())) {
+                    updateOnlineUpdateComponents(false);
+                } else if (SwingWorker.StateValue.PENDING.equals(onlineUpdateTask.getState())) {
+                    updateOnlineUpdateComponents(true);
+                } else if (SwingWorker.StateValue.STARTED.equals(onlineUpdateTask.getState())) {
+                    updateOnlineUpdateComponents(true);
+                } else {
+                    updateOnlineUpdateComponents(false);
                 }
             }
         }
-    }
+    };
     
     
     private void updateOnlineUpdateComponents(boolean running) {
         if (running) {
             btnCancelOnlineUpdate.setEnabled(true);
+            jProgressBar1.setEnabled(true);
+            jProgressBar1.setIndeterminate(true); 
             labelOnlineUpdate.setText("Updating Online...");
-            btnRefreshAll.setEnabled(false);
+            btnRefreshAll.setEnabled(false); 
         } else {
             btnCancelOnlineUpdate.setEnabled(false);
+            jProgressBar1.setEnabled(false);
+            jProgressBar1.setIndeterminate(false); 
+            jProgressBar1.setValue(100); 
             labelOnlineUpdate.setText("");
             btnRefreshAll.setEnabled(true);
         }
@@ -291,6 +298,22 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 break;
             }
         }
+    }
+    
+    /**
+     * Get the number of certificate/keY entries (e.g. exclude trust root certs). 
+     */
+    private int getComboCertEntryCount() {
+        int count = 0 ; 
+        if (!this.caKeyStoreModel.getKeyStoreEntryMap().isEmpty()) {
+            for (int index = 0; index < this.jComboBox1.getItemCount(); index++) {
+                KeyStoreEntryWrapper selectedKSEWComboBox = (KeyStoreEntryWrapper) this.jComboBox1.getItemAt(index);
+                if (KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY.equals(selectedKSEWComboBox.getEntryType())) {
+                    ++ count; 
+                }
+            }
+        }
+        return count; 
     }
     
     /**
@@ -1296,7 +1319,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         }
 
         if (this.jComboBox1.getSelectedIndex() == -1) {
-            JOptionPane.showMessageDialog(this, "There are no certificate in the keystore", "No certificate in the keystore!", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "There are no certificates in the keystore", "No certificate in the keystore!", JOptionPane.WARNING_MESSAGE);
         } else {
             Map<String, KeyStoreEntryWrapper> updateEntries;
             if (all) {
@@ -1311,7 +1334,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             //this.invokeOnceBackgroundExec.execute(onlineUpdateTask);
             this.onlineUpdateTask = new OnlineUpdateKeyStoreEntriesSwingWorker(
                     updateEntries, caKeyStoreModel, this);
-            this.onlineUpdateTask.addPropertyChangeListener(new OnlineUpdateTaskPropertyListener());
+            this.onlineUpdateTask.addPropertyChangeListener(onlineUpdateTaskPropertyListener);
             this.onlineUpdateTask.execute();
             this.btnRefreshAll.setEnabled(false);
         }
@@ -1442,6 +1465,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         btnRefreshAll = new javax.swing.JButton();
         btnCancelOnlineUpdate = new javax.swing.JButton();
         labelOnlineUpdate = new javax.swing.JLabel();
+        jProgressBar1 = new javax.swing.JProgressBar();
 
         setMinimumSize(new java.awt.Dimension(0, 0));
 
@@ -1886,6 +1910,8 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         labelOnlineUpdate.setText("...");
         labelOnlineUpdate.setToolTipText("");
 
+        jProgressBar1.setToolTipText("Online CA update task");
+
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -1899,13 +1925,15 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                             .add(jPanel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                         .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                            .add(pnlAllDetails, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .add(layout.createSequentialGroup()
                                 .add(0, 0, Short.MAX_VALUE)
                                 .add(labelOnlineUpdate, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 104, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                .add(btnCancelOnlineUpdate, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 35, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                .add(6, 6, 6))
-                            .add(pnlAllDetails, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                                .add(jProgressBar1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 56, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                .add(btnCancelOnlineUpdate, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 23, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                .add(6, 6, 6))))
                     .add(jPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .add(13, 13, 13))
         );
@@ -1924,9 +1952,12 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                         .add(pnlAllDetails, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 332, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                            .add(btnCancelOnlineUpdate)
-                            .add(labelOnlineUpdate))
-                        .add(0, 0, Short.MAX_VALUE)))
+                            .add(labelOnlineUpdate, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .add(layout.createSequentialGroup()
+                                .add(0, 0, Short.MAX_VALUE)
+                                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                                    .add(jProgressBar1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                    .add(btnCancelOnlineUpdate, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 19, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))))))
                 .add(8, 8, 8))
         );
     }// </editor-fold>//GEN-END:initComponents
@@ -2083,20 +2114,27 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     }//GEN-LAST:event_viewCertDetailsButtonMouseEntered
 
     private void btnRefreshAllActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRefreshAllActionPerformed
-        //Custom button text
-        Object[] options = {"All", "Selected Only"};
-        int n = JOptionPane.showOptionDialog(this,
-                "Refresh all certificates or selected certificate only ",
-                "Refresh certificate status with UK CA",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.QUESTION_MESSAGE,
-                null,
-                options,
-                options[1]);
-        if(JOptionPane.YES_OPTION == n){
-            doRefreshActionAsBackgroundTask(true);
-        } else {
-            doRefreshActionAsBackgroundTask(false);
+        int keyPairCount = getComboCertEntryCount();
+        if (keyPairCount > 0) {
+            if (keyPairCount == 1) {
+                doRefreshActionAsBackgroundTask(true);
+            } else {
+                //Custom button text
+                Object[] options = {"All", "Selected Only"};
+                int n = JOptionPane.showOptionDialog(this,
+                        "Refresh all certificates or selected certificate only ",
+                        "Refresh certificate status with UK CA",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.QUESTION_MESSAGE,
+                        null,
+                        options,
+                        options[1]);
+                if (JOptionPane.YES_OPTION == n) {
+                    doRefreshActionAsBackgroundTask(true);
+                } else {
+                    doRefreshActionAsBackgroundTask(false);
+                }
+            }
         }
     }//GEN-LAST:event_btnRefreshAllActionPerformed
 
@@ -2146,6 +2184,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private javax.swing.JLabel jLabel9;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
+    private javax.swing.JProgressBar jProgressBar1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JLabel labelOnlineUpdate;
     private javax.swing.JPanel pnlAllDetails;
