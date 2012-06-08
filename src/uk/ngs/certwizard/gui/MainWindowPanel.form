@@ -31,15 +31,14 @@
                       </Group>
                       <EmptySpace type="unrelated" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="pnlAllDetails" alignment="0" max="32767" attributes="0"/>
-                          <Group type="102" alignment="0" attributes="0">
+                          <Component id="pnlAllDetails" max="32767" attributes="0"/>
+                          <Group type="102" attributes="0">
                               <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
                               <Component id="labelOnlineUpdate" min="-2" pref="111" max="-2" attributes="0"/>
                               <EmptySpace max="-2" attributes="0"/>
                               <Component id="jProgressBar1" min="-2" pref="56" max="-2" attributes="0"/>
                               <EmptySpace max="-2" attributes="0"/>
                               <Component id="btnCancelOnlineUpdate" min="-2" pref="23" max="-2" attributes="0"/>
-                              <EmptySpace min="-2" pref="6" max="-2" attributes="0"/>
                           </Group>
                       </Group>
                   </Group>
@@ -63,12 +62,13 @@
                   </Group>
                   <Group type="102" attributes="0">
                       <Component id="pnlAllDetails" min="-2" pref="332" max="-2" attributes="0"/>
-                      <EmptySpace pref="9" max="32767" attributes="0"/>
-                      <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="jProgressBar1" alignment="1" min="-2" max="-2" attributes="0"/>
-                          <Component id="btnCancelOnlineUpdate" alignment="1" min="-2" pref="19" max="-2" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="0" max="-2" attributes="0">
+                          <Component id="jProgressBar1" linkSize="20" alignment="1" max="32767" attributes="0"/>
                           <Component id="labelOnlineUpdate" alignment="1" min="-2" pref="14" max="-2" attributes="0"/>
+                          <Component id="btnCancelOnlineUpdate" linkSize="20" alignment="1" min="-2" pref="14" max="-2" attributes="0"/>
                       </Group>
+                      <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
                   </Group>
               </Group>
               <EmptySpace min="-2" pref="8" max="-2" attributes="0"/>
@@ -641,6 +641,8 @@
         <Property name="icon" type="javax.swing.Icon" editor="org.netbeans.modules.form.editors2.IconEditor">
           <Image iconType="3" name="/net/sf/portecle/images/action/exit.gif"/>
         </Property>
+        <Property name="toolTipText" type="java.lang.String" value="Cancel online update with CA"/>
+        <Property name="borderPainted" type="boolean" value="false"/>
         <Property name="enabled" type="boolean" value="false"/>
       </Properties>
       <Events>
@@ -655,7 +657,7 @@
     </Component>
     <Component class="javax.swing.JProgressBar" name="jProgressBar1">
       <Properties>
-        <Property name="toolTipText" type="java.lang.String" value="Online CA update task"/>
+        <Property name="toolTipText" type="java.lang.String" value="Online certificate update task"/>
       </Properties>
     </Component>
   </SubComponents>

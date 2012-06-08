@@ -36,12 +36,13 @@ import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
 import uk.ngs.ca.certificate.management.KeyStoreEntryWrapper;
 
 /**
- * Utility class for assisting with importing of certificates into the 
+ * Helper class for assisting users with importing of certificates into the 
  * applications managed keyStore. 
+ * The methods invoked by this class present GUI components during their processing. 
  * 
  * @author David Meredith
  */
-public class CertificateImportUtil {
+public class CertificateImportGuiHelper {
 
     /**
      * The last directory accessed by the application
@@ -59,7 +60,7 @@ public class CertificateImportUtil {
     private ClientKeyStoreCaServiceWrapper caKeyStoreModel;
     private char[] PASSPHRASE;
 
-    public CertificateImportUtil(Component parentCompoent, char[] passphrase) throws KeyStoreException {
+    public CertificateImportGuiHelper(Component parentCompoent, char[] passphrase) {
         this.parentCompoent = parentCompoent;
         this.PASSPHRASE = passphrase;
         this.caKeyStoreModel = ClientKeyStoreCaServiceWrapper.getInstance(this.PASSPHRASE);
@@ -230,6 +231,12 @@ public class CertificateImportUtil {
                 KeyStoreEntryWrapper newImport = this.caKeyStoreModel.createKSEntryWrapperInstanceFromEntry(postImportAliases.get(i));
                 this.caKeyStoreModel.getKeyStoreEntryMap().put(postImportAliases.get(i), newImport);
             }
+        }
+        
+        KeyStoreEntryWrapper kew = caKeyStoreModel.getKeyStoreEntryMap().get(newHeadCertImportAlias); 
+        if (caKeyStoreModel.onlineUpdateKeyStoreEntry(kew)) {
+            // we don't need to reStore (no online state is saved to keystore file)
+            //caKeyStoreModel.getClientKeyStore().reStore(); 
         }
 
         return newHeadCertImportAlias;

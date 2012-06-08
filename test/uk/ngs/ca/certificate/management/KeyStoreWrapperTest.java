@@ -8,7 +8,6 @@ package uk.ngs.ca.certificate.management;
 import uk.ngs.ca.certificate.OnLineUserCertificateRequest;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import uk.ngs.ca.common.ClientKeyStore;
 import uk.ngs.ca.tools.property.SysProperty;
 import java.util.Iterator;
 import java.util.List;

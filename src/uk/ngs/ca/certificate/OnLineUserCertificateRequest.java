@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 import uk.ngs.ca.certificate.client.CSRRequest;
 import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
 import uk.ngs.ca.certificate.management.KeyStoreEntryWrapper;
-import uk.ngs.ca.common.ClientKeyStore;
+import uk.ngs.ca.certificate.management.ClientKeyStore;
 import uk.ngs.ca.common.HashUtil;
 
 /**
@@ -51,7 +51,7 @@ public class OnLineUserCertificateRequest /*extends Observable*/{
     public String doOnLineCsrUpdateKeyStore() {
         if (getError().equals("")) {
             // caKeyStore.pkcs12
-            ClientKeyStore clientKeyStore = ClientKeyStore.getClientkeyStore(this.PASSPHRASE);
+            ClientKeyStore clientKeyStore = ClientKeyStoreCaServiceWrapper.getInstance(this.PASSPHRASE).getClientKeyStore(); 
             // create new keypair entry under new meaningless alias and re-save file.
             // TODO: pass-through the info provided by the user rather than
             // creating a new dummy CSR certificate. 

@@ -35,8 +35,9 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
+import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
 import uk.ngs.ca.common.ClientHostName;
-import uk.ngs.ca.common.ClientKeyStore;
+import uk.ngs.ca.certificate.management.ClientKeyStore;
 import uk.ngs.ca.common.HashUtil;
 import uk.ngs.ca.common.SystemStatus;
 import uk.ngs.ca.tools.property.SysProperty;
@@ -59,7 +60,7 @@ public class OnLineUserCertificateReKey {
     private String newCsrAlias = null;
 
     public OnLineUserCertificateReKey(char[] passphrase, String newCsrAlias, X509Certificate renewalCert) {
-        this.clientKeyStore = ClientKeyStore.getClientkeyStore(passphrase);
+        this.clientKeyStore = ClientKeyStoreCaServiceWrapper.getInstance(passphrase).getClientKeyStore(); 
         this.newCsrAlias = newCsrAlias;
         this.renewalCert = renewalCert;
     }

@@ -23,7 +23,6 @@ import net.sf.portecle.DGetAlias;
 import net.sf.portecle.DViewCertificate;
 import net.sf.portecle.FPortecle;
 import net.sf.portecle.crypto.X509CertUtil;
-import net.sf.portecle.gui.LastDir;
 import net.sf.portecle.gui.SwingHelper;
 import net.sf.portecle.gui.error.DThrowable;
 import net.sf.portecle.gui.password.DGetNewPassword;
@@ -33,11 +32,8 @@ import org.globus.common.CoGProperties;
 import org.globus.gsi.bc.BouncyCastleOpenSSLKey;
 import org.globus.util.PEMUtils;
 import org.globus.util.Util;
-import uk.ngs.ca.certificate.OnLineUserCertificateReKey;
 import uk.ngs.ca.certificate.client.CAMotd;
-import uk.ngs.ca.certificate.client.CertificateDownload;
 import uk.ngs.ca.certificate.client.PingService;
-import uk.ngs.ca.certificate.client.RevokeRequest;
 import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
 import uk.ngs.ca.certificate.management.KeyStoreEntryWrapper;
 import uk.ngs.ca.certificate.management.KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE;
@@ -45,8 +41,9 @@ import uk.ngs.ca.common.GuiExecutor;
 import uk.ngs.ca.common.SystemStatus;
 import uk.ngs.ca.task.OnlineUpdateKeyStoreEntriesSwingWorker;
 import uk.ngs.ca.tools.property.SysProperty;
-import uk.ngs.ca.util.CertificateExportUtil;
-import uk.ngs.ca.util.CertificateImportUtil;
+import uk.ngs.ca.util.CertificateExportGuiHelper;
+import uk.ngs.ca.util.CertificateImportGuiHelper;
+import uk.ngs.ca.util.CertificateRenewRevokeGuiHelper;
 
 /**
  * GUI for displaying the keyStore entries in the user's
@@ -100,13 +97,8 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         initComponents();
         loadImages();
 
-        try {
-            this.caKeyStoreModel = ClientKeyStoreCaServiceWrapper.getInstance(this.PASSPHRASE);
-        } catch (KeyStoreException ex) {
-            Logger.getLogger(MainWindowPanel.class.getName()).log(Level.SEVERE, null, ex);
-            // TODO still need to sort out exceptions and show an error dialog here with the problem
-        }
-
+        this.caKeyStoreModel = ClientKeyStoreCaServiceWrapper.getInstance(this.PASSPHRASE);
+        
         this.jComboBox1.setRenderer(new ComboBoxRenderer());
 
         // populate the keystore by reading local file  
@@ -278,6 +270,8 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
      * Set the selected combo item according to the given alias. 
      */
     private void setComboSelectedItemByAlias(String alias) {
+        // first ensure we have all the model entries in the combo 
+        this.reloadComboFromModel(); 
         for (int index = 0; index < this.jComboBox1.getItemCount(); index++) {
             KeyStoreEntryWrapper selectedKSEWComboBox = (KeyStoreEntryWrapper) this.jComboBox1.getItemAt(index);
             if (alias.equals(selectedKSEWComboBox.getAlias())) {
@@ -575,7 +569,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     /**
      * Called by the Renew button. 
      */
-    private void doRenewAction()  {
+    private void doRenewAction() {
         if (this.confirmBackgroundTaskRunning()) {
             return;
         }
@@ -589,102 +583,14 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         }
         // Can only renew key_pairs types issued by our CA
         KeyStoreEntryWrapper selectedKSEW = (KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem();
-        if (selectedKSEW != null
-                && KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY.equals(selectedKSEW.getEntryType())
-                && selectedKSEW.getServerCertificateCSRInfo() != null
-                && "VALID".equals(((KeyStoreEntryWrapper) selectedKSEW).getServerCertificateCSRInfo().getStatus())) {
-
-            int ok = JOptionPane.showConfirmDialog(this, "Are you sure you want to renew the selected certificate?", "Renew Certificate", JOptionPane.OK_CANCEL_OPTION);
-            if (JOptionPane.OK_OPTION == ok) {
-
-                JOptionPane.showMessageDialog(this, "You will now be prompted to enter a new unique alias\n"
-                        + "for your certificate to be renewed.", "Certificate Renewal", JOptionPane.INFORMATION_MESSAGE);
-                //let the user alter the alias
-                //KeyStore keyStore = this.keyStoreCaWrapper.getClientKeyStore().getKeyStoreCopy();
-                String newCsrRenewalAlias = selectedKSEW.getAlias();
-
-                try {
-                    newCsrRenewalAlias = getNewEntryAliasHelper(newCsrRenewalAlias, "FPortecle.KeyPairEntryAlias.Title", false);
-
-                    if (newCsrRenewalAlias == null) {
-                        WaitDialog.hideDialog(); //user hit cancel
-                        return;
-                    }
-
-                    // Check alias entry does not already exist in the keystore
-                    //if (keyStore.containsAlias(sAlias)) {
-                    if (this.caKeyStoreModel.getClientKeyStore().containsAlias(newCsrRenewalAlias)) {
-                        JOptionPane.showMessageDialog(
-                                this,
-                                MessageFormat.format("The keystore already contains an entry with the alias " + newCsrRenewalAlias + "\n"
-                                + "Please enter a unique alias", newCsrRenewalAlias),
-                                RB.getString("FPortecle.RenameEntry.Title"), JOptionPane.ERROR_MESSAGE);
-                        WaitDialog.hideDialog();
-                        return;
-
-                    }
-
-                } catch (KeyStoreException ex) {
-                    DThrowable.showAndWait(null, null, ex);
-                }
-
-                // Submit the renewal request saving the new csr renewal under the 
-                // new alias in the keystore. The existing cert that is selected 
-                // for renewal is left untouched.  
-                WaitDialog.showDialog("Please wait for renewal to complete");
-                String cert_id = selectedKSEW.getServerCertificateCSRInfo().getId();
-                CertificateDownload certDownload = new CertificateDownload(cert_id);
-                OnLineUserCertificateReKey rekey = new OnLineUserCertificateReKey(PASSPHRASE, newCsrRenewalAlias, certDownload.getCertificate());
-                boolean isReadyForReKey = rekey.isValidReKey();
-
-                if (isReadyForReKey) {
-                    // Submit renewal here (does not reStore keyStore but does add a new entry for CSR) 
-                    boolean submittedOk = rekey.doPosts(); 
-                    WaitDialog.hideDialog();
-                    if (submittedOk) {
-                        JOptionPane.showMessageDialog(this, "The renewal request has been submitted", "Renewal request successful", JOptionPane.INFORMATION_MESSAGE);
-
-                        try {
-                            // Persist the keystore to file 
-                            this.caKeyStoreModel.getClientKeyStore().reStore();                       
-                            
-                            // Add a new keystore entry to the model (don't
-                            // reload all the entries from model as exsisting online
-                            // state of the different entries will be lost) 
-                            KeyStoreEntryWrapper newCsrEntry = this.caKeyStoreModel.createKSEntryWrapperInstanceFromEntry(newCsrRenewalAlias);
-                            this.caKeyStoreModel.getKeyStoreEntryMap().put(newCsrRenewalAlias, newCsrEntry);                          
-                            this.reloadComboFromModel();
-                            this.setComboSelectedItemByAlias(newCsrRenewalAlias);                         
-                                           
-                            if (caKeyStoreModel.onlineUpdateKeyStoreEntry(newCsrEntry)) {
-                                // Don't need to reStore (no online state is saved to file)
-                                //caKeyStoreModel.getClientKeyStore().reStore(); 
-                            }        
-                        } catch(KeyStoreException ex){
-                            DThrowable.showAndWait(null, "Problem Saving Renewal Certificate", ex);
-                        }
-
-                    } else {
-                        String messageTitle = rekey.getErrorMessage();
-                        String moreMessage = rekey.getDetailErrorMessage();
-                        JOptionPane.showMessageDialog(this, moreMessage, messageTitle, JOptionPane.ERROR_MESSAGE);
-                    }
-                    this.updateKeyStoreGuiFromModel();
-                    
-                } else {
-                    WaitDialog.hideDialog();
-                    JOptionPane.showMessageDialog(this, "The selected certificate is not valid to renew", "wrong certificate", JOptionPane.WARNING_MESSAGE);
-                }
-            }
-        } else {
-            JOptionPane.showMessageDialog(this, "Only VALID certificates issued by the UK CA can be renewed",
-                    "No suitable certificate selected", JOptionPane.WARNING_MESSAGE);
-        }
-
+        CertificateRenewRevokeGuiHelper renewUtil = new CertificateRenewRevokeGuiHelper(this, PASSPHRASE);
+        String newCsrRenewalAlias = renewUtil.doRenew(selectedKSEW);  
+        if (newCsrRenewalAlias != null)  this.setComboSelectedItemByAlias(newCsrRenewalAlias);
+        this.updateKeyStoreGuiFromModel();
     }
 
     /**
-     * Called by the Revoke button. 
+     * Called by the Revoke button.  
      */
     private void doRevokeAction() {
         if (this.confirmBackgroundTaskRunning()) {
@@ -699,45 +605,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         }
         // Can only revoke key_pairs types issued by our CA
         KeyStoreEntryWrapper selectedKSEW = (KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem();
-        if (selectedKSEW != null
-                && KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY.equals(selectedKSEW.getEntryType())
-                && selectedKSEW.getServerCertificateCSRInfo() != null
-                && "VALID".equals(((KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem()).getServerCertificateCSRInfo().getStatus())) {
-
-            int ok = JOptionPane.showConfirmDialog(this, "Are you sure you want to revoke the selected certificate?", "Revoke Certificate", JOptionPane.OK_CANCEL_OPTION);
-            if (JOptionPane.OK_OPTION == ok) {
-                String reason = "todo"; // TODO: use an inputDialog to get the reason as below
-                //JOptionPane.showInputDialog(this, "message", "reason for revokation", JO)
-                WaitDialog.showDialog("Revoke");
-                long cert_id = new Long(selectedKSEW.getServerCertificateCSRInfo().getId()).longValue();
-                RevokeRequest revokeRequest = new RevokeRequest(
-                        this.caKeyStoreModel.getClientKeyStore().getPrivateKey(selectedKSEW.getAlias()),
-                        cert_id, reason);
-                // do the revokation with the CA and block (note, this has 
-                // no interaction with the keystore) 
-                boolean revoked = revokeRequest.doPosts();
-
-                // Just reload the selected entry rather than refreshing all 
-                try {
-                    if (caKeyStoreModel.onlineUpdateKeyStoreEntry(selectedKSEW)) {
-                        // Don't need to reStore (no online state is saved to file)
-                        //caKeyStoreModel.getClientKeyStore().reStore(); 
-                    }
-                } catch (KeyStoreException ex) {
-                    DThrowable.showAndWait(null, "Problem Revoking Certificate", ex);
-                }
-                this.updateKeyStoreGuiFromModel();
-
-                WaitDialog.hideDialog();
-
-                if (revoked) {
-                    JOptionPane.showMessageDialog(this, revokeRequest.getMessage(), "Certificate revoked", JOptionPane.INFORMATION_MESSAGE);
-                } 
-            }
-        } else {
-            JOptionPane.showMessageDialog(this, "Only VALID certificates issued by the UK CA can be revoked",
-                    "No suitable certificate selected", JOptionPane.WARNING_MESSAGE);
-        }
+        CertificateRenewRevokeGuiHelper util = new CertificateRenewRevokeGuiHelper(this, PASSPHRASE); 
+        util.doRevoke(selectedKSEW); 
+        this.updateKeyStoreGuiFromModel();
     }
     
     /**
@@ -752,23 +622,11 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             return;
         }
         try {
-            CertificateImportUtil util = new CertificateImportUtil(this, PASSPHRASE);
+            CertificateImportGuiHelper util = new CertificateImportGuiHelper(this, PASSPHRASE);
             String newHeadCertImportAlias = util.doImportCertificateAction();
             if(newHeadCertImportAlias != null){
-                // Update the status of the newly imported head cert. 
-                this.reloadComboFromModel();
-                this.setComboSelectedItemByAlias(newHeadCertImportAlias);
-
-                KeyStoreEntryWrapper kew = (KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem();
-                if (caKeyStoreModel.onlineUpdateKeyStoreEntry(kew)) {
-                    // we don't need to reStore (no online state is saved to keystore file)
-                    //caKeyStoreModel.getClientKeyStore().reStore(); 
-                }
-                // don't want to reload keystore because any online state (CertificateCSRInfo) 
-                // for the existing keyStoreEntryWrapperS will be lost. 
-                //this.caKeyStoreModel.loadFromFile(); 
+                this.setComboSelectedItemByAlias(newHeadCertImportAlias);                
             }
-            
         } catch (Exception ex) {
             DThrowable.showAndWait(null, "Problem Importing Certificate", ex);
         }
@@ -976,7 +834,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         // Get the entry
         String sAlias = selectedKSEW.getAlias();
         try {
-            CertificateExportUtil certExportUtil = new CertificateExportUtil(this, PASSPHRASE);
+            CertificateExportGuiHelper certExportUtil = new CertificateExportGuiHelper(this, PASSPHRASE);
             return certExportUtil.doExportAction(sAlias);
         } catch (KeyStoreException ex) {
             DThrowable.showAndWait(null, null, ex);
@@ -1750,6 +1608,8 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         );
 
         btnCancelOnlineUpdate.setIcon(new javax.swing.ImageIcon(getClass().getResource("/net/sf/portecle/images/action/exit.gif"))); // NOI18N
+        btnCancelOnlineUpdate.setToolTipText("Cancel online update with CA");
+        btnCancelOnlineUpdate.setBorderPainted(false);
         btnCancelOnlineUpdate.setEnabled(false);
         btnCancelOnlineUpdate.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -1760,7 +1620,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         labelOnlineUpdate.setText("...");
         labelOnlineUpdate.setToolTipText("");
 
-        jProgressBar1.setToolTipText("Online CA update task");
+        jProgressBar1.setToolTipText("Online certificate update task");
 
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(this);
         this.setLayout(layout);
@@ -1782,8 +1642,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                                 .add(jProgressBar1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 56, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                .add(btnCancelOnlineUpdate, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 23, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                .add(6, 6, 6))))
+                                .add(btnCancelOnlineUpdate, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 23, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))))
                     .add(jPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .add(13, 13, 13))
         );
@@ -1800,13 +1659,17 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                         .add(jScrollPane1))
                     .add(layout.createSequentialGroup()
                         .add(pnlAllDetails, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 332, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 8, Short.MAX_VALUE)
-                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                            .add(org.jdesktop.layout.GroupLayout.TRAILING, jProgressBar1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                            .add(org.jdesktop.layout.GroupLayout.TRAILING, btnCancelOnlineUpdate, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 19, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                            .add(org.jdesktop.layout.GroupLayout.TRAILING, labelOnlineUpdate, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 14, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))))
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
+                            .add(org.jdesktop.layout.GroupLayout.TRAILING, jProgressBar1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .add(org.jdesktop.layout.GroupLayout.TRAILING, labelOnlineUpdate, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 14, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                            .add(org.jdesktop.layout.GroupLayout.TRAILING, btnCancelOnlineUpdate, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 14, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                        .add(0, 0, Short.MAX_VALUE)))
                 .add(8, 8, 8))
         );
+
+        layout.linkSize(new java.awt.Component[] {btnCancelOnlineUpdate, jProgressBar1}, org.jdesktop.layout.GroupLayout.VERTICAL);
+
     }// </editor-fold>//GEN-END:initComponents
 
     private void jComboBox1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBox1ActionPerformed

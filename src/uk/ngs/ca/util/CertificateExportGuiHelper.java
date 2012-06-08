@@ -28,12 +28,13 @@ import org.bouncycastle.openssl.PEMWriter;
 import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
 
 /**
- * Utility class for assisting with exporting of certificates from the 
+ * Helper class for assisting with exporting of certificates from the 
  * applications managed keyStore. 
+ * The methods invoked by this class present GUI components during their processing. 
  * 
  * @author David Meredith
  */
-public class CertificateExportUtil {
+public class CertificateExportGuiHelper {
 
     /**
      * The last directory accessed by the application
@@ -51,7 +52,7 @@ public class CertificateExportUtil {
     private ClientKeyStoreCaServiceWrapper caKeyStoreModel = null;
     private Component parentCompoent;
 
-    public CertificateExportUtil(Component parentCompoent, char[] passphrase) throws KeyStoreException {
+    public CertificateExportGuiHelper(Component parentCompoent, char[] passphrase) throws KeyStoreException {
         this.PASSPHRASE = passphrase;
         this.parentCompoent = parentCompoent;
         this.caKeyStoreModel = ClientKeyStoreCaServiceWrapper.getInstance(this.PASSPHRASE);

@@ -17,7 +17,8 @@ import java.awt.event.ComponentListener;
 import java.io.IOException;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import uk.ngs.ca.common.ClientKeyStore;
+import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
+import uk.ngs.ca.certificate.management.ClientKeyStore;
 import uk.ngs.ca.common.LocalBackup;
 import uk.ngs.ca.common.SystemStatus;
 import uk.ngs.ca.tools.property.SysProperty;
@@ -217,16 +218,16 @@ public class PasswordPanel extends javax.swing.JPanel  {
         
         char[] passphrase = txtPassword.getPassword();
         //boolean isValid = this.sysStatus.isValidPassphrase(passphrase);
-        try {
+        //try {
             // try to load keyStore, if no excpetion thrown that we can assume 
             // it loaded ok.
-            ClientKeyStore.getClientkeyStore(passphrase);
+            //ClientKeyStoreCaServiceWrapper.getInstance(passphrase).getClientKeyStore(); 
 
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, ex.getCause().getMessage(), "Wrong Password", JOptionPane.ERROR_MESSAGE);
-            txtPassword.setText("");
-            return; 
-        }
+        //} catch (Exception ex) {
+        //    JOptionPane.showMessageDialog(this, ex.getCause().getMessage(), "Wrong Password", JOptionPane.ERROR_MESSAGE);
+        //    txtPassword.setText("");
+        //    return; 
+        //}
 
         String _pswdProperty = SysProperty.getValue("uk.ngs.ca.passphrase.property");
         String _pswd = new String(this.txtPassword.getPassword());

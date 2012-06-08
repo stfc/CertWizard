@@ -91,7 +91,7 @@ import java.util.Date;
 
 import java.util.Enumeration;
 
-import uk.ngs.ca.common.ClientKeyStore;
+import uk.ngs.ca.certificate.management.ClientKeyStore;
 //import uk.ngs.ca.common.ClientCertKeyStore;
 
 
