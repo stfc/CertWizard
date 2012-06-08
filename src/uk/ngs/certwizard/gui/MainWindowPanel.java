@@ -757,6 +757,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 try {
                     // delete calls reStore 
                     this.caKeyStoreModel.deleteEntry(((KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem()).getAlias());
+                    this.caKeyStoreModel.getClientKeyStore().reStore();
                     this.updateKeyStoreGuiFromModel();
                 } catch (KeyStoreException ex) {
                     Logger.getLogger(MainWindowPanel.class.getName()).log(Level.SEVERE, null, ex);

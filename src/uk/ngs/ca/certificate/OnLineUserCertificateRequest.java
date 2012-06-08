@@ -10,9 +10,9 @@ import java.security.PublicKey;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import uk.ngs.ca.certificate.client.CSRRequest;
+import uk.ngs.ca.certificate.management.ClientKeyStore;
 import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
 import uk.ngs.ca.certificate.management.KeyStoreEntryWrapper;
-import uk.ngs.ca.certificate.management.ClientKeyStore;
 import uk.ngs.ca.common.HashUtil;
 
 /**
@@ -44,7 +44,7 @@ public class OnLineUserCertificateRequest /*extends Observable*/{
 
     /**
      * Calls CA server to request certificate and creates a new keyStore entry. 
-     * The keyStore IS reStored. 
+     * Important: the keyStore is NOT reStored to file. 
      * 
      * @return newly created keyStore entry alias if successful, otherwise null
      */
@@ -56,7 +56,10 @@ public class OnLineUserCertificateRequest /*extends Observable*/{
             // TODO: pass-through the info provided by the user rather than
             // creating a new dummy CSR certificate. 
             this.Alias = clientKeyStore.createNewKeyPair(this.Alias, getOU(), getL(), this.Name);
-            
+            if(this.Alias == null){
+                // a problem must have occurred
+                return null; 
+            }
             try{ 
                // Add a new keystore entry rather than reloading all the entries!
                ClientKeyStoreCaServiceWrapper caKeyStoreModel = ClientKeyStoreCaServiceWrapper.getInstance(PASSPHRASE); 

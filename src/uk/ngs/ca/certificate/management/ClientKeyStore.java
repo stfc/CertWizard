@@ -25,10 +25,12 @@ import uk.ngs.ca.tools.property.SysProperty;
  * Access to the managed keyStore object is guarded by an instance of <code>this</code>. 
  * <p>
  * Visibility of <code>getInstance()</code> is limited to package-protected 
- * so that retrieval can be managed by other higher level classes in this package
- * that control access to the managed keyStore. 
+ * so that retrieval can be managed by other higher level classes in this package.
+ * <p>
+ * Importantly the keyStore is <b>NEVER reStored to disk</b> by any of the methods
+ * which is delegated to the calling client with manual invocations of {@link #reStore() }. 
  * 
- * @todo DM: Lots, more refactoring is needed, exception swallowing to fix 
+ * @todo DM: Lots, more refactoring is needed, especially all the exception swallowing to fix 
  * @author xw75 (Xiao Wang) 
  * @author David Meredith (refactoring - still lots to fix)
  */
@@ -89,7 +91,7 @@ public final class ClientKeyStore {
     
 
     /**
-     * Change the keystore password
+     * Change the keyStore password and persist to file. 
      * @param passphrase
      */
     public synchronized void reStorePassword(char[] passphrase) {
@@ -125,7 +127,6 @@ public final class ClientKeyStore {
                     ks.load(fis, this.PASSPHRASE);
                 } else {
                     ks.load(null, null);
-                    //reStore(); // create empty keystore
                 }
                 return ks; 
             } finally {
@@ -250,9 +251,11 @@ public final class ClientKeyStore {
     }
 
     /**
-     * Create a new key pair in the keyStore file and save to file.
+     * Create a new key pair in the keyStore file.
+     * Important: the <b>keyStore is NOT reStored to file</b>. 
+     * 
      * @param alias a suggested alias (can be null)
-     * @return alias
+     * @return alias of new keyStore entry or null if a problem occurred. 
      */
     public synchronized String createNewKeyPair(String alias, String ou, String l, String cn) {
         try {
@@ -265,7 +268,6 @@ public final class ClientKeyStore {
                alias = new Long(new Date().getTime()).toString();
             }
             this.keyStore.setKeyEntry(alias, keyPair.getPrivate(), PASSPHRASE, certs);
-            reStore();
             return alias;
         } catch (Exception ep) {
             ep.printStackTrace();
@@ -283,7 +285,7 @@ public final class ClientKeyStore {
     }
 
 
-    public synchronized boolean addNewKey(PrivateKey privateKey, X509Certificate cert) {
+    /*public synchronized boolean addNewKey(PrivateKey privateKey, X509Certificate cert) {
         if ((privateKey == null) || (cert == null)) {
             return false;
         }
@@ -302,7 +304,7 @@ public final class ClientKeyStore {
             ep.printStackTrace();
             return false;
         }
-    }
+    }*/
 
     public synchronized X509Certificate getX509Certificate(String alias) {
         try {
@@ -334,7 +336,7 @@ public final class ClientKeyStore {
     }
 
 
-    public synchronized boolean removeKey(PrivateKey privateKey) {
+    /*public synchronized boolean removeKey(PrivateKey privateKey) {
         boolean isSuccess = true;
         try {
             if (isExistPrivateKey(privateKey)) {
@@ -354,7 +356,7 @@ public final class ClientKeyStore {
         } finally {
             return isSuccess;
         }
-    }
+    }*/
     
     
     /**

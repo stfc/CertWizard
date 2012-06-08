@@ -16,7 +16,14 @@ import uk.ngs.ca.common.BackgroundTask;
 import uk.ngs.certwizard.gui.MainWindowPanel;
 
 /**
- *
+ * For all the entries in the given {@link KeyStoreEntryWrapper} map, perform 
+ * an online status update against the CA. 
+ * The task runs in a background worker thread while the <tt>onCompletion()</tt> and <tt>onProgress()</tt> 
+ * methods are executed in the AWT event dispatch thread to perform GUI updates. 
+ * This class provides similar functionality as {@link OnlineUpdateKeyStoreEntriesSwingWorker}
+ * but is compatible with JDK1.5. 
+ * 
+ * @deprecated use {@link OnlineUpdateKeyStoreEntriesSwingWorker} instead (requires jdk1.6). 
  * @author David Meredith
  */
 public class OnlineUpdateKeyStoreEntries extends BackgroundTask<Void> {
@@ -52,7 +59,7 @@ public class OnlineUpdateKeyStoreEntries extends BackgroundTask<Void> {
                 if (isCancelled()) {
                     break;
                 }
-                Thread.sleep(2000); // to test 
+                //Thread.sleep(2000); // to test 
                 if (caKeyStoreModel.onlineUpdateKeyStoreEntry(keyStoreEntryWrapper)) {
                     updated = true;
                 }

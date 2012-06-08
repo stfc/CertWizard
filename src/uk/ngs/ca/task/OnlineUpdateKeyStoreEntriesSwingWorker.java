@@ -17,10 +17,13 @@ import uk.ngs.ca.certificate.management.KeyStoreEntryWrapper;
 import uk.ngs.certwizard.gui.MainWindowPanel;
 
 /**
- * For all the entries in the given <tt>ClientKeyStoreCaServiceWrapper</tt> 
- * perform an online status update against the CA. 
+ * For all the entries in the given {@link KeyStoreEntryWrapper} map, perform 
+ * an online status update against the CA. 
  * The task runs in a background worker thread while the <tt>done()</tt> and <tt>process()</tt> 
  * methods are executed in the AWT event dispatch thread to perform GUI updates. 
+ * <p>
+ * If any certificate entries are updated, then the application's managed keyStore 
+ * is saved to file. 
  * 
  * @author David Meredith 
  */

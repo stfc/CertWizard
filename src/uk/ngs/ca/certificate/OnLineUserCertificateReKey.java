@@ -35,9 +35,9 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
+import uk.ngs.ca.certificate.management.ClientKeyStore;
 import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
 import uk.ngs.ca.common.ClientHostName;
-import uk.ngs.ca.certificate.management.ClientKeyStore;
 import uk.ngs.ca.common.HashUtil;
 import uk.ngs.ca.common.SystemStatus;
 import uk.ngs.ca.tools.property.SysProperty;
@@ -488,6 +488,7 @@ public class OnLineUserCertificateReKey {
                 String L = _retrieveDataFromDN(dn, "L=");
                 String CN = _retrieveDataFromDN(dn, "CN=");
                 String ali = this.clientKeyStore.createNewKeyPair(newCsrAlias, OU, L, CN);
+                //this.clientKeyStore.reStore();
                 PublicKey _publicKey = this.clientKeyStore.getPublicKey(ali);
                 PrivateKey _privateKey = this.clientKeyStore.getPrivateKey(ali);
                 this.PKCS10REQUEST = new PKCS10CertificationRequest(this.SIG_ALG, new X500Principal(getDN().toString()), _publicKey, new DERSet(), _privateKey);

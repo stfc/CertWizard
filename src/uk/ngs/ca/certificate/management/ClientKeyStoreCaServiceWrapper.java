@@ -35,9 +35,12 @@ import uk.ngs.ca.tools.property.SysProperty;
  * <p>
  * Provides methods for checking the keyStore entries against the CA server 
  * for their current status according to the CA.
+ * Importantly the keyStore is <b>NEVER reStored to disk</b> by any of the methods
+ * which has to be called manually by the client via {@link ClientKeyStore}. 
+ * 
  *
  * @author Xiao Wang
- * @author David Meredith (modifications - lots still to refactor)
+ * @author David Meredith (modifications - more refactoring still needed)
  */
 public class ClientKeyStoreCaServiceWrapper {
 
@@ -218,7 +221,7 @@ public class ClientKeyStoreCaServiceWrapper {
     /**
      * Delete the key store entry identified by the given alias from the
      * KeyStore and from <code>this.KeyStoreEntryMap</code>. 
-     * Important: does reStore (persist) the file.
+     * Important: <b>does NOT reStore (persist) the file</b>.
      * @param alias
      * @throws KeyStoreException
      */
@@ -227,7 +230,7 @@ public class ClientKeyStoreCaServiceWrapper {
         // to call loadKeyStoreWithOnlineEntryUpdate(); 
         this.keyStoreEntryMap.remove(alias);       
         this.clientKeyStore.deleteEntry(alias);
-        this.clientKeyStore.reStore();
+        //this.clientKeyStore.reStore();
     }
 
 

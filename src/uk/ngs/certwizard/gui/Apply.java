@@ -342,11 +342,11 @@ public class Apply extends javax.swing.JDialog {
             complete = false;
             text = text + "\nEnter an alias";
         }
+        ClientKeyStoreCaServiceWrapper model = ClientKeyStoreCaServiceWrapper.getInstance(passphrase);
 
         // test to see if alias is already present
         try {
-            if (ClientKeyStoreCaServiceWrapper.getInstance(passphrase).getClientKeyStore().containsAlias(
-                    this.aliasTextField.getText())) {
+            if (model.getClientKeyStore().containsAlias(this.aliasTextField.getText())) {
                 complete = false;
                 text = text + "\nAlias already exits - please enter another alias";
             }
@@ -402,10 +402,11 @@ public class Apply extends javax.swing.JDialog {
                             + "\nPlease also ensure that it is in the form of name.surname@example.com or similar"
                             + "\nPlease try again.", messageTitle, JOptionPane.INFORMATION_MESSAGE);
                 }else{
-                    // creates a new keypair for the CSR and reStores the keystore file 
-                    this.storedAlias = onLineCertRequest.doOnLineCsrUpdateKeyStore(); 
-                              
+                    // creates a new keypair for the CSR (does not reStore the keystore file) 
+                    this.storedAlias = onLineCertRequest.doOnLineCsrUpdateKeyStore();
+                    
                     if (this.storedAlias != null) {
+                        model.getClientKeyStore().reStore(); 
                         messageTitle = "Request Successful";
                         JOptionPane.showMessageDialog(this, onLineCertRequest.getMessage(), messageTitle, JOptionPane.INFORMATION_MESSAGE);
                         
@@ -413,8 +414,9 @@ public class Apply extends javax.swing.JDialog {
                         messageTitle = "Request UnSuccessful";
                         try {
                             //need to clear up the CSR if created in the keyStore
-                            if(ClientKeyStoreCaServiceWrapper.getInstance(passphrase).getClientKeyStore().containsAlias(this.storedAlias)){
-                               ClientKeyStoreCaServiceWrapper.getInstance(passphrase).deleteEntry(this.storedAlias);
+                            if(model.getClientKeyStore().containsAlias(this.storedAlias)){
+                               model.deleteEntry(this.storedAlias);
+                               model.getClientKeyStore().reStore();
                             }
                         } catch (KeyStoreException ex) {
                             Logger.getLogger(MainWindowPanel.class.getName()).log(Level.SEVERE, null, ex);
