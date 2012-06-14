@@ -34,6 +34,7 @@ import org.bouncycastle.openssl.PEMReader;
 import org.bouncycastle.openssl.PasswordFinder;
 import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
 import uk.ngs.ca.certificate.management.KeyStoreEntryWrapper;
+import uk.ngs.ca.common.SystemStatus;
 
 /**
  * Helper class for assisting users with importing of certificates into the 
@@ -233,10 +234,12 @@ public class CertificateImportGuiHelper {
             }
         }
         
-        KeyStoreEntryWrapper kew = caKeyStoreModel.getKeyStoreEntryMap().get(newHeadCertImportAlias); 
-        if (caKeyStoreModel.onlineUpdateKeyStoreEntry(kew)) {
-            // we don't need to reStore (no online state is saved to keystore file)
-            //caKeyStoreModel.getClientKeyStore().reStore(); 
+        if (SystemStatus.getInstance().getIsOnline()) {
+            KeyStoreEntryWrapper kew = caKeyStoreModel.getKeyStoreEntryMap().get(newHeadCertImportAlias);
+            if (caKeyStoreModel.onlineUpdateKeyStoreEntry(kew)) {
+                // we don't need to reStore (no online state is saved to keystore file)
+                //caKeyStoreModel.getClientKeyStore().reStore(); 
+            }
         }
 
         return newHeadCertImportAlias;

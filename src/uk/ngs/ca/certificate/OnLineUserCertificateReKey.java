@@ -7,6 +7,7 @@ package uk.ngs.ca.certificate;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.math.BigInteger;
+import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.CertificateExpiredException;
@@ -85,13 +86,17 @@ public class OnLineUserCertificateReKey {
             } else {
                 return true;
             }
-        } catch (CertificateExpiredException ce) {
+        } catch(KeyStoreException ex){
+            this.ERRORMESSAGE = "A problem has occurred reading the keyStore";
+            return false; 
+        } 
+        catch (CertificateExpiredException ce) {
             ce.printStackTrace();
-            this.ERRORMESSAGE = "selected certificate has expired.";
+            this.ERRORMESSAGE = "Selected certificate has expired.";
             return false;
         } catch (CertificateNotYetValidException cve) {
             cve.printStackTrace();
-            this.ERRORMESSAGE = "selected certificate is not a valid certificate.";
+            this.ERRORMESSAGE = "Selected certificate is not a valid certificate.";
             return false;
         }
     }

@@ -37,8 +37,8 @@
                               <Component id="labelOnlineUpdate" min="-2" pref="111" max="-2" attributes="0"/>
                               <EmptySpace max="-2" attributes="0"/>
                               <Component id="jProgressBar1" min="-2" pref="56" max="-2" attributes="0"/>
-                              <EmptySpace max="-2" attributes="0"/>
-                              <Component id="btnCancelOnlineUpdate" min="-2" pref="23" max="-2" attributes="0"/>
+                              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                              <Component id="btnCancelOnlineUpdate" min="-2" pref="19" max="-2" attributes="0"/>
                           </Group>
                       </Group>
                   </Group>
@@ -179,7 +179,11 @@
                               </Group>
                               <Group type="102" attributes="0">
                                   <Component id="certificateTypeLabel" min="-2" max="-2" attributes="1"/>
-                                  <EmptySpace max="32767" attributes="0"/>
+                                  <EmptySpace min="-2" pref="67" max="-2" attributes="0"/>
+                                  <Component id="jLabel7" min="-2" max="-2" attributes="0"/>
+                                  <EmptySpace type="separate" max="-2" attributes="0"/>
+                                  <Component id="labelSerialNumber" max="32767" attributes="0"/>
+                                  <EmptySpace type="separate" max="-2" attributes="0"/>
                                   <Component id="viewCertDetailsButton" min="-2" pref="32" max="-2" attributes="1"/>
                               </Group>
                               <Component id="caCertStatusTextField" alignment="1" max="32767" attributes="1"/>
@@ -240,6 +244,8 @@
                       <Component id="jLabel10" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="certificateTypeLabel" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="viewCertDetailsButton" linkSize="16" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="jLabel7" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="labelSerialNumber" alignment="3" min="-2" max="-2" attributes="0"/>
                   </Group>
                   <EmptySpace type="unrelated" max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="0" attributes="0">
@@ -543,6 +549,16 @@
             <Property name="text" type="java.lang.String" value="Actions:"/>
           </Properties>
         </Component>
+        <Component class="javax.swing.JLabel" name="jLabel7">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Serial Number:"/>
+          </Properties>
+        </Component>
+        <Component class="javax.swing.JLabel" name="labelSerialNumber">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Serial number"/>
+          </Properties>
+        </Component>
       </SubComponents>
     </Container>
     <Container class="javax.swing.JScrollPane" name="jScrollPane1">
@@ -639,7 +655,7 @@
     <Component class="javax.swing.JButton" name="btnCancelOnlineUpdate">
       <Properties>
         <Property name="icon" type="javax.swing.Icon" editor="org.netbeans.modules.form.editors2.IconEditor">
-          <Image iconType="3" name="/net/sf/portecle/images/action/exit.gif"/>
+          <Image iconType="3" name="/uk/ngs/ca/images/stopRedCrossIcon.gif"/>
         </Property>
         <Property name="toolTipText" type="java.lang.String" value="Cancel online update with CA"/>
         <Property name="borderPainted" type="boolean" value="false"/>

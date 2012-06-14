@@ -14,18 +14,18 @@ import help_panel_html.LoadHtmlResource;
 import java.awt.Dimension;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
+import java.io.File;
 import java.io.IOException;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
-import uk.ngs.ca.certificate.management.ClientKeyStore;
 import uk.ngs.ca.common.LocalBackup;
 import uk.ngs.ca.common.SystemStatus;
 import uk.ngs.ca.tools.property.SysProperty;
 
 /**
  *
- * @author xw75
+ * @author xw75 (Xiao Wang)
  */
 public class PasswordPanel extends javax.swing.JPanel  {
 
@@ -202,7 +202,7 @@ public class PasswordPanel extends javax.swing.JPanel  {
             String password = new String( txtPassword.getPassword() );
             String confirm = new String( txtConfirmPassword.getPassword() );
             if( password.equals(confirm) ){
-                loadMainWindowPanel();
+                this.loadMainWindowPanel();
             }else{
                 String errorMessage = "The passwords should match.";
                 JOptionPane.showMessageDialog(this, errorMessage, "Wrong Password", JOptionPane.ERROR_MESSAGE);
@@ -218,16 +218,19 @@ public class PasswordPanel extends javax.swing.JPanel  {
         
         char[] passphrase = txtPassword.getPassword();
         //boolean isValid = this.sysStatus.isValidPassphrase(passphrase);
-        //try {
-            // try to load keyStore, if no excpetion thrown that we can assume 
-            // it loaded ok.
-            //ClientKeyStoreCaServiceWrapper.getInstance(passphrase).getClientKeyStore(); 
-
-        //} catch (Exception ex) {
-        //    JOptionPane.showMessageDialog(this, ex.getCause().getMessage(), "Wrong Password", JOptionPane.ERROR_MESSAGE);
-        //    txtPassword.setText("");
-        //    return; 
-        //}
+        try {
+            // Load keyStore and save to disk if it does not already exist
+            // (maybe the first time the tool has been run)
+            String keyStoreFilePath = ClientKeyStoreCaServiceWrapper.getInstance(passphrase).getClientKeyStore().getKeyStoreFilePath(); 
+            File keyStoreFile = new File(keyStoreFilePath); 
+            if(!keyStoreFile.exists()){
+                ClientKeyStoreCaServiceWrapper.getInstance(passphrase).getClientKeyStore().reStore();
+            }       
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Wrong Password? "+ ex.getCause().getMessage(), "Wrong Password", JOptionPane.ERROR_MESSAGE);
+            txtPassword.setText("");
+            return; 
+        }
 
         String _pswdProperty = SysProperty.getValue("uk.ngs.ca.passphrase.property");
         String _pswd = new String(this.txtPassword.getPassword());

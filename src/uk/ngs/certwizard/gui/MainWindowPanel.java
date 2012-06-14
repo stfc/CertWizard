@@ -47,7 +47,7 @@ import uk.ngs.ca.util.CertificateRenewRevokeGuiHelper;
 
 /**
  * GUI for displaying the keyStore entries in the user's
- * '$HOME/.ca/cakeystore.pkcs12' file. This class also manages importing,
+ * <tt>'$HOME/.ca/cakeystore.pkcs12'</tt> file. This class also manages importing,
  * exporting, deleting requesting, renewing certificates. <p> Lots of
  * refactoring is required and extracting logic out of this class into service
  * classes and helper function objects. The <tt>caKeyStoreModel</tt> needs to be
@@ -96,7 +96,8 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 this.PASSPHRASE.toString());
         initComponents();
         loadImages();
-
+        
+        // throws IllegalStateException on wrong password.    
         this.caKeyStoreModel = ClientKeyStoreCaServiceWrapper.getInstance(this.PASSPHRASE);
         
         this.jComboBox1.setRenderer(new ComboBoxRenderer());
@@ -105,8 +106,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         try {
             this.caKeyStoreModel.loadFromFile();
         } catch (KeyStoreException ex) {
-            Logger.getLogger(MainWindowPanel.class.getName()).log(Level.SEVERE, null, ex);
-            JOptionPane.showMessageDialog(null, "Unable to load KeyStore: " + ex.getMessage(), "Unable to load KeyStore", JOptionPane.ERROR_MESSAGE);
+            DThrowable.showAndWait(null, "Could not load keystore", ex);
         }
         this.updateKeyStoreGuiFromModel();
         this.setComboFirstCertEntry();
@@ -138,10 +138,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                     + "Please go to www.ngs.ac.uk in order to obtain the latest version",
                     "New Version of Certificate Wizard", JOptionPane.INFORMATION_MESSAGE);
         }
-        //messageOfDayExecutor.scheduleWithFixedDelay(new MessageOfDayTask(), 0, 30, TimeUnit.MINUTES);
-
-        // Start thread executors to update cert/csr combo list and MOD 
-        //this.schedBackgroundExec.scheduleWithFixedDelay(runningOnlineUpdateTask, 0, 1, TimeUnit.MINUTES); 
+        //messageOfDayExecutor.scheduleWithFixedDelay(new MessageOfDayTask(), 0, 30, TimeUnit.MINUTES); 
 
         onlineUpdateTask = new OnlineUpdateKeyStoreEntriesSwingWorker(
                 caKeyStoreModel.getKeyStoreEntryMap(), caKeyStoreModel, this);
@@ -171,25 +168,27 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 }
             }
         }
+
+        private void updateOnlineUpdateComponents(boolean running) {
+            if (running) {
+                btnCancelOnlineUpdate.setEnabled(true);
+                jProgressBar1.setEnabled(true);
+                jProgressBar1.setIndeterminate(true);
+                labelOnlineUpdate.setText("Updating...");
+                btnRefreshAll.setEnabled(false);
+            } else {
+                btnCancelOnlineUpdate.setEnabled(false);
+                jProgressBar1.setEnabled(false);
+                jProgressBar1.setIndeterminate(false);
+                jProgressBar1.setValue(100);
+                labelOnlineUpdate.setText("");
+                btnRefreshAll.setEnabled(true);
+            }
+        }
     };
     
     
-    private void updateOnlineUpdateComponents(boolean running) {
-        if (running) {
-            btnCancelOnlineUpdate.setEnabled(true);
-            jProgressBar1.setEnabled(true);
-            jProgressBar1.setIndeterminate(true); 
-            labelOnlineUpdate.setText("Updating...");
-            btnRefreshAll.setEnabled(false); 
-        } else {
-            btnCancelOnlineUpdate.setEnabled(false);
-            jProgressBar1.setEnabled(false);
-            jProgressBar1.setIndeterminate(false); 
-            jProgressBar1.setValue(100); 
-            labelOnlineUpdate.setText("");
-            btnRefreshAll.setEnabled(true);
-        }
-    }
+
     
     /**
      * The keyStore GUI components are updated when invoked by an observable.
@@ -317,6 +316,8 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
      */
     private void updateGUIPanel() {
         // nullify/clear the gui components first
+        this.labelSerialNumber.setText(""); 
+        this.labelSerialNumber.setEnabled(false); 
         this.vFrom.setText("");
         this.vTo.setText("");
         this.subjectDnTextField.setText("");
@@ -335,9 +336,10 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         KeyStoreEntryWrapper selectedKeyStoreEntry = (KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem();
         // could be null if we have an empty keystore !
         if (this.jComboBox1.getSelectedIndex() != -1 && selectedKeyStoreEntry != null) {
+            String alias = selectedKeyStoreEntry.getAlias(); 
             this.subjectDnTextField.setText(selectedKeyStoreEntry.getX500PrincipalName());
             this.issuerDnTextField.setText(selectedKeyStoreEntry.getIssuerName());
-            this.aliasTextField.setText(selectedKeyStoreEntry.getAlias());
+            this.aliasTextField.setText(alias);
 
             if (KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_ENTRY.equals(selectedKeyStoreEntry.getEntryType())) {
                 this.certificateTypeLabel.setText("Key");
@@ -345,6 +347,16 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             } else if (KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY.equals(selectedKeyStoreEntry.getEntryType())) {
                 this.certificateTypeLabel.setText("Certificate + Private Key");
                 this.certificateTypeLabel.setIcon(this.images[2]);
+                try {
+                    X509Certificate x509Cert = this.caKeyStoreModel.getClientKeyStore().getX509Certificate(alias);
+                    if (x509Cert != null) {
+                        String serialNumber = x509Cert.getSerialNumber().toString();
+                        this.labelSerialNumber.setText(serialNumber);
+                        this.labelSerialNumber.setEnabled(true);
+                    }
+                } catch (Exception ignore) {
+                    DThrowable.showAndWait(null, "Problem", ignore);
+                }
             } else if (KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.TRUST_CERT_ENTRY.equals(selectedKeyStoreEntry.getEntryType())) {
                 this.certificateTypeLabel.setText("Trusted Third Party Certificate");
                 this.certificateTypeLabel.setIcon(this.images[0]);
@@ -1166,6 +1178,8 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         btnDelete = new javax.swing.JButton();
         viewCertDetailsButton = new javax.swing.JButton();
         jLabel12 = new javax.swing.JLabel();
+        jLabel7 = new javax.swing.JLabel();
+        labelSerialNumber = new javax.swing.JLabel();
         jScrollPane1 = new javax.swing.JScrollPane();
         TextMOD = new javax.swing.JTextArea();
         jPanel2 = new javax.swing.JPanel();
@@ -1405,6 +1419,10 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
         jLabel12.setText("Actions:");
 
+        jLabel7.setText("Serial Number:");
+
+        labelSerialNumber.setText("Serial number");
+
         org.jdesktop.layout.GroupLayout pnlAllDetailsLayout = new org.jdesktop.layout.GroupLayout(pnlAllDetails);
         pnlAllDetails.setLayout(pnlAllDetailsLayout);
         pnlAllDetailsLayout.setHorizontalGroup(
@@ -1437,7 +1455,11 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                                 .add(dRemaining, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 174, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                             .add(pnlAllDetailsLayout.createSequentialGroup()
                                 .add(certificateTypeLabel)
-                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .add(67, 67, 67)
+                                .add(jLabel7)
+                                .add(18, 18, 18)
+                                .add(labelSerialNumber, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .add(18, 18, 18)
                                 .add(viewCertDetailsButton, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 32, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                             .add(org.jdesktop.layout.GroupLayout.TRAILING, caCertStatusTextField)
                             .add(subjectDnTextField, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -1488,7 +1510,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(jLabel10)
                     .add(certificateTypeLabel)
-                    .add(viewCertDetailsButton))
+                    .add(viewCertDetailsButton)
+                    .add(jLabel7)
+                    .add(labelSerialNumber))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                 .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
@@ -1608,7 +1632,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
-        btnCancelOnlineUpdate.setIcon(new javax.swing.ImageIcon(getClass().getResource("/net/sf/portecle/images/action/exit.gif"))); // NOI18N
+        btnCancelOnlineUpdate.setIcon(new javax.swing.ImageIcon(getClass().getResource("/uk/ngs/ca/images/stopRedCrossIcon.gif"))); // NOI18N
         btnCancelOnlineUpdate.setToolTipText("Cancel online update with CA");
         btnCancelOnlineUpdate.setBorderPainted(false);
         btnCancelOnlineUpdate.setEnabled(false);
@@ -1642,8 +1666,8 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                                 .add(labelOnlineUpdate, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 111, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                                 .add(jProgressBar1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 56, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                .add(btnCancelOnlineUpdate, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 23, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))))
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
+                                .add(btnCancelOnlineUpdate, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 19, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))))
                     .add(jPanel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .add(13, 13, 13))
         );
@@ -1891,6 +1915,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
+    private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
     private javax.swing.JLabel jLabel9;
     private javax.swing.JPanel jPanel1;
@@ -1898,6 +1923,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private javax.swing.JProgressBar jProgressBar1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JLabel labelOnlineUpdate;
+    private javax.swing.JLabel labelSerialNumber;
     private javax.swing.JPanel pnlAllDetails;
     private javax.swing.JTextField rDue;
     private javax.swing.JTextField subjectDnTextField;

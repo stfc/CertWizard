@@ -60,17 +60,18 @@ public class OnLineUserCertificateRequest /*extends Observable*/{
                 // a problem must have occurred
                 return null; 
             }
+            PublicKey publicKey; 
             try{ 
                // Add a new keystore entry rather than reloading all the entries!
                ClientKeyStoreCaServiceWrapper caKeyStoreModel = ClientKeyStoreCaServiceWrapper.getInstance(PASSPHRASE); 
                KeyStoreEntryWrapper newCsrEntry = caKeyStoreModel.createKSEntryWrapperInstanceFromEntry(this.Alias);
                caKeyStoreModel.getKeyStoreEntryMap().put(this.Alias, newCsrEntry);
-               
+               publicKey = clientKeyStore.getPublicKey(this.Alias);
             } catch(KeyStoreException ex){
                 ex.printStackTrace();
                 return null; 
             }
-            PublicKey publicKey = clientKeyStore.getPublicKey(this.Alias);
+            
             PrivateKey privateKey = clientKeyStore.getPrivateKey(this.Alias);
 
             CertificateRequestCreator csrCreator = new CertificateRequestCreator();

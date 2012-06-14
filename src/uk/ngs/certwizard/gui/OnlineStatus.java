@@ -2,44 +2,51 @@ package uk.ngs.certwizard.gui;
 
 import java.awt.Color;
 import java.util.Date;
-import java.util.Observable;
-import java.util.Observer;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
 import uk.ngs.ca.certificate.client.PingService;
-import uk.ngs.ca.common.SystemStatus;
-import uk.ngs.ca.tools.property.SysProperty;
+import uk.ngs.ca.common.GuiExecutor;
 
 /**
- * Display the current online status of the tool according to the application's
+ * Display the current online status of the tool and set the application's
  * <code>SystemStatus.ISONLINE</code> property. Thread safe.
  *
  * @author David Meredith
  */
-public class OnlineStatus extends javax.swing.JPanel implements Observer {
+public class OnlineStatus extends javax.swing.JPanel /*implements Observer*/ {
 
-    private Date lastOnline = new Date();
-    private AtomicBoolean pingRunning = new AtomicBoolean(false);
-    //private Executor executor = Executors.newSingleThreadExecutor();
-    private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+    private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+    // our ping check task 
+    private Runnable pingCheckTask = new PingCheckTask(); 
+    // Records whether the last ping check completed ok 
+    private AtomicBoolean pingedOK = new AtomicBoolean(false); 
+    
 
     /**
      * Creates new form OnlineStatus
      */
     public OnlineStatus() {
         initComponents();
-        // Can remove these GUI components in future - for now make them invisible 
-        // and do the following: 
-        // - comment out the calls to this.doPingCheckActionPerformed(); and this.doChangeTimeout(); 
-        // - comment out methods; doPingCheckActionPerformed(), doChangeTimeout()
-        // - change the type of the executor from newSingleThreadExecutor() to a scheduledExecutorService as above. 
-        // - modify runPingCheck() to use the newSingleThreadScheduledExecutor rather than newSingleThreadExecutor
-        this.connectButton.setVisible(false);
-        this.timeoutTextField.setVisible(false);    
+        this.timeoutTextField.setVisible(false);
+        this.jLabel2.setVisible(false);
+     }
+    
+    /**
+     * Starts the periodic Ping task in a background thread. 
+     */
+    public void startScheduledPingCheckTask() {    
+        // DM: I wanted to use a SwingWorker and a property change listener on the
+        // SwingWorker 'state' property as this gives more control, however
+        // this top 25 bug (SwingWorker deadlocks due to 
+        // one thread in the swingworker-pool) caused me issues so i use a 
+        // simple runnable instead. 
+        // http://bugs.sun.com/view_bug.do;jsessionid=e13cfc6ea10a4ffffffffce8c9244b60e54d?bug_id=6880336 
+        //pingTask = new PingTask();
+        //pingTask.addPropertyChangeListener(pingTaskPropertyListener);
+        
+        executor.scheduleWithFixedDelay(pingCheckTask, 0, 10, TimeUnit.MINUTES);
     }
 
     /**
@@ -59,8 +66,8 @@ public class OnlineStatus extends javax.swing.JPanel implements Observer {
 
         setToolTipText("Online CA status indicates whether the tool can contact the UK Certification Authority Server");
 
-        connectButton.setText("Retry");
-        connectButton.setToolTipText("Attempt to ping the CA server with the specified connection timeout period. ");
+        connectButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/uk/ngs/ca/images/arrow_refresh_small.png"))); // NOI18N
+        connectButton.setToolTipText("Attempt to ping the CA server to test online connection. ");
         connectButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 connectButtonActionPerformed(evt);
@@ -94,28 +101,28 @@ public class OnlineStatus extends javax.swing.JPanel implements Observer {
                 .addContainerGap()
                 .addComponent(jLabel1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(onlineLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(onlineLabel, javax.swing.GroupLayout.DEFAULT_SIZE, 315, Short.MAX_VALUE)
                 .addGap(30, 30, 30)
                 .addComponent(jLabel2)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(timeoutTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(4, 4, 4)
-                .addComponent(connectButton))
+                .addGap(31, 31, 31)
+                .addComponent(connectButton, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(connectButton, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+            .addComponent(timeoutTextField)
             .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                .addComponent(connectButton)
                 .addComponent(jLabel1)
                 .addComponent(onlineLabel)
-                .addComponent(timeoutTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addComponent(jLabel2))
         );
     }// </editor-fold>//GEN-END:initComponents
 
     private void connectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_connectButtonActionPerformed
         //System.setProperty("http.proxyHost", "wwwcache.dl.ac.uk");
-        //this.doPingCheckActionPerformed();
+        this.doPingCheckActionPerformed();
     }//GEN-LAST:event_connectButtonActionPerformed
 
 private void timeoutTextFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_timeoutTextFieldActionPerformed
@@ -160,85 +167,109 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
     }*/
 
     /**
-     * Attempt a ping check and update our global state. This will block until
-     * completed which avoids re-clicking while trying to connect.
+     * Attempt a ping check and update our global state. 
      */
-    /*private void doPingCheckActionPerformed() {
-        // calling isPingService will call SystemStatus.setIsOnline(bool) which
-        // will subsequently invoke update below if the state changes.
-        //
-        // if(pingchecktaskisrunning) {
-        // the ping task is running, kill ping task? or cancel ? 
-        //PingService.getPingService().isPingService();
-        //this.update(null, null);
-        this.runPingCheck();
-        this.update(null, null);
-    }*/
+    private void doPingCheckActionPerformed() {
+        // Clicking to start this task should not clash with another ping task 
+        // because the button that calls this method is disabled when a task
+        // executes. 
+        Runnable localPingCheckTask = new PingCheckTask();
+        localPingCheckTask.run();
+    }
 
     /**
-     * Update this panels online status GUI components based on the
-     * <code>SystemStatus.ISONLINE</code> property. Thread safe.
+     * Update this panels online status GUI components in the AWT event dispatch 
+     * thread. Online status is based on the <code>SystemStatus.ISONLINE</code> property. 
      */
-    public void update(Observable o, Object arg) {
-        //System.out.println("update called");
-        if (SystemStatus.getInstance().getIsOnline()) {
-            lastOnline = new Date();
-            this.onlineLabel.setText("Last online check at:  " + lastOnline.toString());
-            this.onlineLabel.setForeground(new Color(0, 153, 0));
-            //this.connectButton.setText("Refresh");
-        } else {
-            if (pingRunning.get()) {
-                this.onlineLabel.setText("Trying to Contact Server - Click Help to configure connection.");
-            } else {
-                this.onlineLabel.setText("Cannot Contact Server - Click Help to configure connection.");
+    /*public void update(Observable o, Object arg) {
+        SwingUtilities.invokeLater(new Runnable() {
+
+            public void run() {
+                //System.out.println("Will print true: "+SwingUtilities.isEventDispatchThread()); 
+                updateGUI();
             }
-            this.onlineLabel.setForeground(Color.RED);
-            //this.connectButton.setText("Try again");
-        }
-    }
-
+        });
+    }*/
+    
     /**
-     * Asynchronously Ping the CA server (does not wait for ping check to
-     * complete).
+     * Updates the GUI. Guarantees to run the GUI updates in the AWT event dispatch thread. 
+     * @param running 
      */
-    public void runPingCheck() {
-        if (pingRunning.get()) {
-            // ping is running, so show dialog and return 
-            JOptionPane.showMessageDialog(this, "Ping check task is currently running.",
-                    "Ping Running", JOptionPane.INFORMATION_MESSAGE);
-        } else {
-            // A ping thread is not running, so execute PingCheckTask as new thread 
-            //Thread ping = new Thread(new PingCheckTask()); 
-            //ping.start();         
-            
-            // If re-enabling buttons, change the executor to manual single execution below: 
-            //executor.execute(new PingCheckTask());
-            
-            // Run a ping every 5 mins 
-            executor.scheduleWithFixedDelay(new PingCheckTask(), 0, 1, TimeUnit.MINUTES); 
-    
-        }
+    private void updateGUI(final boolean running) {
+        GuiExecutor.instance().execute( new Runnable() {
+            public void run() {
+                if (running) {
+                    onlineLabel.setText("Pinging Server...");
+                    onlineLabel.setForeground(Color.RED);
+                    connectButton.setEnabled(false);
+                } else {
+                    Date lastOnline = new Date();
+                    if(pingedOK.get()){
+                        onlineLabel.setText("Last online check at:  " + lastOnline.toString());
+                        onlineLabel.setForeground(new Color(0, 153, 0));
+                    } else {
+                        onlineLabel.setText("Last online check failed at:  " + lastOnline.toString());
+                        onlineLabel.setForeground(Color.RED);
+                    }
+                    connectButton.setEnabled(true);
+                }
+            }
+        });
     }
     
-    private class PingCheckTask implements Runnable {
+    
 
+    private class PingCheckTask implements Runnable {
         @Override
         public void run() {
             try {
-                pingRunning.set(true);
-                // simply call isPingService which will itself call SystemStatus.setIsOnline(bool)
-                // and update any observers (such as the onlineStatusPanel).
-                PingService.getPingService().isPingService();
-                SwingUtilities.invokeLater(new Runnable() {
-
-                    public void run() {
-                        //System.out.println("Will print true: "+SwingUtilities.isEventDispatchThread()); 
-                        update(null, null);
-                    }
-                });
+                updateGUI(true); 
+                pingedOK.set(PingService.getPingService().isPingService());   
             } finally {
-                pingRunning.set(false);
+                updateGUI(false);
             }
         }
     }
+        
+    
+    /**
+     * Handle onlineUpdateTask property changes (runs in AWT Event thread) 
+     */    
+   /* private PropertyChangeListener pingTaskPropertyListener = new PropertyChangeListener() {
+
+        public void propertyChange(PropertyChangeEvent e) {
+            String propertyName = e.getPropertyName();
+            if ("progress".equals(propertyName)) {
+                // not handled currently 
+                System.out.println("progress called");
+            } else if ("state".equals(propertyName)) {
+                System.out.println("state change is: "+pingTask.getState());
+                if (SwingWorker.StateValue.DONE.equals(pingTask.getState())) {
+                    updateGUI(false);
+                } else if (SwingWorker.StateValue.PENDING.equals(pingTask.getState())) {
+                    updateGUI(true);
+                } else if (SwingWorker.StateValue.STARTED.equals(pingTask.getState())) {
+                    updateGUI(true);
+                } else {
+                    updateGUI(false);
+                }
+            }
+        }
+    };*/
+    
+    // I wanted to use a SwingWorker with a listener but beware of this 
+    // top 25 bug: http://bugs.sun.com/view_bug.do;jsessionid=e13cfc6ea10a4ffffffffce8c9244b60e54d?bug_id=6880336 
+    /*private class PingTask extends SwingWorker<Void, Object[]>{
+        @Override
+        protected Void doInBackground() throws Exception {
+            PingService.getPingService().isPingService();
+            return null; 
+        }
+        @Override
+        public void done() {
+            //System.out.println("done in AWT event dispatch thread");
+            //updateGUI(false);
+        }
+    }*/
+  
 }

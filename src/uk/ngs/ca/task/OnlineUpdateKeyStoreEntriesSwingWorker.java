@@ -24,6 +24,10 @@ import uk.ngs.certwizard.gui.MainWindowPanel;
  * <p>
  * If any certificate entries are updated, then the application's managed keyStore 
  * is saved to file. 
+ * <p>
+ * If you intend to use an Executor to run this SwingWorker, then beware of this
+ * top 25 bug (SwingWorker can deadlock if one thread in the swingworker-pool)
+ * @see http://bugs.sun.com/view_bug.do;jsessionid=e13cfc6ea10a4ffffffffce8c9244b60e54d?bug_id=6880336 
  * 
  * @author David Meredith 
  */

@@ -6,8 +6,6 @@ package uk.ngs.ca.common;
 
 import java.io.File;
 import java.util.Observable;
-//import java.util.concurrent.atomic.AtomicBoolean;
-
 import uk.ngs.ca.tools.property.SysProperty;
 
 /**

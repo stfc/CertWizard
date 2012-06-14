@@ -23,23 +23,23 @@
               <EmptySpace min="-2" max="-2" attributes="0"/>
               <Component id="jLabel1" min="-2" max="-2" attributes="0"/>
               <EmptySpace min="-2" max="-2" attributes="0"/>
-              <Component id="onlineLabel" max="32767" attributes="0"/>
+              <Component id="onlineLabel" pref="315" max="32767" attributes="0"/>
               <EmptySpace min="-2" pref="30" max="-2" attributes="0"/>
               <Component id="jLabel2" min="-2" max="-2" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
               <Component id="timeoutTextField" min="-2" pref="22" max="-2" attributes="0"/>
-              <EmptySpace min="-2" pref="4" max="-2" attributes="0"/>
-              <Component id="connectButton" min="-2" max="-2" attributes="0"/>
+              <EmptySpace min="-2" pref="31" max="-2" attributes="0"/>
+              <Component id="connectButton" min="-2" pref="22" max="-2" attributes="0"/>
           </Group>
       </Group>
     </DimensionLayout>
     <DimensionLayout dim="1">
       <Group type="103" groupAlignment="0" attributes="0">
-          <Group type="103" alignment="0" groupAlignment="3" attributes="0">
-              <Component id="connectButton" alignment="3" min="-2" max="-2" attributes="0"/>
+          <Component id="connectButton" alignment="0" pref="0" max="32767" attributes="0"/>
+          <Component id="timeoutTextField" alignment="0" max="32767" attributes="0"/>
+          <Group type="103" groupAlignment="3" attributes="0">
               <Component id="jLabel1" alignment="3" min="-2" max="-2" attributes="0"/>
               <Component id="onlineLabel" alignment="3" min="-2" max="-2" attributes="0"/>
-              <Component id="timeoutTextField" alignment="3" min="-2" max="-2" attributes="0"/>
               <Component id="jLabel2" alignment="3" min="-2" max="-2" attributes="0"/>
           </Group>
       </Group>
@@ -48,8 +48,10 @@
   <SubComponents>
     <Component class="javax.swing.JButton" name="connectButton">
       <Properties>
-        <Property name="text" type="java.lang.String" value="Retry"/>
-        <Property name="toolTipText" type="java.lang.String" value="Attempt to ping the CA server with the specified connection timeout period. "/>
+        <Property name="icon" type="javax.swing.Icon" editor="org.netbeans.modules.form.editors2.IconEditor">
+          <Image iconType="3" name="/uk/ngs/ca/images/arrow_refresh_small.png"/>
+        </Property>
+        <Property name="toolTipText" type="java.lang.String" value="Attempt to ping the CA server to test online connection. "/>
       </Properties>
       <Events>
         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="connectButtonActionPerformed"/>

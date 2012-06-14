@@ -23,9 +23,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import uk.ngs.ca.certificate.client.CertificateDownload;
-import uk.ngs.ca.certificate.client.PingService;
 import uk.ngs.ca.certificate.client.ResourcesPublicKey;
-import uk.ngs.ca.common.EncryptUtil;
 import uk.ngs.ca.tools.property.SysProperty;
 
 /**
@@ -33,18 +31,17 @@ import uk.ngs.ca.tools.property.SysProperty;
  * a map of {@link KeyStoreEntryWrapper} objects which both constitute the 
  * application's shared data model. 
  * <p>
- * Provides methods for checking the keyStore entries against the CA server 
- * for their current status according to the CA.
- * Importantly the keyStore is <b>NEVER reStored to disk</b> by any of the methods
- * which has to be called manually by the client via {@link ClientKeyStore}. 
+ * Provides methods for checking the keyStore entries online against the CA server 
+ * for their current status (status according to the CA).
+ * Importantly the keyStore is <b>NEVER reStored to disk</b> by any of the methods.
+ * ReStoring to disk has to be called manually by the client via {@link ClientKeyStore}. 
  * 
- *
  * @author Xiao Wang
  * @author David Meredith (modifications - more refactoring still needed)
  */
 public class ClientKeyStoreCaServiceWrapper {
 
-    // important memeber vars
+    // important member vars
 
     /** The password of the managed keyStore file */
     private char[] mKeystorePASSPHRASE = null;
@@ -93,6 +90,7 @@ public class ClientKeyStoreCaServiceWrapper {
     /**
      * (Re)load the managed keyStore object from file and populate
      * <code>this.mKeyStoreEntries</code> with <code>KeyStoreEntryWrapper</code> objects.
+     * Involves no online interactions. 
      * 
      * @throws KeyStoreException
      */
@@ -113,7 +111,7 @@ public class ClientKeyStoreCaServiceWrapper {
      * 
      * @param sAlias
      * @return
-     * @throws KeyStoreException 
+     * @throws KeyStoreException  
      */
     public KeyStoreEntryWrapper createKSEntryWrapperInstanceFromEntry(String sAlias) throws KeyStoreException {
         String x500PrincipalName = "Unknown"; // provide a default incase
@@ -167,10 +165,10 @@ public class ClientKeyStoreCaServiceWrapper {
      * @return true if a keyStoreEntry was updated in the keyStore, otherwise false. 
      * @throws KeyStoreException 
      */
-    public boolean onlineUpdateKeyStore() throws KeyStoreException {
+    /*public boolean onlineUpdateKeyStore() throws KeyStoreException {
         boolean updateOccurred = false; 
         // If online (can simply comment out the followng calls to disable initialisation online).
-        if(PingService.getPingService().isPingService()){
+        //if(SystemStatus.getInstance().getIsOnline()){
             // Append the CertificateCSRInfo instances to each KeyStoreEntryWrapper
             this.checkAllEntriesForUpdates();
             
@@ -182,9 +180,9 @@ public class ClientKeyStoreCaServiceWrapper {
                     updateOccurred = true; 
                 }
             }
-        }
+        //}
         return updateOccurred; 
-    }
+    }*/
     
     /**
      * Requests an online update of the given keyStore entry object and updates the keyStore model accordingly. 
@@ -238,12 +236,12 @@ public class ClientKeyStoreCaServiceWrapper {
      * Check for updates for all KeyStoreEntryWrappers. 
      * Does not update the keyStore. 
      */
-    private void checkAllEntriesForUpdates() {
+    /*private void checkAllEntriesForUpdates() {
         for (Iterator<KeyStoreEntryWrapper> it = this.keyStoreEntryMap.values().iterator(); it.hasNext();) {
             KeyStoreEntryWrapper keyStoreEntryWrapper = it.next();
             this.checkEntryForUpdates(keyStoreEntryWrapper);
         }
-    }
+    }*/
  
     
     /**
@@ -256,7 +254,7 @@ public class ClientKeyStoreCaServiceWrapper {
      * server response (XML) and add as a member object of the <code>keyStoreEntryWrapper</code>.
      * 
      * @param keyStoreEntryWrapper 
-     */
+     */ 
     private void checkEntryForUpdates(KeyStoreEntryWrapper keyStoreEntryWrapper) {
         try {
             // return if not KEY_PAIR_ENTRY
@@ -392,7 +390,7 @@ public class ClientKeyStoreCaServiceWrapper {
                         serverInfo.setEndDate(_enddate);
                         serverInfo.setLifeDays(_lifedays);
                         serverInfo.setRenew(_renew);
-                        serverInfo.setPublickey(EncryptUtil.getEncodedPublicKey(keystorePublicKey));
+                        //serverInfo.setPublickey(EncryptUtil.getEncodedPublicKey(keystorePublicKey));
                         keyStoreEntryWrapper.setServerCertificateCSRInfo(serverInfo);
                     }
                 }
@@ -441,7 +439,7 @@ public class ClientKeyStoreCaServiceWrapper {
 
                         //***Add a new CSR CertificateCSRInfo to keyStoreEntryWrapper***
                         CertificateCSRInfo serverInfo = new CertificateCSRInfo();
-                        serverInfo.setPublickey(EncryptUtil.getEncodedPublicKey(keystorePublicKey));
+                        //serverInfo.setPublickey(EncryptUtil.getEncodedPublicKey(keystorePublicKey));
                         serverInfo.setIsCSR(true); // note !
                         serverInfo.setOwner(_owner);
                         serverInfo.setRole(_role);
@@ -508,6 +506,7 @@ public class ClientKeyStoreCaServiceWrapper {
             } else {
                 try {
                     PublicKey downloadedPublicKey = downloadedCert.getPublicKey();
+                    if(downloadedPublicKey == null) return false; 
                     Certificate[] ksChain = this.clientKeyStore
                             .getCertificateChain(keyStoreEntryWrapper.getAlias());
                     if(ksChain == null) {
@@ -519,8 +518,11 @@ public class ClientKeyStoreCaServiceWrapper {
                     // We only want to update the clientKeyStore cert IF there 
                     // were changes to the cert on the server. We do not want to 
                     // replace each/every cert if it is identical to what we already have. 
-                    if(this.clientKeyStore.getX509Certificate(keyStoreEntryWrapper.getAlias())
-                            .equals(downloadedCert)){
+                    X509Certificate x509 = this.clientKeyStore.getX509Certificate(keyStoreEntryWrapper.getAlias());
+                    if(x509 == null){
+                        return false; 
+                    }
+                    if(x509.equals(downloadedCert)){
                         return false; 
                     }
                     
@@ -574,206 +576,5 @@ public class ClientKeyStoreCaServiceWrapper {
         return false;
     }
 
-
-
- 
-
-
-
-
-
-    	/**
-	 * TODO Get the KeyStoreReport as plain text.
-	 *
-	 * @return Keystore report
-	 * @throws CryptoException A crypto related problem was encountered generating the keystore report
-	 */
-	/*private String getKeyStoreReport()
-	{
-		try
-		{
-			// Buffer to hold report
-			StringBuilder sbReport = new StringBuilder(2000);
-
-			// General keystore information...
-
-			// Keystore type
-			sbReport.append(m_keystore.getType());
-			sbReport.append("\n");
-
-			// Keystore provider
-			sbReport.append(m_keystore.getProvider().getName());
-			sbReport.append("\n");
-
-			// Keystore size (entries)
-			sbReport.append(m_keystore.size());
-			sbReport.append("\n\n");
-
-			Enumeration<String> aliases = m_keystore.aliases();
-
-			// Get information on each keystore entry
-			while (aliases.hasMoreElements())
-			{
-				// Alias
-				String sAlias = aliases.nextElement();
-				sbReport.append(sAlias);
-				sbReport.append("\n");
-
-				// Creation date
-
-				//if (ksType.isEntryCreationDateUseful())
-				//{
-				//	Date dCreation = m_keystore.getCreationDate(sAlias);
-
-					// Include time zone
-				//	String sCreation =
-				//	    DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.LONG).format(dCreation);
-				//	sbReport.append(MessageFormat.format(RB.getString("DKeyStoreReport.report.creation"),
-				//	    sCreation));
-				//	sbReport.append("\n");
-				//}
-
-				Certificate[] certChain = null;
-
-				// Get entry type and certificates
-				if (m_keystore.isKeyEntry(sAlias))
-				{
-					certChain = m_keystore.getCertificateChain(sAlias);
-
-					if (certChain == null || certChain.length == 0)
-					{
-						sbReport.append(RB.getString("DKeyStoreReport.report.key"));
-						sbReport.append("\n");
-					}
-					else
-					{
-						sbReport.append(RB.getString("DKeyStoreReport.report.keypair"));
-						sbReport.append("\n");
-					}
-				}
-				else
-				{
-					sbReport.append(RB.getString("DKeyStoreReport.report.trustcert"));
-					sbReport.append("\n");
-
-					Certificate cert = m_keystore.getCertificate(sAlias);
-					if (cert != null)
-					{
-						certChain = new Certificate[] { cert };
-					}
-				}
-
-				// Get information on each certificate in an entry
-				if (certChain == null || certChain.length == 0)
-				{
-					// Zero certificates
-					sbReport.append(MessageFormat.format(RB.getString("DKeyStoreReport.report.certs"), 0));
-					sbReport.append("\n\n");
-				}
-				else
-				{
-					X509Certificate[] x509CertChain = X509CertUtil.convertCertificates(certChain);
-
-					// One or more certificates
-					int iChainLen = x509CertChain.length;
-					sbReport.append(MessageFormat.format(RB.getString("DKeyStoreReport.report.certs"),
-					    iChainLen));
-					sbReport.append("\n\n");
-
-					for (int iCnt = 0; iCnt < iChainLen; iCnt++)
-					{
-						// Get information on an individual certificate
-						sbReport.append(MessageFormat.format(RB.getString("DKeyStoreReport.report.cert"),
-						    iCnt + 1, iChainLen));
-						sbReport.append("\n");
-
-						X509Certificate x509Cert = x509CertChain[iCnt];
-
-						// Version
-						sbReport.append(MessageFormat.format(RB.getString("DKeyStoreReport.report.version"),
-						    x509Cert.getVersion()));
-						sbReport.append("\n");
-
-						// Subject
-						sbReport.append(MessageFormat.format(RB.getString("DKeyStoreReport.report.subject"),
-						    x509Cert.getSubjectDN()));
-						sbReport.append("\n");
-
-						// Issuer
-						sbReport.append(MessageFormat.format(RB.getString("DKeyStoreReport.report.issuer"),
-						    x509Cert.getIssuerDN()));
-						sbReport.append("\n");
-
-						// Serial Number
-						StringBuilder sSerialNumber = StringUtil.toHex(x509Cert.getSerialNumber(), 4, " ");
-						sbReport.append(MessageFormat.format(RB.getString("DKeyStoreReport.report.serial"),
-						    sSerialNumber));
-						sbReport.append("\n");
-
-						// Valid From
-						Date dValidFrom = x509Cert.getNotBefore();
-						String sValidFrom =
-						    DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM).format(
-						        dValidFrom);
-						sbReport.append(MessageFormat.format(
-						    RB.getString("DKeyStoreReport.report.validfrom"), sValidFrom));
-						sbReport.append("\n");
-
-						// Valid Until
-						Date dValidTo = x509Cert.getNotAfter();
-						String sValidTo =
-						    DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM).format(
-						        dValidTo);
-						sbReport.append(MessageFormat.format(
-						    RB.getString("DKeyStoreReport.report.validuntil"), sValidTo));
-						sbReport.append("\n");
-
-						// Public Key (algorithm and key size)
-						int iKeySize = KeyPairUtil.getKeyLength(x509Cert.getPublicKey());
-						String sKeyAlg = x509Cert.getPublicKey().getAlgorithm();
-						String fmtKey =
-						    (iKeySize == KeyPairUtil.UNKNOWN_KEY_SIZE)
-						        ? "DKeyStoreReport.report.pubkeynosize" : "DKeyStoreReport.report.pubkey";
-						sbReport.append(MessageFormat.format(RB.getString(fmtKey), sKeyAlg, iKeySize));
-						sbReport.append("\n");
-
-						// Signature Algorithm
-						sbReport.append(MessageFormat.format(RB.getString("DKeyStoreReport.report.sigalg"),
-						    x509Cert.getSigAlgName()));
-						sbReport.append("\n");
-
-						byte[] bCert = x509Cert.getEncoded();
-
-						// SHA-1 fingerprint
-						sbReport.append(MessageFormat.format(RB.getString("DKeyStoreReport.report.sha1"),
-						    DigestUtil.getMessageDigest(bCert, DigestType.SHA1)));
-						sbReport.append("\n");
-
-						// MD5 fingerprint
-						sbReport.append(MessageFormat.format(RB.getString("DKeyStoreReport.report.md5"),
-						    DigestUtil.getMessageDigest(bCert, DigestType.MD5)));
-						sbReport.append("\n");
-
-						if (iCnt + 1 < iChainLen)
-						{
-							sbReport.append("\n");
-						}
-					}
-
-					if (aliases.hasMoreElements())
-					{
-						sbReport.append("\n");
-					}
-				}
-			}
-
-			// Return the report
-			return sbReport.toString();
-		}
-		catch (Exception ex)
-		{
-			throw new IllegalStateException("report exeception", ex);
-		}
-	}*/
 
 }

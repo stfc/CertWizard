@@ -14,7 +14,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import org.globus.common.CoGProperties;
-import uk.ngs.ca.common.SystemStatus;
 import uk.ngs.ca.tools.property.SysProperty;
 
 /**
@@ -84,14 +83,10 @@ public class CertWizardMain extends javax.swing.JFrame {
 
         this.initTabbedPane();
 
-        // We want to ensure onlineStatusPanel can observe any changes in online system status
-        // so that we can update its GUI accordingly.
-        SystemStatus.getInstance().addObserver(onlineStatusPanel);
-
         //System.setProperty("http.proxyHost", "wwwnotexist.tr.ld");
         //System.setProperty("http.proxyHost", "wwwcache.dl.ac.uk");     
         // Run ping check in a new thread so we don't block while it tries to connect.
-        onlineStatusPanel.runPingCheck();
+        onlineStatusPanel.startScheduledPingCheckTask();
 
         //Timer timer = new Timer();
         // execute once with no delay required.

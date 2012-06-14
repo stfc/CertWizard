@@ -22,13 +22,13 @@ import uk.ngs.ca.tools.property.SysProperty;
  * A thread safe singleton that wraps the managed <tt>'$HOME/.ca/cakeystore.pkcs12'</tt> KeyStore file.
  * <p>
  * It provides thread safe methods for adding/creating/deleting entries from the managed keyStore file. 
- * Access to the managed keyStore object is guarded by an instance of <code>this</code>. 
+ * Access to the managed keyStore object is guarded by the singleton <code>this</code> instance. 
  * <p>
  * Visibility of <code>getInstance()</code> is limited to package-protected 
  * so that retrieval can be managed by other higher level classes in this package.
  * <p>
- * Importantly the keyStore is <b>NEVER reStored to disk</b> by any of the methods
- * which is delegated to the calling client with manual invocations of {@link #reStore() }. 
+ * Importantly, the keyStore is <b>NEVER reStored to disk</b> by any of the methods.
+ * This is delegated to the calling client with manual invocations of {@link #reStore() }. 
  * 
  * @todo DM: Lots, more refactoring is needed, especially all the exception swallowing to fix 
  * @author xw75 (Xiao Wang) 
@@ -48,8 +48,6 @@ public final class ClientKeyStore {
     private final String key_KeyStoreFilePath ;
     private char[] PASSPHRASE = null;
     private String errorMessage = null;
-
-  
     private static ClientKeyStore clientKeyStore = null;
 
     /**
@@ -100,18 +98,19 @@ public final class ClientKeyStore {
     }
 
     /**
-     * Method that returns the directory to keystore
-     * @return keystore directory as a String
+     * @return the full path of the managed keyStore file  
      */
-    public String returnKeystoreDir() {
+    public String getKeyStoreFilePath() {
         return this.key_KeyStoreFilePath;
     }
 
     /**
      * Create a new KeyStore instance by loading state from the 
-     * '$HOME/.ca/cakeystore.pkcs12' file. If file does not exist, then 
+     * <tt>'$HOME/.ca/cakeystore.pkcs12'</tt> file. If file does not exist, then 
      * load an empty keyStore. This newly created KeyStore object is a copy of 
      * the KeyStore that is managed in this class. 
+     * Important: the keyStore is NOT reStored to disk (so if an initial 
+     * keyStore does not exist, the file is not created on disk).
      * 
      * @return A newly created KeyStore 
      */
@@ -157,7 +156,7 @@ public final class ClientKeyStore {
      */
     public synchronized boolean reStore() {
         FileOutputStream fos = null;
-        try {
+        try { 
             File f = new File(this.key_KeyStoreFilePath);
             fos = new FileOutputStream(f);
             // store will overwrite the file if it already exists
@@ -195,25 +194,22 @@ public final class ClientKeyStore {
    
     
     
-    public synchronized boolean isExistPublicKey(PublicKey publicKey) {
-        try {
-            Enumeration aliases = this.keyStore.aliases();
-            while (aliases.hasMoreElements()) {
-                String alias = (String) aliases.nextElement();
-                if (this.keyStore.isKeyEntry(alias)) {
-                    X509Certificate cert = (X509Certificate) this.keyStore.getCertificate(alias);
-                    if(cert.getPublicKey().equals(publicKey)){
-                        return true;
-                    }
+    public synchronized boolean isExistPublicKey(PublicKey publicKey) throws KeyStoreException {
+        Enumeration aliases = this.keyStore.aliases();
+        while (aliases.hasMoreElements()) {
+            String alias = (String) aliases.nextElement();
+            if (this.keyStore.isKeyEntry(alias)) {
+                java.security.cert.Certificate cert = this.keyStore.getCertificate(alias);
+                //X509Certificate xcert = (X509Certificate) this.keyStore.getCertificate(alias);
+                if (cert.getPublicKey() != null && cert.getPublicKey().equals(publicKey)) {
+                    return true;
                 }
-            }  
-        } catch (KeyStoreException ke) {
-            ke.printStackTrace();
+            }
         }
         return false;
     }
 
-    public synchronized boolean isExistPrivateKey(PrivateKey privateKey) {
+    /*public synchronized boolean isExistPrivateKey(PrivateKey privateKey) {
         try {
             Enumeration aliases = this.keyStore.aliases();
              while (aliases.hasMoreElements()) {
@@ -224,11 +220,15 @@ public final class ClientKeyStore {
                     }
                 }
             }
-        } catch (Exception ke) {
-            ke.printStackTrace();
+        } catch (KeyStoreException ex) {
+            ex.printStackTrace();
+        } catch (NoSuchAlgorithmException ex) {
+            ex.printStackTrace();
+        } catch (UnrecoverableKeyException ex){
+            ex.printStackTrace();
         }
         return false;
-    }
+    }*/
 
 
     public synchronized PrivateKey getPrivateKey(PublicKey publicKey) {
@@ -244,8 +244,12 @@ public final class ClientKeyStore {
                     }
                 }
             }     
-        } catch (Exception ke) {
-            ke.printStackTrace();
+        } catch (KeyStoreException ex) {
+            ex.printStackTrace();
+        } catch (NoSuchAlgorithmException ex) {
+            ex.printStackTrace();
+        } catch (UnrecoverableKeyException ex){
+            ex.printStackTrace();
         }
         return null;
     }
@@ -269,20 +273,20 @@ public final class ClientKeyStore {
             }
             this.keyStore.setKeyEntry(alias, keyPair.getPrivate(), PASSPHRASE, certs);
             return alias;
-        } catch (Exception ep) {
-            ep.printStackTrace();
-            return null;
+        } catch (KeyStoreException ex) {
+            ex.printStackTrace();
         }
+        return null;
     }
 
-    public synchronized String getAlias( X509Certificate cert ){
+    /*public synchronized String getAlias( X509Certificate cert ){
         try{
             return this.keyStore.getCertificateAlias(cert);
-        }catch( Exception ep ){
-            ep.printStackTrace();
-            return null;
+        }catch(KeyStoreException ex ){
+            ex.printStackTrace();
         }
-    }
+        return null;
+    }*/
 
 
     /*public synchronized boolean addNewKey(PrivateKey privateKey, X509Certificate cert) {
@@ -306,33 +310,51 @@ public final class ClientKeyStore {
         }
     }*/
 
-    public synchronized X509Certificate getX509Certificate(String alias) {
-        try {
-            X509Certificate cert = (X509Certificate) this.keyStore.getCertificate(alias);
-            return cert;
-        } catch (Exception ep) {
-            ep.printStackTrace();
-            return null;
+    /**
+     * Get the x509 certificate for the keyStore entry with the requested alias 
+     * or null if alias does not represent an x509 cert. 
+     * 
+     * @param alias
+     * @return certificate or null. 
+     * @throws KeyStoreException 
+     */
+    public synchronized X509Certificate getX509Certificate(String alias) throws KeyStoreException {
+        if (this.keyStore.getCertificate(alias) != null) {
+            if (this.keyStore.getCertificate(alias) instanceof X509Certificate) {
+                X509Certificate cert = (X509Certificate) this.keyStore.getCertificate(alias);
+                return cert;
+            }
         }
+        return null;
     }
-        
-    public synchronized PublicKey getPublicKey(String alias) {
-        try {
-            X509Certificate cert = (X509Certificate) this.keyStore.getCertificate(alias);
+     
+    /**
+     * Get the public key for the keyStore entry with the requested alias 
+     * or null if alias does not represent a certificate. 
+     * 
+     * @param alias
+     * @return public key or null 
+     * @throws KeyStoreException 
+     */
+    public synchronized PublicKey getPublicKey(String alias) throws KeyStoreException {
+        java.security.cert.Certificate cert = this.keyStore.getCertificate(alias);
+        if (cert != null) {
             return cert.getPublicKey();
-        } catch (Exception ep) {
-            ep.printStackTrace();
-            return null;
         }
+        return null;
     }
 
     public synchronized PrivateKey getPrivateKey(String alias) {
         try {
             return (PrivateKey) this.keyStore.getKey(alias, PASSPHRASE);
-        } catch (Exception ep) {
-            ep.printStackTrace();
-            return null;
+        } catch (KeyStoreException ex) {
+            ex.printStackTrace();
+        } catch (NoSuchAlgorithmException ex) {
+            ex.printStackTrace();
+        } catch (UnrecoverableKeyException ex){
+            ex.printStackTrace();
         }
+        return null; 
     }
 
 

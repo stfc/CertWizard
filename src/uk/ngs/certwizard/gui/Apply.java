@@ -9,7 +9,6 @@ import java.awt.Color;
 import java.awt.Toolkit;
 import java.net.URL;
 import java.security.KeyStoreException;
-import java.util.Observer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -319,8 +318,7 @@ public class Apply extends javax.swing.JDialog {
     }*/
 
     private void btnApplyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnApplyActionPerformed
-     
-        //WaitDialog.showDialog("Apply");
+      
         boolean complete = true;
         String text = "";
         String myCN = "";
@@ -402,15 +400,18 @@ public class Apply extends javax.swing.JDialog {
                             + "\nPlease also ensure that it is in the form of name.surname@example.com or similar"
                             + "\nPlease try again.", messageTitle, JOptionPane.INFORMATION_MESSAGE);
                 }else{
+                    WaitDialog.showDialog("Apply");
                     // creates a new keypair for the CSR (does not reStore the keystore file) 
                     this.storedAlias = onLineCertRequest.doOnLineCsrUpdateKeyStore();
                     
                     if (this.storedAlias != null) {
+                        WaitDialog.hideDialog();
                         model.getClientKeyStore().reStore(); 
                         messageTitle = "Request Successful";
                         JOptionPane.showMessageDialog(this, onLineCertRequest.getMessage(), messageTitle, JOptionPane.INFORMATION_MESSAGE);
                         
                     } else {
+                        WaitDialog.hideDialog();
                         messageTitle = "Request UnSuccessful";
                         try {
                             //need to clear up the CSR if created in the keyStore
