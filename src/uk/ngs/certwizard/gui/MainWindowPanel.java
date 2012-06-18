@@ -121,6 +121,12 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
      * the certificate wizard is available.
      */
     public void doPostConstruct() {
+        // start the background tasks before we show any dialogs. 
+        messageOfDayExecutor.scheduleWithFixedDelay(new MessageOfDayTask(), 0, 30, TimeUnit.MINUTES); 
+        onlineUpdateTask = new OnlineUpdateKeyStoreEntriesSwingWorker(
+                caKeyStoreModel.getKeyStoreEntryMap(), caKeyStoreModel, this);
+        onlineUpdateTask.addPropertyChangeListener(onlineUpdateTaskPropertyListener); 
+        onlineUpdateTask.execute();
         
         if (this.caKeyStoreModel.getKeyStoreEntryMap().isEmpty()) {
             JOptionPane.showMessageDialog(this,
@@ -141,12 +147,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                     + "Please go to www.ngs.ac.uk in order to obtain the latest version",
                     "New Version of Certificate Wizard", JOptionPane.INFORMATION_MESSAGE);
         }
-        messageOfDayExecutor.scheduleWithFixedDelay(new MessageOfDayTask(), 0, 30, TimeUnit.MINUTES); 
-
-        onlineUpdateTask = new OnlineUpdateKeyStoreEntriesSwingWorker(
-                caKeyStoreModel.getKeyStoreEntryMap(), caKeyStoreModel, this);
-        onlineUpdateTask.addPropertyChangeListener(onlineUpdateTaskPropertyListener); 
-        onlineUpdateTask.execute();
     }
     
     private class MessageOfDayTask implements Runnable {
@@ -1624,7 +1624,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         });
 
         btnRefreshAll.setIcon(new javax.swing.ImageIcon(getClass().getResource("/help_panel_html/images/ajax-refresh-icon.gif"))); // NOI18N
-        btnRefreshAll.setToolTipText("Refresh all keystore certificates");
+        btnRefreshAll.setToolTipText("Refresh all/selected keystore certificates");
         btnRefreshAll.setEnabled(false);
         btnRefreshAll.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
