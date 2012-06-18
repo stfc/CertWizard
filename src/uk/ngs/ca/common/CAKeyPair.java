@@ -3,43 +3,16 @@
  */
 package uk.ngs.ca.common;
 
+import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.Provider;
-import org.bouncycastle.x509.X509V3CertificateGenerator;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.apache.log4j.Logger;
-import org.bouncycastle.asn1.x509.X509Name;
 import java.security.cert.X509Certificate;
-
-/*import java.io.IOException;
-import java.io.PrintStream;
-import java.io.File;
-import java.io.FileReader;
-import java.io.BufferedReader;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.AlgorithmParameters;
-import java.security.KeyFactory;
-import org.bouncycastle.util.encoders.Base64;
-import java.io.StringWriter;
-import javax.security.auth.x500.X500Principal;
-import org.bouncycastle.openssl.PEMWriter;
-import java.io.ByteArrayOutputStream;
-import org.bouncycastle.asn1.DERSet;
-import org.bouncycastle.jce.PKCS10CertificationRequest;
-import org.bouncycastle.x509.X509V1CertificateGenerator;
-import java.security.spec.PKCS8EncodedKeySpec;
-import javax.crypto.spec.PBEParameterSpec;
-import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.Cipher;
-import javax.crypto.EncryptedPrivateKeyInfo;
-*/
-
-import java.util.Date;
-import java.math.BigInteger;
 import java.util.Calendar;
+import java.util.Date;
+import org.apache.log4j.Logger;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.x509.X509V3CertificateGenerator;
 
 /**
  * A special keypair class for this application. It holds a private key which is

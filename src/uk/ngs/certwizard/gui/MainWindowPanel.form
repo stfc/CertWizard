@@ -106,7 +106,7 @@
                   <Component id="btnNewCertificateRequest" linkSize="19" min="-2" max="-2" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
                   <Component id="btnImportCertificate" linkSize="19" min="-2" max="-2" attributes="0"/>
-                  <EmptySpace max="32767" attributes="0"/>
+                  <EmptySpace pref="13" max="32767" attributes="0"/>
               </Group>
           </Group>
         </DimensionLayout>
@@ -179,11 +179,11 @@
                               </Group>
                               <Group type="102" attributes="0">
                                   <Component id="certificateTypeLabel" min="-2" max="-2" attributes="1"/>
-                                  <EmptySpace min="-2" pref="67" max="-2" attributes="0"/>
+                                  <EmptySpace pref="67" max="32767" attributes="0"/>
                                   <Component id="jLabel7" min="-2" max="-2" attributes="0"/>
-                                  <EmptySpace type="separate" max="-2" attributes="0"/>
-                                  <Component id="labelSerialNumber" max="32767" attributes="0"/>
-                                  <EmptySpace type="separate" max="-2" attributes="0"/>
+                                  <EmptySpace max="-2" attributes="0"/>
+                                  <Component id="textFieldSerialNumber" min="-2" pref="111" max="-2" attributes="0"/>
+                                  <EmptySpace type="unrelated" max="-2" attributes="0"/>
                                   <Component id="viewCertDetailsButton" min="-2" pref="32" max="-2" attributes="1"/>
                               </Group>
                               <Component id="caCertStatusTextField" alignment="1" max="32767" attributes="1"/>
@@ -194,7 +194,7 @@
                       </Group>
                       <Group type="102" attributes="0">
                           <Component id="jLabel12" min="-2" max="-2" attributes="0"/>
-                          <EmptySpace max="32767" attributes="0"/>
+                          <EmptySpace pref="96" max="32767" attributes="0"/>
                           <Group type="103" groupAlignment="0" attributes="0">
                               <Group type="102" alignment="0" attributes="0">
                                   <Component id="btnInstall" linkSize="5" min="-2" pref="106" max="-2" attributes="1"/>
@@ -245,7 +245,7 @@
                       <Component id="certificateTypeLabel" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="viewCertDetailsButton" linkSize="16" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="jLabel7" alignment="3" min="-2" max="-2" attributes="0"/>
-                      <Component id="labelSerialNumber" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="textFieldSerialNumber" alignment="3" min="-2" max="-2" attributes="0"/>
                   </Group>
                   <EmptySpace type="unrelated" max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="0" attributes="0">
@@ -554,9 +554,10 @@
             <Property name="text" type="java.lang.String" value="Serial Number:"/>
           </Properties>
         </Component>
-        <Component class="javax.swing.JLabel" name="labelSerialNumber">
+        <Component class="javax.swing.JTextField" name="textFieldSerialNumber">
           <Properties>
-            <Property name="text" type="java.lang.String" value="Serial number"/>
+            <Property name="editable" type="boolean" value="false"/>
+            <Property name="toolTipText" type="java.lang.String" value=""/>
           </Properties>
         </Component>
       </SubComponents>
@@ -607,7 +608,7 @@
                           <Component id="btnChangePasswd" alignment="3" min="-2" max="-2" attributes="0"/>
                       </Group>
                   </Group>
-                  <EmptySpace max="32767" attributes="0"/>
+                  <EmptySpace pref="13" max="32767" attributes="0"/>
               </Group>
           </Group>
         </DimensionLayout>

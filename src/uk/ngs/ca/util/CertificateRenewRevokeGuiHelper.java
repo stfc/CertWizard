@@ -150,7 +150,7 @@ public class CertificateRenewRevokeGuiHelper {
                 // Submit the renewal request saving the new csr renewal under the 
                 // new alias in the keystore. The existing cert that is selected 
                 // for renewal is left untouched.  
-                WaitDialog.showDialog("Please wait for renewal to complete");
+                WaitDialog.showDialog("Please wait, submitting renewal request");
                 String cert_id = selectedKSEW.getServerCertificateCSRInfo().getId();
                 CertificateDownload certDownload = new CertificateDownload(cert_id);
                 OnLineUserCertificateReKey rekey = new OnLineUserCertificateReKey(PASSPHRASE, newCsrRenewalAlias, certDownload.getCertificate());

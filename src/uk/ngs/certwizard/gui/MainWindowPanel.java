@@ -16,6 +16,9 @@ import java.text.Format;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.*;
@@ -60,7 +63,7 @@ import uk.ngs.ca.util.CertificateRenewRevokeGuiHelper;
 public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     private ImageIcon[] images; 
-    private String stringMotD = "Hit the Refresh button to fetch the latest message of the Day";
+    private String stringMotD = "Message of the Day";
     private final CAMotd motd = new CAMotd();
     private char[] PASSPHRASE;
     private ClientKeyStoreCaServiceWrapper caKeyStoreModel = null;
@@ -81,7 +84,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     //private final ScheduledExecutorService schedBackgroundExec = Executors.newSingleThreadScheduledExecutor();
     //private BackgroundTask<Void> runningOnlineUpdateTask;  // confined to AWT event thread. 
     private OnlineUpdateKeyStoreEntriesSwingWorker onlineUpdateTask = new OnlineUpdateKeyStoreEntriesSwingWorker(null, null, null);
-    //private ScheduledExecutorService messageOfDayExecutor = Executors.newSingleThreadScheduledExecutor();
+    private ScheduledExecutorService messageOfDayExecutor = Executors.newSingleThreadScheduledExecutor();
 
    
     
@@ -138,13 +141,27 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                     + "Please go to www.ngs.ac.uk in order to obtain the latest version",
                     "New Version of Certificate Wizard", JOptionPane.INFORMATION_MESSAGE);
         }
-        //messageOfDayExecutor.scheduleWithFixedDelay(new MessageOfDayTask(), 0, 30, TimeUnit.MINUTES); 
+        messageOfDayExecutor.scheduleWithFixedDelay(new MessageOfDayTask(), 0, 30, TimeUnit.MINUTES); 
 
         onlineUpdateTask = new OnlineUpdateKeyStoreEntriesSwingWorker(
                 caKeyStoreModel.getKeyStoreEntryMap(), caKeyStoreModel, this);
         onlineUpdateTask.addPropertyChangeListener(onlineUpdateTaskPropertyListener); 
         onlineUpdateTask.execute();
     }
+    
+    private class MessageOfDayTask implements Runnable {
+
+        public void run() {
+            final String motdtext = motd.getText(); 
+            // update the gui in the AWT event dispatch thread. 
+            GuiExecutor.instance().execute(new Runnable() {
+                public void run() {
+                  stringMotD = motdtext;   
+                  setMOD(motdtext); 
+                }
+            });
+        }
+   }
 
     /**
      * Handle onlineUpdateTask property changes (runs in AWT Event thread) 
@@ -316,8 +333,8 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
      */
     private void updateGUIPanel() {
         // nullify/clear the gui components first
-        this.labelSerialNumber.setText(""); 
-        this.labelSerialNumber.setEnabled(false); 
+        this.textFieldSerialNumber.setText(""); 
+        //this.textFieldSerialNumber.setEnabled(false); 
         this.vFrom.setText("");
         this.vTo.setText("");
         this.subjectDnTextField.setText("");
@@ -351,8 +368,14 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                     X509Certificate x509Cert = this.caKeyStoreModel.getClientKeyStore().getX509Certificate(alias);
                     if (x509Cert != null) {
                         String serialNumber = x509Cert.getSerialNumber().toString();
-                        this.labelSerialNumber.setText(serialNumber);
-                        this.labelSerialNumber.setEnabled(true);
+                        // Xiao Wang chose to use self signed certs to represent
+                        // CSRs rather than an instance of sun.security.pkcs.PKCS10. 
+                        // This self signed cert defines a default serial number
+                        // as follows, so we prob don't want to display this. 
+                        if(!"123456789".equals(serialNumber)){
+                          this.textFieldSerialNumber.setText(serialNumber);
+                        }
+                        //this.labelSerialNumber.setEnabled(true);
                     }
                 } catch (Exception ignore) {
                     DThrowable.showAndWait(null, "Problem", ignore);
@@ -1179,7 +1202,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         viewCertDetailsButton = new javax.swing.JButton();
         jLabel12 = new javax.swing.JLabel();
         jLabel7 = new javax.swing.JLabel();
-        labelSerialNumber = new javax.swing.JLabel();
+        textFieldSerialNumber = new javax.swing.JTextField();
         jScrollPane1 = new javax.swing.JScrollPane();
         TextMOD = new javax.swing.JTextArea();
         jPanel2 = new javax.swing.JPanel();
@@ -1244,7 +1267,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 .add(btnNewCertificateRequest)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(btnImportCertificate)
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(13, Short.MAX_VALUE))
         );
 
         jPanel1Layout.linkSize(new java.awt.Component[] {btnImportCertificate, btnNewCertificateRequest}, org.jdesktop.layout.GroupLayout.VERTICAL);
@@ -1421,7 +1444,8 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
         jLabel7.setText("Serial Number:");
 
-        labelSerialNumber.setText("Serial number");
+        textFieldSerialNumber.setEditable(false);
+        textFieldSerialNumber.setToolTipText("");
 
         org.jdesktop.layout.GroupLayout pnlAllDetailsLayout = new org.jdesktop.layout.GroupLayout(pnlAllDetails);
         pnlAllDetails.setLayout(pnlAllDetailsLayout);
@@ -1455,11 +1479,11 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                                 .add(dRemaining, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 174, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                             .add(pnlAllDetailsLayout.createSequentialGroup()
                                 .add(certificateTypeLabel)
-                                .add(67, 67, 67)
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 67, Short.MAX_VALUE)
                                 .add(jLabel7)
-                                .add(18, 18, 18)
-                                .add(labelSerialNumber, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .add(18, 18, 18)
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                .add(textFieldSerialNumber, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 111, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                                 .add(viewCertDetailsButton, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 32, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                             .add(org.jdesktop.layout.GroupLayout.TRAILING, caCertStatusTextField)
                             .add(subjectDnTextField, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -1467,7 +1491,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                             .add(aliasTextField)))
                     .add(pnlAllDetailsLayout.createSequentialGroup()
                         .add(jLabel12)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 96, Short.MAX_VALUE)
                         .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                             .add(pnlAllDetailsLayout.createSequentialGroup()
                                 .add(btnInstall, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 106, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
@@ -1512,7 +1536,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                     .add(certificateTypeLabel)
                     .add(viewCertDetailsButton)
                     .add(jLabel7)
-                    .add(labelSerialNumber))
+                    .add(textFieldSerialNumber, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                 .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
@@ -1629,7 +1653,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                     .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                         .add(jComboBox1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 28, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                         .add(btnChangePasswd)))
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(13, Short.MAX_VALUE))
         );
 
         btnCancelOnlineUpdate.setIcon(new javax.swing.ImageIcon(getClass().getResource("/uk/ngs/ca/images/stopRedCrossIcon.gif"))); // NOI18N
@@ -1923,10 +1947,10 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private javax.swing.JProgressBar jProgressBar1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JLabel labelOnlineUpdate;
-    private javax.swing.JLabel labelSerialNumber;
     private javax.swing.JPanel pnlAllDetails;
     private javax.swing.JTextField rDue;
     private javax.swing.JTextField subjectDnTextField;
+    private javax.swing.JTextField textFieldSerialNumber;
     private javax.swing.JTextField vFrom;
     private javax.swing.JTextField vTo;
     private javax.swing.JButton viewCertDetailsButton;
