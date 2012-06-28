@@ -328,7 +328,7 @@ public class ClientKeyStoreCaServiceWrapper {
             // the serverCertCSRInfo before we re-set it.
             keyStoreEntryWrapper.setServerCertificateCSRInfo(null);
 
-            // For each <certificate/> or <CSR/> node in the
+            // For each <certificate/> (takes precidence) or <CSR/> node in the
             // returned XML, create a new CertificateCSRInfo object
             // populated from the returned XML and the m_keyStore PubKey, and
             // add it to the corresponding keyStoreEntryWrapper
@@ -337,7 +337,10 @@ public class ClientKeyStoreCaServiceWrapper {
             // ADD CertificateCSRInfo entries
             // =============================================
             if (certNodes.getLength() != 0) {
-                // Iterate all the <certificate> XML nodes           
+                // Iterate all the <certificate> XML nodes      
+                // If there are multiple returned nodes, 
+                // the LAST node is used. This is ok because the server 
+                // gurantees that the last node is the latest. 
                 for (int i = 0; i < certNodes.getLength(); i++) {
                     Node _certNode = certNodes.item(i);
                     if (_certNode.getNodeType() == Node.ELEMENT_NODE) {
