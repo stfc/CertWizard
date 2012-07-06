@@ -12,7 +12,6 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
@@ -31,13 +30,17 @@ import uk.ngs.ca.tools.property.SysProperty;
  * a map of {@link KeyStoreEntryWrapper} objects which both constitute the 
  * application's shared data model. 
  * <p>
- * Provides methods for checking the keyStore entries online against the CA server 
- * for their current status (status according to the CA).
- * Importantly the keyStore is <b>NEVER reStored to disk</b> by any of the methods.
+ * Provides functionality for updating a keyStore entry by querying the CA server 
+ * for the <b>latest/current</b> state of a particular entry.
+ * The public key of the keyStore entry is used as the query parameter to query 
+ * for the latest certificate/CSR state. 
+ * <p>
+ * Importantly, the keyStore is <b>NEVER reStored to disk</b> by any of the methods.
  * ReStoring to disk has to be called manually by the client via {@link ClientKeyStore}. 
  * 
+ * 
  * @author Xiao Wang
- * @author David Meredith (modifications - more refactoring still needed)
+ * @author David Meredith (many modifications - more still needed)
  */
 public class ClientKeyStoreCaServiceWrapper {
 
@@ -176,7 +179,7 @@ public class ClientKeyStoreCaServiceWrapper {
             // Would only need to reStore keyStore if we did actually update a 
             // cert - but leave that to the calling client. 
             for (Iterator<KeyStoreEntryWrapper> it = this.keyStoreEntryMap.values().iterator(); it.hasNext();) {
-                if(this.updateKeyStoreEntry(it.next())){
+                if(this.updateKeyStoreEntry_IfVALID(it.next())){
                     updateOccurred = true; 
                 }
             }
@@ -189,6 +192,7 @@ public class ClientKeyStoreCaServiceWrapper {
      * Important: the keyStore is <b>NOT reStored to disk</b>. 
      * This method is long running and could be run in a background thread. 
      * The data model it modifies is itself thread safe (delegation of thread safety to model).
+     * See {@link #updateKeyStoreEntry_IfVALID(uk.ngs.ca.certificate.management.KeyStoreEntryWrapper) }
      * 
      * @param keyStoreEntryWrapper
      * @return true if the keyStoreEntry was updated in the keyStore, otherwise false. 
@@ -196,7 +200,7 @@ public class ClientKeyStoreCaServiceWrapper {
      */
     public boolean onlineUpdateKeyStoreEntry(KeyStoreEntryWrapper keyStoreEntryWrapper) throws KeyStoreException {
          this.checkEntryForUpdates(keyStoreEntryWrapper);
-         return this.updateKeyStoreEntry(keyStoreEntryWrapper); 
+         return this.updateKeyStoreEntryWithCert_IfVALID(keyStoreEntryWrapper); 
     }
     
     /**
@@ -245,18 +249,18 @@ public class ClientKeyStoreCaServiceWrapper {
  
     
     /**
-     * Download the latest status for the given KeyStoreEntryWrapper (if any) and update the 
-     * KeyStoreEntryWrapper's member CertificateCSRInfo object (does not update the keyStore). 
+     * Download the <b>latest</b> cert/CSR status that matches the given 
+     * KeyStoreEntryWrapper's public key from the server and update the KeyStoreEntryWrapper's
+     * member CertificateCSRInfo object (does not update the keyStore). 
      * <p/>
      * If keyStoreEntryWrapper has KEY_PAIR_ENTRY type, get the PublicKey and
      * query our CA to see if it has a record of that PubKey. If recognised, 
      * create a new <code>CertificateCSRInfo</code> from the PubKey and the
      * server response (XML) and add as a member object of the <code>keyStoreEntryWrapper</code>.
      * 
-     * @param keyStoreEntryWrapper 
+     * @param keyStoreEntryWrapper  
      */ 
-    private void checkEntryForUpdates(KeyStoreEntryWrapper keyStoreEntryWrapper) {
-        try {
+    private void checkEntryForUpdates(KeyStoreEntryWrapper keyStoreEntryWrapper) throws KeyStoreException {
             // return if not KEY_PAIR_ENTRY
             if (!keyStoreEntryWrapper.getEntryType().equals(KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY)) {
                 return;
@@ -321,8 +325,15 @@ public class ClientKeyStoreCaServiceWrapper {
             
             // doc would be null if not recognized by CA
             Document doc = resourcesPublicKey.getDocument();
-            NodeList certNodes = (NodeList) extractCertificateExpr.evaluate(doc, XPathConstants.NODESET);
-            NodeList csrNodes = (NodeList) exptractCSR_Expr.evaluate(doc, XPathConstants.NODESET);
+            NodeList certNodes; 
+            NodeList csrNodes;
+            try{
+               certNodes = (NodeList) extractCertificateExpr.evaluate(doc, XPathConstants.NODESET);
+               csrNodes = (NodeList) exptractCSR_Expr.evaluate(doc, XPathConstants.NODESET);
+            } catch(XPathExpressionException ex){
+                // coding error, we should be able to parse the expected response
+                throw new IllegalStateException("Could not parse server response", ex);      
+            }
 
             // Ok, this keyStore entry is recognised by our CA so first nullify 
             // the serverCertCSRInfo before we re-set it.
@@ -456,26 +467,22 @@ public class ClientKeyStoreCaServiceWrapper {
                     }
                 }
             }
-
-        } catch (Exception ep) {
-            ep.printStackTrace();
-        }
     }
 
 
     /**
-     * Download any certificate updates for the given KeyStoreEntryWrapper (if any) and update 
-     * <code>this.clientKeyStore</code> (note, the keyStore is NOT reStored to disk). 
+     * If the given KeyStoreEntryWrapper is VALID and has a certificate serial ID 
+     * that is known by the server, download the <b>latest</b> certificate 
+     * and update <code>this.clientKeyStore</code> (note, the keyStore is NOT reStored to disk). 
      * <p>
-     * For the given keyStoreEntryWrapper, check the following;
+     * First call {@link #onlineUpdateKeyStoreEntry(uk.ngs.ca.certificate.management.KeyStoreEntryWrapper)}, 
+     * then check the following pre-conditions;
      * <ul>
      *  <li>It is of type {@link KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE#KEY_PAIR_ENTRY}</li>
-     *  <li>It has a member {@link CertificateCSRInfo} object with a status of 'VALID'. 
-     *   Note, to set/update this status, call either {@link #checkAllEntriesForUpdates() }
-     *   or {@link #checkEntryForUpdates(uk.ngs.ca.certificate.model.KeyStoreEntryWrapper) }</li>
+     *  <li>It has a member {@link CertificateCSRInfo} object with a status of 'VALID'</li>
+     *  <li>The {@link CertificateCSRInfo} object has a serial ID for this certificate.</li>
      * </ul>
-     * 
-     * If both pre-conditions are true, then download the cert from the CA server and compare it to the 
+     * If these pre-conditions are true, then download the cert from the CA server and compare it to the 
      * cert in the managed keyStore. If the two certificates are identical, we 
      * do not need to update/replace the cert in our keyStore so return false. 
      * <p>
@@ -483,22 +490,24 @@ public class ClientKeyStoreCaServiceWrapper {
      * <ul>
      *   <li>The certificate for this entry has changed on the server 
      *   (maybe some new attributes have been added)</li>
-     *   <li>The certificate in our keyStore is a self-signed CSR cert.</li> 
+     *   <li>The certificate in our keyStore was a self-signed CSR cert which 
+     *   has just been signed on the server.</li> 
      * </ul>
      * Therefore, proceed to compare the PubKey of each to ensure they correspond. 
      * If the keys are identical, then replace the keyStore cert entry with the 
      * newly downloaded cert under the same alias (the private key already resides in keyStore). 
      * 
      * @param keyStoreEntryWrapper 
-     * @return true if <code>this.clientKeyStore</code> was updated, otherwise false. 
-     */ 
-    public boolean updateKeyStoreEntry(KeyStoreEntryWrapper keyStoreEntryWrapper) throws KeyStoreException {
+     * @return true if <code>this.clientKeyStore</code> was updated, otherwise false.  
+     */  
+    private boolean updateKeyStoreEntryWithCert_IfVALID(KeyStoreEntryWrapper keyStoreEntryWrapper) throws KeyStoreException {
 
         if (keyStoreEntryWrapper.getEntryType().equals(KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY)
                 && keyStoreEntryWrapper.getServerCertificateCSRInfo() != null
-                && "VALID".equals(keyStoreEntryWrapper.getServerCertificateCSRInfo().getStatus())) {
+                && "VALID".equals(keyStoreEntryWrapper.getServerCertificateCSRInfo().getStatus()) 
+                && keyStoreEntryWrapper.getServerCertificateCSRInfo().getId() != null) {
 
-            // Download the cert from server by passing the id dont think this returns a cert chain)
+            // Download the cert from server by passing the id (dont think this returns a cert chain)
             X509Certificate downloadedCert =
                     (new CertificateDownload(keyStoreEntryWrapper.getServerCertificateCSRInfo().getId()))
                     .getCertificate();

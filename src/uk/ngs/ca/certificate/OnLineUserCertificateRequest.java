@@ -21,7 +21,7 @@ import uk.ngs.ca.common.HashUtil;
  */
 public class OnLineUserCertificateRequest /*extends Observable*/{
 
-    private String RA = null;
+    private String RA= null;
     private String Name = null;
     private String Email = null;
     private String PIN1 = null;
@@ -48,44 +48,35 @@ public class OnLineUserCertificateRequest /*extends Observable*/{
      * 
      * @return newly created keyStore entry alias if successful, otherwise null
      */
-    public String doOnLineCsrUpdateKeyStore() {
+    public String doOnLineCsrUpdateKeyStore() throws KeyStoreException {
         if (getError().equals("")) {
             // caKeyStore.pkcs12
             ClientKeyStore clientKeyStore = ClientKeyStoreCaServiceWrapper.getInstance(this.PASSPHRASE).getClientKeyStore(); 
             // create new keypair entry under new meaningless alias and re-save file.
             // TODO: pass-through the info provided by the user rather than
             // creating a new dummy CSR certificate. 
-            this.Alias = clientKeyStore.createNewKeyPair(this.Alias, getOU(), getL(), this.Name);
-            if(this.Alias == null){
-                // a problem must have occurred
-                return null; 
-            }
+            
+            this.Alias = clientKeyStore.createNewSelfSignedCert(this.Alias, getOU(), getL(), this.Name);
+            
             PublicKey publicKey; 
-            try{ 
-               // Add a new keystore entry rather than reloading all the entries!
-               ClientKeyStoreCaServiceWrapper caKeyStoreModel = ClientKeyStoreCaServiceWrapper.getInstance(PASSPHRASE); 
-               KeyStoreEntryWrapper newCsrEntry = caKeyStoreModel.createKSEntryWrapperInstanceFromEntry(this.Alias);
-               caKeyStoreModel.getKeyStoreEntryMap().put(this.Alias, newCsrEntry);
-               publicKey = clientKeyStore.getPublicKey(this.Alias);
-            } catch(KeyStoreException ex){
-                ex.printStackTrace();
-                return null; 
-            }
+            // Add a new keystore entry rather than reloading all the entries!
+            ClientKeyStoreCaServiceWrapper caKeyStoreModel = ClientKeyStoreCaServiceWrapper.getInstance(PASSPHRASE); 
+            KeyStoreEntryWrapper newCsrEntry = caKeyStoreModel.createKSEntryWrapperInstanceFromEntry(this.Alias);
+            caKeyStoreModel.getKeyStoreEntryMap().put(this.Alias, newCsrEntry);
+            publicKey = clientKeyStore.getPublicKey(this.Alias);
+            
             
             PrivateKey privateKey = clientKeyStore.getPrivateKey(this.Alias);
 
-            CertificateRequestCreator csrCreator = new CertificateRequestCreator();
-            csrCreator.setCN(this.Name);
-            csrCreator.setEmail(this.Email);
-            csrCreator.setRA(getOU(), getL());
+            CertificateRequestCreator csrCreator = new CertificateRequestCreator(
+                    CertificateRequestCreator.TYPE.USER, this.Name, getOU(), getL(), this.Email);
+            String csrString = csrCreator.createCertificateRequest(privateKey, publicKey);
+            
             String hashPIN1 = HashUtil.getHash(this.PIN1);
             String hashPIN2 = HashUtil.getHash(this.PIN2);
-            csrCreator.setPIN1(hashPIN1);
-            csrCreator.setPIN2(hashPIN2);
-            csrCreator.createDN(false);
-            String csrString = csrCreator.createCertificateRequest(privateKey, publicKey);
-            //String dn = csrCreator.getDN().toString();
-
+            if(!hashPIN1.equals(hashPIN2)){
+               return null;  
+            }
             CSRRequest csrRequest = new CSRRequest(csrString, hashPIN1, this.Email);
             this.MESSAGE = csrRequest.getMessage();
             if(csrRequest.isCSRREquestSuccess()){
@@ -176,16 +167,16 @@ public class OnLineUserCertificateRequest /*extends Observable*/{
 
     private String getError() {
         if (!isValidRA()) {
-            return "Please select a RA from the pull-down menu.";
+            return "Invalid RA";
         }
         if (!isValidName()) {
-            return "Please input your name (firstname lastname)";
+            return "Invalid CN";
         }
         if (!isValidEmail()) {
-            return "Please input your email";
+            return "Invalid Email";
         }
         if (!isValidPIN()) {
-            return "Please input two same PIN";
+            return "Invalid PIN";
         }
         return "";
     }

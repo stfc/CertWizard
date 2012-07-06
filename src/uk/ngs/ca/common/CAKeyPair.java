@@ -18,11 +18,11 @@ import org.bouncycastle.x509.X509V3CertificateGenerator;
  * A special keypair class for this application. It holds a private key which is
  * compatible to an openssl-generated one and a RSA private key.
  * 
- * @author xw75
+ * @author xw75 (Xiao Wang) 
  */
 public class CAKeyPair {
 
-    private static final int KEYSIZE = 2048; //1024;  // DAVE,
+    private static final int KEYSIZE = 2048; //1024; 
     private static final String KEY_ALG = "RSA";
 
     //private static final String KEY_HEADER = "-----BEGIN ENCRYPTED PRIVATE KEY-----";

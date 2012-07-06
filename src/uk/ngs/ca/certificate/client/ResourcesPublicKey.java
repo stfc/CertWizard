@@ -28,10 +28,7 @@ public class ResourcesPublicKey {
     public ResourcesPublicKey( PublicKey publicKey ){
         this.encodedPublicKey = EncryptUtil.getEncodedPublicKey(publicKey);
     }
-    //public ResourcesPublicKey( String encodedPublicKey ){
-    //    this.encodedPublicKey = encodedPublicKey;
-    //}
-
+   
     public boolean isExist(){
         Document _document ;
         boolean isExist = false;

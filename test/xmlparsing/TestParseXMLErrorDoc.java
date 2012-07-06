@@ -14,6 +14,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.StringReader;
+import java.util.regex.Pattern;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -49,6 +50,18 @@ public class TestParseXMLErrorDoc {
     
     @After
     public void tearDown() {
+    }
+    
+    @Test 
+    public void quickTest() throws Exception{
+       
+        String sample = " one   two three, four    five  "; 
+        String[] vals = sample.trim().split("[,\\s]+"); 
+        assertEquals("one", vals[0]); 
+        assertEquals("two", vals[1]); 
+        assertEquals("three", vals[2]); 
+        assertEquals("four", vals[3]); 
+        assertEquals("five", vals[4]); 
     }
 
 

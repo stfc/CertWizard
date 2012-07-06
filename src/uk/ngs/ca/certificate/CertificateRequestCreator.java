@@ -3,324 +3,134 @@
  */
 package uk.ngs.ca.certificate;
 
-import org.apache.log4j.Logger;
-
+import java.io.StringWriter;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import javax.security.auth.x500.X500Principal;
-
-import org.bouncycastle.asn1.DERSet;
-import org.bouncycastle.asn1.x509.X509Name;
-import org.bouncycastle.openssl.PEMWriter;
-import org.bouncycastle.asn1.x509.X509Extensions;
-import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.GeneralNames;
-import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
-import org.bouncycastle.asn1.x509.Attribute;
-import org.bouncycastle.asn1.x509.X509Extension;
-import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.jce.PKCS10CertificationRequest;
-
-//import java.io.ByteArrayOutputStream;
-import java.io.StringWriter;
-
 import java.util.Vector;
-import java.util.ArrayList;
+import javax.security.auth.x500.X500Principal;
+import org.apache.commons.validator.routines.EmailValidator;
+import org.apache.log4j.Logger;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.x509.*;
+import org.bouncycastle.jce.PKCS10CertificationRequest;
+import org.bouncycastle.openssl.PEMWriter;
 
 /**
- * A new certification request
- *
- * @author xw75
+ * Create a new PKCS#10 certification request as a string. 
+ * @see http://www.bouncycastle.org/wiki/display/JA1/X.509+Public+Key+Certificate+and+Certification+Request+Generation
+ * @see https://ssl-tools.verisign.com/checker/ 
+ * 
+ * @author xw75 (Xiao Wang) 
+ * @author David Meredith
  *
  */
 public class CertificateRequestCreator {
 
-    static final Logger myLogger = Logger.getLogger(CertificateRequestCreator.class.getName());
-    public String SIG_ALG = "MD5withRSA";
-    private String C = "";
-    private String O = "";
-    private String OU = "";
-    private String L = "";
-    private String CN = "";
-    private String AdminEmail = "";
-    private X509Name DN = null;
-    private String Email = "";
-    private String PIN1 = "";
-    private String PIN2 = "";
-    private String RA = "";
-    public String HEADER = "-----BEGIN CERTIFICATE REQUEST-----";
-    public String FOOTER = "-----END CERTIFICATE REQUEST-----";
+    private static final Logger myLogger = Logger.getLogger(CertificateRequestCreator.class.getName());
+    
+    private final String SIG_ALG; //"MD5withRSA";
+    private String C, O, OU, L, CN, Email;
+    private X509Name DN;
+    /**
+     * Options for the PKCS#10 type. 
+     */
+    public enum TYPE {HOST, USER};
+    private TYPE type; 
 
     /**
-     * Creates a new certificate request.
+     * Create a new certificate request.
+     * 
+     * @throws IllegalArgumentException if any of the given values are empty. 
      */
-    public CertificateRequestCreator() {
-        String value = uk.ngs.ca.tools.property.SysProperty.getValue("ngsca.cert.c");
-        C = value.trim();
-        value = uk.ngs.ca.tools.property.SysProperty.getValue("ngsca.cert.o");
-        O = value.trim();
-        value = uk.ngs.ca.tools.property.SysProperty.getValue("ngsca.cert.signature.algorithm");
-        SIG_ALG = value.trim();
-    }
-
-    /**
-     * Gets C
-     * @return C
-     */
-    public String getC() {
-        return C;
-    }
-
-    /**
-     * Gets O
-     * @return O
-     */
-    public String getO() {
-        return O;
-    }
-
-    /**
-     * Sets up CN
-     * @param name CN
-     */
-    public void setCN(String name) {
-        CN = name.trim();
-    }
-
-    /**
-     * Gets CN
-     * @return CN
-     */
-    public String getCN() {
-        return CN;
-    }
-
-    /**
-     * Sets up email
-     * @param email email
-     */
-    public void setEmail(String email) {
-        Email = email.trim();
-    }
-
-    /**
-     * Gets email
-     * @return email
-     */
-    public String getEmail() {
-        return Email;
-    }
-
-    /**
-     * Sets up administratos's email
-     * @param email administrator's email
-     */
-    public void setAdminEmail(String email) {
-        AdminEmail = email.trim();
-    }
-
-    /**
-     * Gets administrator's email
-     * @return administrator's email
-     */
-    public String getAdminEmail() {
-        return AdminEmail;
-    }
-
-    /**
-     * Sets up RA
-     * @param ou OU
-     * @param l L
-     */
-    public void setRA(String ou, String l) {
-        setOU(ou.trim());
-        setL(l.trim());
-        RA = ou.trim() + " " + l.trim();
-    }
-
-    /**
-     * Gets RA
-     * @return RA
-     */
-    public String getRA() {
-        return RA;
-    }
-
-    /**
-     * Sets up OU
-     * @param ou OU
-     */
-    public void setOU(String ou) {
-        OU = ou.trim();
-    }
-
-    /**
-     * Gets OU
-     * @return OU
-     */
-    public String getOU() {
-        return OU;
-    }
-
-    /**
-     * Sets up L
-     * @param l L
-     */
-    public void setL(String l) {
-        L = l.trim();
-    }
-
-    /**
-     * Gets L
-     * @return L
-     */
-    public String getL() {
-        return L;
-    }
-
-    /**
-     * Sets up first PIN
-     * @param pin PIN
-     */
-    public void setPIN1(String pin) {
-        PIN1 = pin;
-    }
-
-    /**
-     * Gets first PIN
-     * @return PIN
-     */
-    public String getPIN1() {
-        return PIN1;
-    }
-
-    /**
-     * Sets up second PIN
-     * @param pin PIN
-     */
-    public void setPIN2(String pin) {
-        PIN2 = pin;
-    }
-
-    /**
-     * Gets second PIN
-     * @return PIN
-     */
-    public String getPIN2() {
-        return PIN2;
-    }
-
-    /**
-     * Checks if the two PINs are same
-     * @return true if two PINs are same, otherwise false.
-     */
-    public boolean isValidPIN() {
-        if (PIN1.equals("") || PIN2.equals("")) {
-            return false;
+    public CertificateRequestCreator(TYPE type, String CN, String OU, String L, String email) {
+        this.C = uk.ngs.ca.tools.property.SysProperty.getValue("ngsca.cert.c").trim();
+        this.O = uk.ngs.ca.tools.property.SysProperty.getValue("ngsca.cert.o").trim();
+        this.SIG_ALG = uk.ngs.ca.tools.property.SysProperty.getValue("ngsca.cert.signature.algorithm").trim();
+        this.CN = CN.trim(); 
+        this.OU = OU.trim(); 
+        if(L != null){
+          this.L = L.trim(); 
         }
-
-        if (PIN1.equals(PIN2)) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * Gets X509Name
-     * @return DN in X509Name
-     */
-    public X509Name getDN() {
-        return DN;
+        this.Email = email.trim(); 
+        this.type = type; 
+        
+        // build the DN and throw IllegalArgExe if something is invaild 
+        this.createDN(); 
+                 
     }
 
     /**
      * Concatenates all the user information to a DN
-     * @param hostcert true if to create a host DN, otherwise false.
      */
-    public void createDN(boolean hostcert) {
-
-        ArrayList<String> missingInformation = new ArrayList<String>();
-
-        if (getCN().equals("")) {
-            missingInformation.add("C");
+    private void createDN() {
+        if (CN.equals("")) {
+            throw new IllegalArgumentException("Invalid C");
         }
-        if (getO().equals("")) {
-            missingInformation.add("O");
+        if (O.equals("")) {
+            throw new IllegalArgumentException("O");
         }
-        if (getOU().equals("")) {
-            missingInformation.add("OU");
+        if (OU.equals("")) {
+            throw new IllegalArgumentException("OU");
         }
-//        if (getL().equals("")) {
-//            missingInformation.add("L");
-//        }
-        if (getCN().equals("")) {
-            missingInformation.add("CN");
+        // Should L be made optional ? 
+        //if (L.equals("")) {
+        //      throw new IllegalArgumentException("L");
+        //}
+        if (CN.equals("")) {
+            throw new IllegalArgumentException("CN");
         }
 
-//        if (getAdminEmail().trim().equals("")) {
-//            missingInformation.add("ADMINEMAIL");
-//        }
-        if (getPIN1().trim().equals("") || getPIN2().trim().equals("")) {
-            missingInformation.add("PIN");
-        }
-        if (!isValidPIN()) {
-            missingInformation.add("mismatch PIN");
-        }
-
-        if (hostcert) {
-            if (getAdminEmail().equals("")) {
-                missingInformation.add("AdminEmail");
+        if (TYPE.HOST.equals(this.type)) {
+            if (!EmailValidator.getInstance().isValid(Email)) {
+                throw new IllegalArgumentException("AdminEmail");
             }
         }
-//        if (getEmail().equals("")) {
-//            missingInformation.add("EMAIL");
-//        }
 
-
-        if (missingInformation.size() == 0) {
-            if (!hostcert) {
-                if (getL().equals("")) {
-                    //user certificate
-//                    DN = new X509Name("C=" + getC() + ", O=" + getO() + ", OU=" + getOU() + ", CN=" + getCN());
-                    DN = new X509Name("CN=" + getCN() + ", OU=" + getOU() + ", O=" + getO() + ", C=" + getC() );
-
-                } else {
-//                    DN = new X509Name("C=" + getC() + ", O=" + getO() + ", OU=" + getOU() + ", L=" + getL() + ", CN=" + getCN());
-                    DN = new X509Name("CN=" + getCN() + ", L=" + getL() + ", OU=" + getOU() + ", O=" + getO() + ", C=" + getC());
-
-                }
+        if (TYPE.USER.equals(this.type)) { 
+            // Should L be made optional ? 
+            if (L==null || L.equals("")) {
+                DN = new X509Name("CN=" + CN + ", OU=" + OU + ", O=" + O + ", C=" + C);
             } else {
-                //host certificate, please note the email is E, not
-                //emaliAddress
-                if (getL().equals("")) {
-//                    DN = new X509Name("C=" + getC() + ", O=" + getO() + ", OU=" + getOU() + ", CN=" + getCN() + ", emailAddress=" + getAdminEmail());
-                    DN = new X509Name("emailAddress=" + getAdminEmail() + ", CN=" + getCN() + ", OU=" + getOU() + ", O=" + getO() + ", C=" + getC() );
-                } else {
-//                    DN = new X509Name("C=" + getC() + ", O=" + getO() + ", OU=" + getOU() + ", L=" + getL() + ", CN=" + getCN() + ", emailAddress=" + getAdminEmail());
-                    DN = new X509Name("emailAddress=" + getAdminEmail() + ", CN=" + getCN() + ", L=" + getL() + ", OU=" + getOU() + ", O=" + getO() + "C=" + getC() );
-                }
+                DN = new X509Name("CN=" + CN + ", L=" + L + ", OU=" + OU + ", O=" + O + ", C=" + C);
             }
-        } else {
-            myLogger.error("[CertificateRequest] could not create DN: not enough information available");
-        }
+        } else { //host certificate
+            if (L==null || L.equals("")) {
+                DN = new X509Name("emailAddress=" + Email + ", CN=" + CN + ", OU=" + OU + ", O=" + O + ", C=" + C);
+            } else {
+                DN = new X509Name("emailAddress=" + Email + ", CN=" + CN + ", L=" + L + ", OU=" + OU + ", O=" + O + ", C=" + C);
+            }
+        } 
     }
 
     /**
-     * Creates CSR
+     * Creates a PKCS#10 request string using the class creation parameters and  
+     * the given pubkey and privkey. 
+     * 
      * @param privkey Private Key
      * @param pubkey Public Key
-     * @return CSR
+     * @return CSR as string 
+     * @throws IllegalStateException if the PKCS#10 can't be created. 
      */
     public String createCertificateRequest(PrivateKey privkey, PublicKey pubkey) {
 
-        PKCS10CertificationRequest request = null;
+        PKCS10CertificationRequest request;
 
-        X500Principal subjectName = new X500Principal( getDN().toString() );
-
-        // create a attribute for the request
-        GeneralNames subjectAltName = new GeneralNames(new GeneralName(GeneralName.rfc822Name, getEmail()));
-        Vector oids = new Vector();
+        
+        // Create an attribute for the request
+        // A common use case is to include an email address in the SubjectAlternative 
+        // name extension in the certificate generated from the PKCS#10 request: 
+        // For a user request, the SUBJECT_ALT_NAME is the userEmail. 
+        // For a host request, the SUBJECT_ALT_NAME is of the form 'DNS: host.name.ac.uk' 
+        GeneralNames subjectAltName; 
+        if(TYPE.HOST.equals(this.type)){
+            subjectAltName = new GeneralNames(new GeneralName(GeneralName.rfc822Name, Email));
+        } else {
+            // TODO need to check this is correct. 
+            subjectAltName = new GeneralNames(new GeneralName(GeneralName.rfc822Name, "DNS: "+CN)); 
+        }
+        Vector oids = new Vector(); // legacy required by BC. 
         Vector values = new Vector();
         oids.add(X509Extensions.SubjectAlternativeName);
         values.add(new X509Extension(false, new DEROctetString(subjectAltName)));
@@ -329,8 +139,13 @@ public class CertificateRequestCreator {
 
 
         try {
-//            request = new PKCS10CertificationRequest(SIG_ALG, getDN(), pubkey, new DERSet( attribute ), privkey);
-            request = new PKCS10CertificationRequest(SIG_ALG, subjectName, pubkey, new DERSet(attribute), privkey);
+            if(TYPE.USER.equals(this.type)){
+                // DM: can's specify X500Principal for host as it may contain email attribute. 
+               request = new PKCS10CertificationRequest(SIG_ALG, new X500Principal(DN.toString()), pubkey, new DERSet(attribute), privkey);    
+            } else {
+               request = new PKCS10CertificationRequest(SIG_ALG, DN, pubkey, new DERSet(attribute), privkey); 
+            }
+            
             StringWriter writer = new StringWriter();
             PEMWriter pemWrite = new PEMWriter(writer);
             pemWrite.writeObject(request);
@@ -338,11 +153,13 @@ public class CertificateRequestCreator {
 
             myLogger.debug("[CertificateCreator] createCertificateRequest: successful");
             return writer.toString();
-        } catch (Exception ep) {
-            ep.printStackTrace();
-            myLogger.error("[CertificateCreator] createCertificateRequest: failed. " + ep.toString());
-            return null;
-        }
+        } catch (Exception ex) {
+            myLogger.error("[CertificateCreator] createCertificateRequest: failed. " + ex.toString());
+            // This could be considered a coding error because we control the 
+            // security provider, algorithm and generate the private key so we 
+            // don't expect any bad values. 
+            throw new IllegalStateException("Failed to make PKCS#10", ex);  
+        } 
     }
 
 

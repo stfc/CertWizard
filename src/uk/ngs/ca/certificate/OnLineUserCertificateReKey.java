@@ -147,6 +147,7 @@ public class OnLineUserCertificateReKey {
         return hex.toString();
     }
 
+    // hmm, this looks hacky 
     private String getPrivateExponent(PrivateKey _privateKey) {
         int index = _privateKey.toString().indexOf("private exponent:");
         index = index + 17;
@@ -176,8 +177,9 @@ public class OnLineUserCertificateReKey {
         Client client = new Client(Protocol.HTTPS);
         client.setConnectTimeout(SysProperty.getTimeoutMilliSecs());  // in milliseconds (8 secs). TODO: should be editable and stored in .properties file 
 
-        // First attempt to connect without the necessary PPPK headers (just the
-        // PPPK header). We subsequently expect a 401 response challenge. 
+        // First attempt to connect. Add the 'PPPK' header and provide the encoded 
+        // public keyid in the request message payload/body. 
+        // We subsequently expect a 401 response challenge. 
         Representation representation = getRepresentation();
         Request request = new Request(Method.POST, new Reference(CSRURL), representation);
         request = setupHeaders(request);
@@ -185,7 +187,7 @@ public class OnLineUserCertificateReKey {
         Status _status = response.getStatus();
 
         // 401 response challenge was issued by the server - we will do a 
-        // second post and this time include the required PPPK headers.
+        // second post and this time include the required PPPK headers to authenticate.
         if (_status.equals(Status.CLIENT_ERROR_UNAUTHORIZED)) {
             org.restlet.util.Series<org.restlet.data.Parameter> headers = (org.restlet.util.Series) response.getAttributes().get("org.restlet.http.headers");
             Parameter _realmP = headers.getFirst("realm");
@@ -260,6 +262,8 @@ public class OnLineUserCertificateReKey {
                 // Set defaults 
                 this.ERRORMESSAGE = "Error";
                 this.DETAILERRORMESSAGE = "Unknown Error";
+                
+                // try and parse the server response XML 
                 try {
                     String xmlResponse = response.getEntityAsText();
                     DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -492,10 +496,10 @@ public class OnLineUserCertificateReKey {
                 String OU = _retrieveDataFromDN(dn, "OU=");
                 String L = _retrieveDataFromDN(dn, "L=");
                 String CN = _retrieveDataFromDN(dn, "CN=");
-                String ali = this.clientKeyStore.createNewKeyPair(newCsrAlias, OU, L, CN);
+                String alias = this.clientKeyStore.createNewSelfSignedCert(newCsrAlias, OU, L, CN);
                 //this.clientKeyStore.reStore();
-                PublicKey _publicKey = this.clientKeyStore.getPublicKey(ali);
-                PrivateKey _privateKey = this.clientKeyStore.getPrivateKey(ali);
+                PublicKey _publicKey = this.clientKeyStore.getPublicKey(alias);
+                PrivateKey _privateKey = this.clientKeyStore.getPrivateKey(alias);
                 this.PKCS10REQUEST = new PKCS10CertificationRequest(this.SIG_ALG, new X500Principal(getDN().toString()), _publicKey, new DERSet(), _privateKey);
             }
             StringWriter writer = new StringWriter();

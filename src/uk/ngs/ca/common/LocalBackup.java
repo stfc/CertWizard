@@ -49,7 +49,10 @@ public class LocalBackup {
             inF = new File(keyFile);
             outF = new File(keyBackupFile);
 
-            copyFile(inF, outF);
+            if(inF.exists() && inF.isFile() && inF.length() > 0L){
+              copyFile(inF, outF);    
+            }
+            
             return true;
         } catch (Exception ex) {       
             Message = "Could not make keyStore backup file. Please make a manaual backup of :\n"

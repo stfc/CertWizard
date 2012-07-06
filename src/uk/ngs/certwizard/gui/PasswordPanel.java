@@ -236,6 +236,7 @@ public class PasswordPanel extends javax.swing.JPanel  {
         String _pswd = new String(this.txtPassword.getPassword());
         System.setProperty(_pswdProperty, _pswd);
 
+        // create a backup 
         LocalBackup localBackup = new LocalBackup();
         if(!localBackup.isSuccess()){
             JOptionPane.showMessageDialog(this, localBackup.getMessage(), "Failed to make backup file", JOptionPane.WARNING_MESSAGE);

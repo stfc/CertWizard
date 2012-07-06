@@ -92,9 +92,9 @@ public final class ClientKeyStore {
      * Change the keyStore password and persist to file. 
      * @param passphrase
      */
-    public synchronized void reStorePassword(char[] passphrase) {
+    public synchronized boolean reStorePassword(char[] passphrase) {
         this.PASSPHRASE = passphrase;
-        this.reStore();
+        return this.reStore();
     }
 
     /**
@@ -255,14 +255,13 @@ public final class ClientKeyStore {
     }
 
     /**
-     * Create a new key pair in the keyStore file.
+     * Create a new self-signed certificate (key pair) in the keyStore file.
      * Important: the <b>keyStore is NOT reStored to file</b>. 
      * 
-     * @param alias a suggested alias (can be null)
+     * @param alias a suggested alias (can be null, a new meaningless alias will be created instead)
      * @return alias of new keyStore entry or null if a problem occurred. 
      */
-    public synchronized String createNewKeyPair(String alias, String ou, String l, String cn) {
-        try {
+    public synchronized String createNewSelfSignedCert(String alias, String ou, String l, String cn) throws KeyStoreException {
             KeyPair keyPair = CAKeyPair.getNewKeyPair();
             // the self signed certificate has some hardwired values - why?
             X509Certificate cert = CAKeyPair.createSelfSignedCertificate(keyPair, ou, l, cn );
@@ -273,10 +272,6 @@ public final class ClientKeyStore {
             }
             this.keyStore.setKeyEntry(alias, keyPair.getPrivate(), PASSPHRASE, certs);
             return alias;
-        } catch (KeyStoreException ex) {
-            ex.printStackTrace();
-        }
-        return null;
     }
 
     /*public synchronized String getAlias( X509Certificate cert ){
