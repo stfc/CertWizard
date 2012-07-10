@@ -75,7 +75,7 @@ public class OnlineUpdateKeyStoreEntries extends BackgroundTask<Void> {
             }
 
 
-        } catch (KeyStoreException ex) {
+        } catch (Exception ex) {
             Logger.getLogger(MainWindowPanel.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
         }

@@ -12,6 +12,7 @@ import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -59,12 +60,13 @@ public class CertificateImportGuiHelper {
     public static final ResourceBundle RB = ResourceBundle.getBundle(RB_BASENAME);
     private Component parentCompoent;
     private ClientKeyStoreCaServiceWrapper caKeyStoreModel;
-    private char[] PASSPHRASE;
+    //private char[] PASSPHRASE;
 
-    public CertificateImportGuiHelper(Component parentCompoent, char[] passphrase) {
+    public CertificateImportGuiHelper(Component parentCompoent, ClientKeyStoreCaServiceWrapper caKeyStoreModel) {
         this.parentCompoent = parentCompoent;
-        this.PASSPHRASE = passphrase;
-        this.caKeyStoreModel = ClientKeyStoreCaServiceWrapper.getInstance(this.PASSPHRASE);
+        //this.PASSPHRASE = passphrase;
+        //this.caKeyStoreModel = ClientKeyStoreCaServiceWrapper.getInstance(this.PASSPHRASE);
+        this.caKeyStoreModel = caKeyStoreModel; 
     }
 
     /**
@@ -73,7 +75,7 @@ public class CertificateImportGuiHelper {
      *
      * @see FPortecle#importKeyPair()
      */
-    public String doImportCertificateAction() throws KeyStoreException, CryptoException {
+    public String doImportCertificateAction() throws KeyStoreException, CryptoException, IOException, CertificateException {
 
         // Let the user choose a file to import from
         File fKeyPairFile = chooseImportFileHelper();
@@ -209,7 +211,7 @@ public class CertificateImportGuiHelper {
 
         // Add a new key entry to the keystore (private key and CERT CHAIN)
         // and reStore (save the keystore to file and reload from file) 
-        this.caKeyStoreModel.getClientKeyStore().setKeyEntry(newHeadCertImportAlias, privateKey, this.PASSPHRASE, certChain);
+        this.caKeyStoreModel.getClientKeyStore().setKeyEntry(newHeadCertImportAlias, privateKey, this.caKeyStoreModel.getPassword(), certChain);
         this.caKeyStoreModel.getClientKeyStore().reStore();
 
         // Note, the reStore above reloads the keyStore object from file. 

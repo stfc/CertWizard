@@ -32,7 +32,7 @@ import uk.ngs.ca.tools.property.SysProperty;
 
 /**
  *
- * @author xw75
+ * @author xw75 (Xiao Wang) 
  */
 public class CSRRequest {
 
@@ -63,14 +63,14 @@ public class CSRRequest {
             isCSRRequestSuccess = true;
         } else if (response.getStatus().equals(response.getStatus().SUCCESS_ACCEPTED)) {
             try {
-                MESSAGE = _getFormattedMessage( response );
+                MESSAGE = _getFormattedMessage(response);
                 isCSRRequestSuccess = false;
             } catch (Exception ep) {
                 ep.printStackTrace();
             }
-        }else{
+        } else {
 
-           MESSAGE = "A problem occurred during the submission process. This could be due to a Server side problem.\n"
+            MESSAGE = "A problem occurred during the submission process. This could be due to a Server side problem.\n"
                     + "Please try again later. If the problem persists, please contact the helpdesk support at \n"
                     + "support@grid-support.ac.uk";
             isCSRRequestSuccess = false;
@@ -104,16 +104,16 @@ public class CSRRequest {
 
                 if (fstNode.getNodeType() == Node.ELEMENT_NODE) {
 
-                      Element fstElmnt = (Element) fstNode;
-                      NodeList fstNmElmntLst = fstElmnt.getElementsByTagName("text");
-                      
-                      
-                      Element fstNmElmnt = (Element) fstNmElmntLst.item(0);
-                      NodeList fstNm = fstNmElmnt.getChildNodes();
-                      
-                      message = (((Node) fstNm.item(0)).getNodeValue());
+                    Element fstElmnt = (Element) fstNode;
+                    NodeList fstNmElmntLst = fstElmnt.getElementsByTagName("text");
+
+
+                    Element fstNmElmnt = (Element) fstNmElmntLst.item(0);
+                    NodeList fstNm = fstNmElmnt.getChildNodes();
+
+                    message = (((Node) fstNm.item(0)).getNodeValue());
 //                      System.out.println("SERVER VERSION NO === : "  + ((Node) fstNm.item(0)).getNodeValue());
-                      //img = ((Node) fstNm.item(0)).getNodeValue();
+                    //img = ((Node) fstNm.item(0)).getNodeValue();
                 }
             }
 

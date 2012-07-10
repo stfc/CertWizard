@@ -4,18 +4,17 @@
  */
 package uk.ngs.ca.certificate.management;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
+import java.nio.channels.FileChannel;
 import java.security.*;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.logging.Level;
-import org.apache.log4j.Logger;
 import org.bouncycastle.jce.provider.unlimited.PKCS12KeyStoreUnlimited;
 import uk.ngs.ca.common.CAKeyPair;
+import uk.ngs.ca.common.FileUtils;
 import uk.ngs.ca.tools.property.SysProperty;
 
 /**
@@ -36,8 +35,7 @@ import uk.ngs.ca.tools.property.SysProperty;
  */
 public final class ClientKeyStore {
     
-    private static final Logger myLogger = Logger.getLogger(ClientKeyStore.class);
-
+    
     // keyStore is an in-mem object that represents shared mutable state and 
     // so access to its entries must by synchronized in order to;  
     // a) prevent one thread from modifying the state of the object when 
@@ -51,12 +49,14 @@ public final class ClientKeyStore {
     private static ClientKeyStore clientKeyStore = null;
 
     /**
-     * Get a shared singleton <code>ClientKeyStore</code> instance.
-     * @param passphrase for the '$HOME/.ca/cakeystore.pkcs12' keystore file. 
+     * Get a shared singleton <code>ClientKeyStore</code> instance for the 
+     * <tt>'$HOME/.ca/cakeystore.pkcs12'</tt> keyStore file.
+     * 
+     * @param passphrase used to protect the keyStore. 
      * @return
      * @throws IllegalStateException if there is problem creating or loading the KeyStore
      */
-    static synchronized ClientKeyStore getClientkeyStore(char[] passphrase) {
+    static synchronized ClientKeyStore getClientkeyStore(char[] passphrase) throws KeyStoreException, IOException, CertificateException{
         // Static factory method allows us to choose whether we return the same instance
         // or create a new instance (easy to remove the if statement below so that
         // each invocation of this method will create/return a new keyStore
@@ -80,7 +80,7 @@ public final class ClientKeyStore {
      * @param passphrase
      * @throws IllegalStateException if the KeyStore cannot be initialized.
      */
-    private ClientKeyStore(char[] passphrase) {
+    private ClientKeyStore(char[] passphrase) throws KeyStoreException, IOException, CertificateException{
         String caDir = System.getProperty("user.home") + File.separator + ".ca";
         this.PASSPHRASE = passphrase;
         this.key_KeyStoreFilePath = caDir + File.separator + SysProperty.getValue("ngsca.key.keystore.file");
@@ -92,9 +92,9 @@ public final class ClientKeyStore {
      * Change the keyStore password and persist to file. 
      * @param passphrase
      */
-    public synchronized boolean reStorePassword(char[] passphrase) {
+    public synchronized void reStorePassword(char[] passphrase) throws IOException, KeyStoreException, CertificateException {
         this.PASSPHRASE = passphrase;
-        return this.reStore();
+        this.reStore();
     }
 
     /**
@@ -114,10 +114,9 @@ public final class ClientKeyStore {
      * 
      * @return A newly created KeyStore 
      */
-    public KeyStore getKeyStoreCopy(){
+    public KeyStore getKeyStoreCopy() throws KeyStoreException, IOException, CertificateException{
         try {
             KeyStore ks = PKCS12KeyStoreUnlimited.getInstance();
-            myLogger.debug("[ClientKeyStore] get keystore ...");
             FileInputStream fis = null;
             try {
                 File f = new File(this.key_KeyStoreFilePath);
@@ -134,11 +133,13 @@ public final class ClientKeyStore {
                         fis.close();
                     }
                 } catch (IOException ex) {
-                    ex.printStackTrace();
+                    java.util.logging.Logger.getLogger(ClientKeyStore.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
-        } catch (Exception ke) {
-            throw new IllegalStateException("[ClientKeyStore] failed to init keyStore handle: ", ke);
+        } catch (NoSuchProviderException ke) {
+            throw new IllegalStateException(ke);
+        } catch (NoSuchAlgorithmException ke) {
+            throw new IllegalStateException(ke);
         }
     }
 
@@ -151,14 +152,24 @@ public final class ClientKeyStore {
 
     /**
      * Save the managed keyStore file to its default location and re-init
-     * the managed key store <code>this.keyStore</code>.
-     * @return
+     * the managed key store <code>this.keyStore</code>. 
+     *  
+     * @throws IOException
+     * @throws KeyStoreException
+     * @throws CertificateException 
      */
-    public synchronized boolean reStore() {
+    public synchronized void reStore() throws IOException, KeyStoreException, CertificateException {
+        // must first create a swap file incase anything goes wrong 
+        File srcFile = new File(this.key_KeyStoreFilePath);
+        File swpFile = null; 
+        if(srcFile.exists() && srcFile.length() > 0l){
+            swpFile = new File(this.key_KeyStoreFilePath+".swp"); 
+            FileUtils.copyFile(srcFile, swpFile, true);
+        }
+            
         FileOutputStream fos = null;
-        try { 
-            File f = new File(this.key_KeyStoreFilePath);
-            fos = new FileOutputStream(f);
+        try {
+            fos = new FileOutputStream(srcFile);
             // store will overwrite the file if it already exists
             this.keyStore.store(fos, PASSPHRASE); 
             
@@ -168,12 +179,12 @@ public final class ClientKeyStore {
             // imported cert chain are also stored as standalone entries in the
             // keyStore file? 
             this.keyStore = this.getKeyStoreCopy();
-            return true;
-            
-        } catch (Exception ep) {
-            ep.printStackTrace();
-            errorMessage = ep.getMessage();
-            return false;
+
+        } catch (NoSuchAlgorithmException ex) {
+            // Thrown when a particular cryptographic algorithm is
+            // requested but is not available in the environment. Since we know
+            // what algorithms we are using via BC, it should probably be considered a coding error
+            throw new IllegalStateException(ex);
         } finally {
             try {
                 if (fos != null) {
@@ -183,8 +194,13 @@ public final class ClientKeyStore {
                 java.util.logging.Logger.getLogger(ClientKeyStore.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+        // Now delete the swap file (we don't want to leave around copies of 
+        // the user's keyStore on disk). 
+        if(swpFile != null && swpFile.exists()){
+            swpFile.delete();
+        }
     }
-
+  
     /*
      * DM: Methods below provide thread-safe read/write access to the keystore and 
      * its contained entries since all code paths that access the encapsulated 

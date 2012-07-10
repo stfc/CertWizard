@@ -81,7 +81,8 @@ public class OnlineUpdateKeyStoreEntriesSwingWorker extends SwingWorker<Void, Ob
             }
 
 
-        } catch (KeyStoreException ex) {
+        } catch (Exception ex) {
+            // swallow and log the exception
             Logger.getLogger(MainWindowPanel.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
         }

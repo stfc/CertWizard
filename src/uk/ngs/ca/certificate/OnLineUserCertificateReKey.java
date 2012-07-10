@@ -53,15 +53,17 @@ public class OnLineUserCertificateReKey {
     public static String USERAGENT = SysProperty.getValue("uk.ngs.ca.request.useragent");
     public String SIG_ALG = SysProperty.getValue("ngsca.cert.signature.algorithm");
     X509Certificate renewalCert = null;
-    private ClientKeyStore clientKeyStore = null;
+    private final ClientKeyStore clientKeyStore;
+    private final ClientKeyStoreCaServiceWrapper caKeyStoreModel; 
     String ERRORMESSAGE = "";
     String DETAILERRORMESSAGE = "";
     private Document DOCUMENT = null;
     private PKCS10CertificationRequest PKCS10REQUEST = null;
     private String newCsrAlias = null;
 
-    public OnLineUserCertificateReKey(char[] passphrase, String newCsrAlias, X509Certificate renewalCert) {
-        this.clientKeyStore = ClientKeyStoreCaServiceWrapper.getInstance(passphrase).getClientKeyStore(); 
+    public OnLineUserCertificateReKey(ClientKeyStoreCaServiceWrapper caKeyStoreModel, String newCsrAlias, X509Certificate renewalCert)  {
+        this.caKeyStoreModel = caKeyStoreModel; 
+        this.clientKeyStore = caKeyStoreModel.getClientKeyStore(); 
         this.newCsrAlias = newCsrAlias;
         this.renewalCert = renewalCert;
     }

@@ -67,8 +67,13 @@ public class CAMotd {
         }
     }
 
+    /**
+     * Get the latest version of CertWizard supported by the server. 
+     * @return The latest CertWizard version or null if no version info can be 
+     * retrieved from the server. 
+     */
     public String getLatestVersion() {
-        String img = null;
+        String latestVersion = null;
         try {
             String csrURL = SysProperty.getValue("uk.ngs.ca.request.ca.url");
             Client c = new Client(Protocol.HTTPS);
@@ -99,7 +104,7 @@ public class CAMotd {
                       Element fstNmElmnt = (Element) fstNmElmntLst.item(0);
                       NodeList fstNm = fstNmElmnt.getChildNodes();
 //                      System.out.println("SERVER VERSION NO === : "  + ((Node) fstNm.item(0)).getNodeValue());
-                      img = ((Node) fstNm.item(0)).getNodeValue();
+                      latestVersion = ((Node) fstNm.item(0)).getNodeValue();
                 }
             }
 //            Document document = response.getEntityAsDom().getDocument();
@@ -111,11 +116,11 @@ public class CAMotd {
         } catch (Exception ep) {
             ep.printStackTrace();
         } finally {
-            return img;
+            return latestVersion;
         }
     }
 
-    public String getImage() {
+    /*public String getImage() {
         String img = null;
         try {
             String csrURL = SysProperty.getValue("uk.ngs.ca.request.ca.motd.img.url");
@@ -142,6 +147,6 @@ public class CAMotd {
         } finally {
             return img;
         }
-    }
+    }*/
     
 }

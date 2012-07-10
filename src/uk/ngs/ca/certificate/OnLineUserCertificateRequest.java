@@ -4,6 +4,7 @@
  */
 package uk.ngs.ca.certificate;
 
+import java.security.KeyPair;
 import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -13,6 +14,7 @@ import uk.ngs.ca.certificate.client.CSRRequest;
 import uk.ngs.ca.certificate.management.ClientKeyStore;
 import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
 import uk.ngs.ca.certificate.management.KeyStoreEntryWrapper;
+import uk.ngs.ca.common.CAKeyPair;
 import uk.ngs.ca.common.HashUtil;
 
 /**
@@ -26,12 +28,16 @@ public class OnLineUserCertificateRequest /*extends Observable*/{
     private String Email = null;
     private String PIN1 = null;
     private String PIN2 = null;
-    private char[] PASSPHRASE = null;
+    //private char[] PASSPHRASE = null;
     private String MESSAGE = null;
     private String Alias = null;
+    private final ClientKeyStore clientKeyStore; 
+    private final ClientKeyStoreCaServiceWrapper caKeyStoreModel; 
 
-    public OnLineUserCertificateRequest(char[] passphrase) {
-        this.PASSPHRASE = passphrase;
+    public OnLineUserCertificateRequest(ClientKeyStoreCaServiceWrapper caKeyStoreModel) {
+        //this.PASSPHRASE = passphrase;
+        this.caKeyStoreModel = caKeyStoreModel;
+        this.clientKeyStore = caKeyStoreModel.getClientKeyStore(); 
     }
 
     /**
@@ -48,35 +54,33 @@ public class OnLineUserCertificateRequest /*extends Observable*/{
      * 
      * @return newly created keyStore entry alias if successful, otherwise null
      */
-    public String doOnLineCsrUpdateKeyStore() throws KeyStoreException {
+    /*public String doOnLineCsrUpdateKeyStore() throws KeyStoreException {
         if (getError().equals("")) {
-            // caKeyStore.pkcs12
-            ClientKeyStore clientKeyStore = ClientKeyStoreCaServiceWrapper.getInstance(this.PASSPHRASE).getClientKeyStore(); 
-            // create new keypair entry under new meaningless alias and re-save file.
-            // TODO: pass-through the info provided by the user rather than
-            // creating a new dummy CSR certificate. 
-            
-            this.Alias = clientKeyStore.createNewSelfSignedCert(this.Alias, getOU(), getL(), this.Name);
-            
-            PublicKey publicKey; 
-            // Add a new keystore entry rather than reloading all the entries!
-            ClientKeyStoreCaServiceWrapper caKeyStoreModel = ClientKeyStoreCaServiceWrapper.getInstance(PASSPHRASE); 
-            KeyStoreEntryWrapper newCsrEntry = caKeyStoreModel.createKSEntryWrapperInstanceFromEntry(this.Alias);
-            caKeyStoreModel.getKeyStoreEntryMap().put(this.Alias, newCsrEntry);
-            publicKey = clientKeyStore.getPublicKey(this.Alias);
-            
-            
-            PrivateKey privateKey = clientKeyStore.getPrivateKey(this.Alias);
-
-            CertificateRequestCreator csrCreator = new CertificateRequestCreator(
-                    CertificateRequestCreator.TYPE.USER, this.Name, getOU(), getL(), this.Email);
-            String csrString = csrCreator.createCertificateRequest(privateKey, publicKey);
             
             String hashPIN1 = HashUtil.getHash(this.PIN1);
             String hashPIN2 = HashUtil.getHash(this.PIN2);
             if(!hashPIN1.equals(hashPIN2)){
                return null;  
             }
+          
+            // create/add a new-self signed cert in keystore   
+            this.Alias = clientKeyStore.createNewSelfSignedCert(this.Alias, getOU(), getL(), this.Name);
+            
+            // Add a new keystore entry to map rather than reloading all the entries!
+            //ClientKeyStoreCaServiceWrapper caKeyStoreModel = ClientKeyStoreCaServiceWrapper.getInstance(PASSPHRASE); 
+            KeyStoreEntryWrapper newCsrEntry = caKeyStoreModel.createKSEntryWrapperInstanceFromEntry(this.Alias);
+            caKeyStoreModel.getKeyStoreEntryMap().put(this.Alias, newCsrEntry);
+            
+            // fetch the pub/private key from the keystore for the newly added self-signed cert 
+            PublicKey publicKey = clientKeyStore.getPublicKey(this.Alias);            
+            PrivateKey privateKey = clientKeyStore.getPrivateKey(this.Alias);
+
+            // create a PKCS#10 from keys and DN info 
+            CertificateRequestCreator csrCreator = new CertificateRequestCreator(
+                    CertificateRequestCreator.TYPE.USER, this.Name, getOU(), getL(), this.Email);
+            String csrString = csrCreator.createCertificateRequest(privateKey, publicKey);
+            
+            // send PKCS#10 to server
             CSRRequest csrRequest = new CSRRequest(csrString, hashPIN1, this.Email);
             this.MESSAGE = csrRequest.getMessage();
             if(csrRequest.isCSRREquestSuccess()){
@@ -89,6 +93,38 @@ public class OnLineUserCertificateRequest /*extends Observable*/{
         } else {
             this.MESSAGE = "Please check you input parameters.";
             return null;
+        }
+    }*/
+    
+    public boolean doOnLineCsrUpdateKeyStore() throws KeyStoreException {
+        if (!getError().equals("")) {
+            this.MESSAGE = "Please check you input parameters.";
+            return false;
+        }
+
+        String hashPIN1 = HashUtil.getHash(this.PIN1);
+        String hashPIN2 = HashUtil.getHash(this.PIN2);
+        if (!hashPIN1.equals(hashPIN2)) {
+            return false;
+        }
+
+        // Create a new key pair for new user cert 
+        KeyPair keyPair = CAKeyPair.getNewKeyPair();
+        PublicKey csrPublicKey = keyPair.getPublic();
+        PrivateKey csrPrivateKey = keyPair.getPrivate();
+
+        // create a PKCS#10 from keys and DN info 
+        CertificateRequestCreator csrCreator = new CertificateRequestCreator(
+                CertificateRequestCreator.TYPE.USER, this.Name, getOU(), getL(), this.Email);
+        String csrString = csrCreator.createCertificateRequest(csrPrivateKey, csrPublicKey);
+
+        // send PKCS#10 to server
+        CSRRequest csrRequest = new CSRRequest(csrString, hashPIN1, this.Email);
+        this.MESSAGE = csrRequest.getMessage();
+        if (csrRequest.isCSRREquestSuccess()) {
+            return true;
+        } else {
+            return false; 
         }
     }
 

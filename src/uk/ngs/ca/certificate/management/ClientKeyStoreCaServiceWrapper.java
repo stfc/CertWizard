@@ -5,10 +5,12 @@
 
 package uk.ngs.ca.certificate.management;
 
+import java.io.IOException;
 import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.Enumeration;
@@ -63,20 +65,22 @@ public class ClientKeyStoreCaServiceWrapper {
 
 
     /**
-     * Get a shared singleton <code>KeyStoreWrapper</code> instance
-     * @param passphrase for the <tt>'$HOME/.ca/cakeystore.pkcs12'</tt> keyStore file.
+     * Get a shared singleton <code>KeyStoreWrapper</code> instance for the 
+     * <tt>'$HOME/.ca/cakeystore.pkcs12'</tt> keyStore file. 
+     * 
+     * @param passphrase used to protect the keyStore file.
      * @return
      * @throws KeyStoreException if keyStore file cannot be created or read
      * @throws IllegalStateException if class cannot load for some other reason
      */
-    public static synchronized ClientKeyStoreCaServiceWrapper getInstance(char[] passphrase) {
+    public static synchronized ClientKeyStoreCaServiceWrapper getInstance(char[] passphrase) throws KeyStoreException, IOException, CertificateException{
         if(instance == null) {
             instance = new ClientKeyStoreCaServiceWrapper(passphrase);
         }
         return instance;
     }
 
-    private ClientKeyStoreCaServiceWrapper(char[] passphrase)  {
+    private ClientKeyStoreCaServiceWrapper(char[] passphrase) throws KeyStoreException, IOException, CertificateException  {
         this.mKeystorePASSPHRASE = passphrase;
         try {
             extractCertificateExpr = certXpath.compile("/resources/resource/certificates/certificate");
@@ -86,18 +90,24 @@ public class ClientKeyStoreCaServiceWrapper {
             throw new IllegalStateException(ex);
         }
         this.clientKeyStore = ClientKeyStore.getClientkeyStore(this.mKeystorePASSPHRASE);
+        this.loadMap();
+    }
+
+    /**
+     * @return The current password for the CA keyStore file. 
+     */
+    public char[] getPassword(){
+        return this.mKeystorePASSPHRASE; 
     }
 
 
-
     /**
-     * (Re)load the managed keyStore object from file and populate
-     * <code>this.mKeyStoreEntries</code> with <code>KeyStoreEntryWrapper</code> objects.
+     * Clear and populate <code>this.mKeyStoreEntries</code> with <code>KeyStoreEntryWrapper</code> objects.
      * Involves no online interactions. 
      * 
      * @throws KeyStoreException
      */
-    public void loadFromFile() throws KeyStoreException {
+    private void loadMap() throws KeyStoreException {
         this.keyStoreEntryMap.clear(); 
         Enumeration<String> keystoreAliases = this.clientKeyStore.aliases();
         while (keystoreAliases.hasMoreElements()) {
@@ -192,7 +202,6 @@ public class ClientKeyStoreCaServiceWrapper {
      * Important: the keyStore is <b>NOT reStored to disk</b>. 
      * This method is long running and could be run in a background thread. 
      * The data model it modifies is itself thread safe (delegation of thread safety to model).
-     * See {@link #updateKeyStoreEntry_IfVALID(uk.ngs.ca.certificate.management.KeyStoreEntryWrapper) }
      * 
      * @param keyStoreEntryWrapper
      * @return true if the keyStoreEntry was updated in the keyStore, otherwise false. 
@@ -251,7 +260,7 @@ public class ClientKeyStoreCaServiceWrapper {
     /**
      * Download the <b>latest</b> cert/CSR status that matches the given 
      * KeyStoreEntryWrapper's public key from the server and update the KeyStoreEntryWrapper's
-     * member CertificateCSRInfo object (does not update the keyStore). 
+     * member {@link CertificateCSRInfo} object (does NOT update the keyStore). 
      * <p/>
      * If keyStoreEntryWrapper has KEY_PAIR_ENTRY type, get the PublicKey and
      * query our CA to see if it has a record of that PubKey. If recognised, 
@@ -335,15 +344,19 @@ public class ClientKeyStoreCaServiceWrapper {
                 throw new IllegalStateException("Could not parse server response", ex);      
             }
 
-            // Ok, this keyStore entry is recognised by our CA so first nullify 
+            // Ok, this keyStore entry's publicKey is recognised by our CA so first nullify 
             // the serverCertCSRInfo before we re-set it.
             keyStoreEntryWrapper.setServerCertificateCSRInfo(null);
 
-            // For each <certificate/> (takes precidence) or <CSR/> node in the
-            // returned XML, create a new CertificateCSRInfo object
-            // populated from the returned XML and the m_keyStore PubKey, and
-            // add it to the corresponding keyStoreEntryWrapper
-            // (note, for certificate nodes, CertificateCSRInfo.isCSR is set to false).
+            // Iterate each <certificate/> (takes precidence). 
+            // For the last <certificate>, create a new CertificateCSRInfo object
+            // populated from the returned XML and set the keyStoreEntryWrapper's CertificateCSRInfo member object. 
+            //
+            // If no <certificate> elements were returned, iterate each <CSR/> node.
+            // For the last <CSR>, create a new CertificateCSRInfo object populated
+            // from the returned XML and set the KeyStoreEntryWrapper's CertificateCSRInfo object.
+            // 
+            // Otherwise, keyStoreEntryWrapper's CertificateCSRInfo member object remains null. 
             
             // ADD CertificateCSRInfo entries
             // =============================================
@@ -393,19 +406,20 @@ public class ClientKeyStoreCaServiceWrapper {
                         String _renew = _renewElement.getChildNodes().item(0).getTextContent();
 
                         //***Add a new Certificate CertificateCSRInfo to keyStoreEntryWrapper***
-                        CertificateCSRInfo serverInfo = new CertificateCSRInfo();
-                        serverInfo.setIsCSR(false); // note !
-                        serverInfo.setOwner(_owner);
-                        serverInfo.setStatus(_status); // could be VALID or another cert status
-                        serverInfo.setRole(_role);
-                        serverInfo.setUserEmail(_useremail);
-                        serverInfo.setId(_id);
-                        serverInfo.setStartDate(_startdate);
-                        serverInfo.setEndDate(_enddate);
-                        serverInfo.setLifeDays(_lifedays);
-                        serverInfo.setRenew(_renew);
+                        CertificateCSRInfo certServerInfo = new CertificateCSRInfo();
+                        certServerInfo.setIsCSR(false); // note !
+                        certServerInfo.setOwner(_owner);
+                        certServerInfo.setStatus(_status); // could be VALID or another cert status
+                        certServerInfo.setRole(_role);
+                        certServerInfo.setUserEmail(_useremail);
+                        certServerInfo.setId(_id); // 
+                        certServerInfo.setStartDate(_startdate);
+                        certServerInfo.setEndDate(_enddate);
+                        certServerInfo.setLifeDays(_lifedays);
+                        certServerInfo.setRenew(_renew);
+                        // note we do not set the public key info 
                         //serverInfo.setPublickey(EncryptUtil.getEncodedPublicKey(keystorePublicKey));
-                        keyStoreEntryWrapper.setServerCertificateCSRInfo(serverInfo);
+                        keyStoreEntryWrapper.setServerCertificateCSRInfo(certServerInfo);
                     }
                 }
             } else if (csrNodes.getLength() != 0) {
@@ -452,18 +466,17 @@ public class ClientKeyStoreCaServiceWrapper {
                         //}
 
                         //***Add a new CSR CertificateCSRInfo to keyStoreEntryWrapper***
-                        CertificateCSRInfo serverInfo = new CertificateCSRInfo();
+                        CertificateCSRInfo csrServerInfo = new CertificateCSRInfo();
                         //serverInfo.setPublickey(EncryptUtil.getEncodedPublicKey(keystorePublicKey));
-                        serverInfo.setIsCSR(true); // note !
-                        serverInfo.setOwner(_owner);
-                        serverInfo.setRole(_role);
-                        serverInfo.setUserEmail(_useremail);
-                        serverInfo.setId(_id);
-                        serverInfo.setDescription(description);
-                        serverInfo.setStatus(_status);
-                        // note we do not set the public key or date info if this
-                        // is a CSR, but we do for a cert 
-                        keyStoreEntryWrapper.setServerCertificateCSRInfo(serverInfo);
+                        csrServerInfo.setIsCSR(true); // note !
+                        csrServerInfo.setOwner(_owner);
+                        csrServerInfo.setRole(_role);
+                        csrServerInfo.setUserEmail(_useremail);
+                        csrServerInfo.setId(_id);
+                        csrServerInfo.setDescription(description);
+                        csrServerInfo.setStatus(_status);
+                        // note we do not set the public key or date info.
+                        keyStoreEntryWrapper.setServerCertificateCSRInfo(csrServerInfo);
                     }
                 }
             }
@@ -471,11 +484,13 @@ public class ClientKeyStoreCaServiceWrapper {
 
 
     /**
-     * If the given KeyStoreEntryWrapper is VALID and has a certificate serial ID 
-     * that is known by the server, download the <b>latest</b> certificate 
-     * and update <code>this.clientKeyStore</code> (note, the keyStore is NOT reStored to disk). 
+     * If the given {@link KeyStoreEntryWrapper} has both a <tt>VALID</tt> status 
+     * and a known certificate serial ID (according to the CA server), 
+     * download the <b>latest</b> certificate and update <code>this.clientKeyStore</code> 
+     * (note, the keyStore is NOT reStored to disk). 
      * <p>
-     * First call {@link #onlineUpdateKeyStoreEntry(uk.ngs.ca.certificate.management.KeyStoreEntryWrapper)}, 
+     * There are a number of pre-conditions that must be satisfied for the update 
+     * to occur. First call {@link #onlineUpdateKeyStoreEntry(uk.ngs.ca.certificate.management.KeyStoreEntryWrapper)}, 
      * then check the following pre-conditions;
      * <ul>
      *  <li>It is of type {@link KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE#KEY_PAIR_ENTRY}</li>
@@ -493,9 +508,10 @@ public class ClientKeyStoreCaServiceWrapper {
      *   <li>The certificate in our keyStore was a self-signed CSR cert which 
      *   has just been signed on the server.</li> 
      * </ul>
-     * Therefore, proceed to compare the PubKey of each to ensure they correspond. 
-     * If the keys are identical, then replace the keyStore cert entry with the 
-     * newly downloaded cert under the same alias (the private key already resides in keyStore). 
+     * Therefore, proceed to compare the PublicKey of the downloaded cert with the 
+     * PubKey of keyStore cert to ensure they correspond. If the keys are identical, 
+     * then replace the keyStore cert entry with the newly downloaded cert under 
+     * the same alias (the private key already resides in keyStore). 
      * 
      * @param keyStoreEntryWrapper 
      * @return true if <code>this.clientKeyStore</code> was updated, otherwise false.  

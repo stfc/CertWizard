@@ -8,6 +8,7 @@ import java.awt.Component;
 import java.io.*;
 import java.security.*;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
@@ -40,7 +41,7 @@ public class CertificateExportGuiHelper {
      * The last directory accessed by the application
      */
     private final LastDir m_lastDir = new LastDir();
-    private char[] PASSPHRASE;
+    //private char[] PASSPHRASE;
     /**
      * Portecle Resource bundle base name
      */
@@ -52,10 +53,11 @@ public class CertificateExportGuiHelper {
     private ClientKeyStoreCaServiceWrapper caKeyStoreModel = null;
     private Component parentCompoent;
 
-    public CertificateExportGuiHelper(Component parentCompoent, char[] passphrase) throws KeyStoreException {
-        this.PASSPHRASE = passphrase;
+    public CertificateExportGuiHelper(Component parentCompoent, ClientKeyStoreCaServiceWrapper caKeyStoreModel) throws KeyStoreException, IOException, CertificateException {
+        //this.PASSPHRASE = passphrase;
         this.parentCompoent = parentCompoent;
-        this.caKeyStoreModel = ClientKeyStoreCaServiceWrapper.getInstance(this.PASSPHRASE);
+        //this.caKeyStoreModel = ClientKeyStoreCaServiceWrapper.getInstance(this.PASSPHRASE);
+        this.caKeyStoreModel = caKeyStoreModel; 
     }
 
 
@@ -128,7 +130,7 @@ public class CertificateExportGuiHelper {
                         RB.getString("FPortecle.Export.Title"), JOptionPane.INFORMATION_MESSAGE);
             }
         } catch (Exception ex) {
-            DThrowable.showAndWait(null, null, ex);
+            DThrowable.showAndWait(null, "Problem Exporting Certificate", ex);
             return false;
         }
         return true;
@@ -152,7 +154,7 @@ public class CertificateExportGuiHelper {
     private boolean exportPrivKeyCertChainPKCS12(String sEntryAlias) {
 
         //KeyStore keyStore = this.keyStoreCaWrapper.getClientKeyStore().getKeyStoreCopy();
-        char[] cPassword = this.PASSPHRASE;
+        //char[] cPassword = this.PASSPHRASE;
 
         File fExportFile = null;
         FileOutputStream fos = null;
@@ -169,7 +171,7 @@ public class CertificateExportGuiHelper {
             }
 
             // Get the private key and certificate chain from the entry
-            Key privKey = this.caKeyStoreModel.getClientKeyStore().getKey(sEntryAlias, cPassword);
+            Key privKey = this.caKeyStoreModel.getClientKeyStore().getKey(sEntryAlias, this.caKeyStoreModel.getPassword());
             Certificate[] certs = this.caKeyStoreModel.getClientKeyStore().getCertificateChain(sEntryAlias);
 
 
@@ -231,10 +233,10 @@ public class CertificateExportGuiHelper {
             JOptionPane.showMessageDialog(parentCompoent, sMessage, "File not found", JOptionPane.WARNING_MESSAGE);
             return false;
         } catch (IOException ex) {
-            DThrowable.showAndWait(null, null, ex);
+            DThrowable.showAndWait(null, "Problem exporting private key", ex);
             return false;
         } catch (GeneralSecurityException ex) {
-            DThrowable.showAndWait(null, null, ex);
+            DThrowable.showAndWait(null, "Problem exporting private key", ex);
             return false;
         } finally {
             try {
@@ -242,14 +244,10 @@ public class CertificateExportGuiHelper {
                     fos.close();
                 }
             } catch (Exception ex) {
-                DThrowable.showAndWait(null, null, ex);
+                DThrowable.showAndWait(null, "Problem exporting private key", ex);
                 return false;
             }
         }
-//        catch (CryptoException ex) {
-//            DThrowable.showAndWait(null, null, ex);
-//            return false;
-//        }
     }
 
     /**
@@ -264,14 +262,14 @@ public class CertificateExportGuiHelper {
     private boolean exportPrivKeyCertChainPEM(String sEntryAlias) {
 
         //KeyStore keyStore = this.keyStoreCaWrapper.getClientKeyStore().getKeyStoreCopy();
-        char[] cPassword = this.PASSPHRASE;
+        //char[] cPassword = this.PASSPHRASE;
 
         File fExportFile = null;
         PEMWriter pw = null;
 
         try {
             // Get the private key and certificate chain from the entry
-            Key privKey = this.caKeyStoreModel.getClientKeyStore().getKey(sEntryAlias, cPassword);
+            Key privKey = this.caKeyStoreModel.getClientKeyStore().getKey(sEntryAlias, this.caKeyStoreModel.getPassword());
             Certificate[] certs = this.caKeyStoreModel.getClientKeyStore().getCertificateChain(sEntryAlias);
 
             // Get a new password to encrypt the private key with

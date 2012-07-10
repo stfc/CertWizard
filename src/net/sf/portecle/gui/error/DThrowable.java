@@ -80,6 +80,7 @@ public class DThrowable
 	 */
 	public static void showAndWait(Window parent, String title, Throwable throwable)
 	{
+                if(title == null) title = "An error has occurred"; 
 		DThrowable dt = new DThrowable(parent, title, throwable);
 		dt.setLocationRelativeTo(parent);
 		SwingHelper.showAndWait(dt);

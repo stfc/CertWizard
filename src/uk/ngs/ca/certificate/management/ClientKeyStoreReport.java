@@ -4,8 +4,11 @@
  */
 package uk.ngs.ca.certificate.management;
 
+import java.io.IOException;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.DateFormat;
 import java.text.MessageFormat;
@@ -37,7 +40,7 @@ public class ClientKeyStoreReport {
      */
     public static final ResourceBundle RB = ResourceBundle.getBundle(RB_BASENAME);
 
-    public ClientKeyStoreReport(char[] passphrase) {
+    public ClientKeyStoreReport(char[] passphrase) throws KeyStoreException, IOException, CertificateException {
         this.m_keystore = ClientKeyStoreCaServiceWrapper.getInstance(passphrase).getClientKeyStore().getKeyStoreCopy();
     }
 

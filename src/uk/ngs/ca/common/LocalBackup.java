@@ -5,15 +5,11 @@
 package uk.ngs.ca.common;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.channels.FileChannel;
 import uk.ngs.ca.tools.property.SysProperty;
 
 /**
  *
- * @author xw75 (Xiao Wang) 
+ * @author xw75 (Xiao Wang)
  */
 public class LocalBackup {
 
@@ -31,56 +27,38 @@ public class LocalBackup {
         backupDir = backupDir + System.getProperty("file.separator") + "backup";
         String keyFile = configDir + System.getProperty("file.separator") + _keyFile;
         String keyBackupFile = backupDir + System.getProperty("file.separator") + _keyBackupFile;
-        
+
         File file = new File(backupDir);
         if (!file.isDirectory()) {
             file.mkdir();
         } else {
             if (!file.canWrite()) {
                 Message = "Could not make keyStore backup file (permissions denied). Please make a manaual backup of :\n"
-                    +keyFile; 
+                        + keyFile;
                 return false;
             }
         }
 
         try {
-            File inF, outF ;
+            File inF, outF;
 
             inF = new File(keyFile);
             outF = new File(keyBackupFile);
 
-            if(inF.exists() && inF.isFile() && inF.length() > 0L){
-              copyFile(inF, outF);    
+            if (inF.exists() && inF.isFile() && inF.length() > 0L) {
+                FileUtils.copyFile(inF, outF, true); 
             }
-            
+
             return true;
-        } catch (Exception ex) {       
+        } catch (Exception ex) {
             Message = "Could not make keyStore backup file. Please make a manaual backup of :\n"
-                    +keyFile+"\n\n"
-                    + " \nError cause: "+ex.getMessage();
+                    + keyFile + "\n\n"
+                    + " \nError cause: " + ex.getMessage();
             return false;
         }
 
 
 
-    }
-
-    private void copyFile(File inFile, File outFile) throws IOException {
-        FileChannel inChannel = null;
-        FileChannel outChannel = null;
-        try {
-            inChannel = new FileInputStream(inFile).getChannel();
-            outChannel = new FileOutputStream(outFile).getChannel();
-            inChannel.transferTo(0, inChannel.size(), outChannel);
-        
-        } finally {
-            if (inChannel != null) {
-                inChannel.close();
-            }
-            if (outChannel != null) {
-                outChannel.close();
-            }
-        }
     }
 
     public String getMessage() {

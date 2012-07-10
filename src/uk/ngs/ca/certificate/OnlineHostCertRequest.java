@@ -40,7 +40,7 @@ public class OnlineHostCertRequest {
     private final X509Certificate authCert;
     private final String exponent;
     private final String pkcs10;
-    private final String pin;
+    private final String pinHash;
     private final String email;
 
     /**
@@ -50,14 +50,14 @@ public class OnlineHostCertRequest {
      * @param authCert Used to authenticate the CSR request with the server.
      * @param privateKey This must be the corresponding private key to
      * <tt>authCert</tt>.
-     * @param pin To be manually checked by the RA.
+     * @param pkcs10 A string encoded PKCS#10 certificate signing request.
+     * @param pinHash Hash of the pin number. To be manually checked by the RA.
      * @param email Contact Email address that will be associated with this host
      * cert (e.g. the server administrator).
-     * @param pkcs10 A string encoded PKCS#10 certificate signing request.
      */
-    public OnlineHostCertRequest(X509Certificate authCert, PrivateKey privateKey, String pin, String email, String pkcs10) {
+    public OnlineHostCertRequest(X509Certificate authCert, PrivateKey privateKey, String pkcs10, String pinHash, String email) {
         this.pkcs10 = pkcs10;
-        this.pin = pin;
+        this.pinHash = pinHash;
         this.email = email;
         this.authCert = authCert;
         this.exponent = this.getPrivateExponent(privateKey);
@@ -234,7 +234,7 @@ public class OnlineHostCertRequest {
         csrElt.appendChild(eltName);
 
         eltName = d.createElement("PIN");
-        eltName.appendChild(d.createTextNode(HashUtil.getHash(this.pin)));
+        eltName.appendChild(d.createTextNode(this.pinHash));
         csrElt.appendChild(eltName);
 
         eltName = d.createElement("Email");

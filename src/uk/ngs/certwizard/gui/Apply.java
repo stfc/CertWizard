@@ -13,20 +13,20 @@ import java.security.KeyPair;
 import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 import net.sf.portecle.gui.error.DThrowable;
 import org.apache.commons.validator.routines.DomainValidator;
 import org.apache.commons.validator.routines.EmailValidator;
 import uk.ngs.ca.certificate.CertificateRequestCreator;
-import uk.ngs.ca.certificate.OnLineUserCertificateRequest;
 import uk.ngs.ca.certificate.OnlineHostCertRequest;
+import uk.ngs.ca.certificate.client.CSRRequest;
 import uk.ngs.ca.certificate.client.PingService;
 import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
 import uk.ngs.ca.certificate.management.KeyStoreEntryWrapper;
 import uk.ngs.ca.common.CAKeyPair;
+import uk.ngs.ca.common.HashUtil;
 import uk.ngs.ca.common.MyPattern;
 import uk.ngs.ca.common.Pair;
 import uk.ngs.ca.info.CAInfo;
@@ -44,11 +44,11 @@ public class Apply extends javax.swing.JDialog {
     private final String readyInfo = "Your input is ready, please click Apply button to request certificate or click Cancel button to cancel";
     private String[] RAs;
     //private final Pattern emailPattern = Pattern.compile("[-\\.a-zA-Z0-9_]+@[-a-zA-Z0-9\\.]+\\.[a-z]+");
-    private char[] passphrase;
     private String storedAlias;
     
     private final X509Certificate authCert;
     private final PrivateKey authKey; 
+    private final ClientKeyStoreCaServiceWrapper model; 
     
     
     /**
@@ -63,7 +63,7 @@ public class Apply extends javax.swing.JDialog {
     /**
      * Create a new Apply dialog. 
      * 
-     * @param passphrase used to unlock/get an instance of {@link ClientKeyStoreCaServiceWrapper}
+     * @param model CertWizard data model 
      * @param certType Apply for either host or user cert 
      * @param keyStoreAliasToAuthHostApply If a host cert is requested, this is the alias of the 
      * keyStore entry that will be used to authenticate the request. Can be null for 
@@ -72,16 +72,15 @@ public class Apply extends javax.swing.JDialog {
      * {@link IllegalArgumentException} is thrown. 
      * @throws IOException If an error occurs when contact the remote server. 
      */
-    public Apply(char[] passphrase, CERT_TYPE certType, String keyStoreAliasToAuthHostApply) throws IOException, KeyStoreException {
-        this.passphrase = passphrase;
+    public Apply(ClientKeyStoreCaServiceWrapper model, CERT_TYPE certType, String keyStoreAliasToAuthHostApply) throws IOException, KeyStoreException, CertificateException {
         this.certType = certType;
+        this.model = model; 
         initComponents();
-        
+            
         if(CERT_TYPE.HOST_CERT.equals(this.certType)){
             if(keyStoreAliasToAuthHostApply == null || keyStoreAliasToAuthHostApply.trim().equals("")){
                 throw new IllegalArgumentException("Invaild keyStore alias"); 
             }
-            ClientKeyStoreCaServiceWrapper model = ClientKeyStoreCaServiceWrapper.getInstance(passphrase);
             this.authCert = model.getClientKeyStore().getX509Certificate(keyStoreAliasToAuthHostApply);
             if(this.authCert == null){
                 throw new IllegalArgumentException("Invaild keyStore alias - given alias does not refer to X509Certificate");  
@@ -126,8 +125,7 @@ public class Apply extends javax.swing.JDialog {
     private void doApplyButton() {
         boolean complete = true;
         String text = "";
-        ClientKeyStoreCaServiceWrapper model = ClientKeyStoreCaServiceWrapper.getInstance(passphrase);
-
+       
         if (this.txtName.getText().isEmpty()) {
             complete = false;
             if (CERT_TYPE.USER_CERT.equals(this.certType)) {
@@ -218,111 +216,83 @@ public class Apply extends javax.swing.JDialog {
                         + "the helpdesk at support@grid-support.ac.uk.", "Server Connection Fault", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            if (CERT_TYPE.USER_CERT.equals(this.certType)) {
-                this.processUserCertApplication(model);
-            } else {
-                try {
-                   this.processHostCertApplication(model);  
-                } catch(KeyStoreException ex){
-                    DThrowable.showAndWait(this, "Problem Host CSR", ex);
+            try {
+                if (CERT_TYPE.USER_CERT.equals(this.certType)) {
+                    this.processCertApplication(model, CertificateRequestCreator.TYPE.USER);
+                } else {
+                    this.processCertApplication(model, CertificateRequestCreator.TYPE.HOST);
                 }
+            } catch (Exception ex) {
+                WaitDialog.hideDialog();
+                DThrowable.showAndWait(this, "Problem User CSR", ex);
             }
         }
     } 
   
-    private void processUserCertApplication(ClientKeyStoreCaServiceWrapper model) {
-        OnLineUserCertificateRequest onLineCertRequest = new OnLineUserCertificateRequest(passphrase);
-        onLineCertRequest.setEmail(this.txtEmail.getText());
-        onLineCertRequest.setName(this.txtName.getText());
-        onLineCertRequest.setPIN1(new String(this.txtPin.getPassword()));
-        onLineCertRequest.setPIN2(new String(this.txtConfirm.getPassword()));
-        onLineCertRequest.setRA((String) this.cmbSelectRA.getSelectedItem());
-        onLineCertRequest.setAlias(this.aliasTextField.getText());
-        WaitDialog.showDialog("Apply");
-        boolean problem = true;
-        try {
-            // creates a new keypair for the CSR (does not reStore the keystore file) 
-            this.storedAlias = onLineCertRequest.doOnLineCsrUpdateKeyStore();
-            WaitDialog.hideDialog();
-            if (this.storedAlias != null) {
-                model.getClientKeyStore().reStore();
-                JOptionPane.showMessageDialog(this, onLineCertRequest.getMessage(), "Request Successful", JOptionPane.INFORMATION_MESSAGE);
-                problem = false;
-            }
-        } catch (Exception ex) {
-            WaitDialog.hideDialog();
-            DThrowable.showAndWait(this, "Problem Applying for Certificate", ex);
-        }
 
-        if (!problem) {
-            WaitDialog.hideDialog();
-            this.dispose(); // only dispose if successful 
-
-        } else {
-            try {
-                //need to clear up the CSR if created in the keyStore
-                if (this.storedAlias != null && model.getClientKeyStore().containsAlias(this.storedAlias)) {
-                    model.deleteEntry(this.storedAlias);
-                    model.getClientKeyStore().reStore();
-                }
-            } catch (KeyStoreException ex) {
-                Logger.getLogger(MainWindowPanel.class.getName()).log(Level.SEVERE, null, ex);
-                JOptionPane.showMessageDialog(this, "Unable to clear up failed KeyStore CSR entry. Please contact helpdesk and quote this message! " + ex.getMessage(), "Unable to clear up CSR request", JOptionPane.ERROR_MESSAGE);
-            }
-            // reset the alias to null so the calling client can detect success for failure. 
-            this.storedAlias = null; 
-            JOptionPane.showMessageDialog(this, onLineCertRequest.getMessage(), "Request UnSuccessful", JOptionPane.INFORMATION_MESSAGE);
-        }
-    }
-
-    
-    private void processHostCertApplication(ClientKeyStoreCaServiceWrapper model) throws KeyStoreException  {
-        String newHostAlias = this.aliasTextField.getText(); 
-        String CN = this.txtName.getText(); 
-        String email = this.txtEmail.getText(); 
+    private void processCertApplication(ClientKeyStoreCaServiceWrapper model, 
+            CertificateRequestCreator.TYPE type) throws KeyStoreException, IOException, CertificateException {
+        String newAlias = this.aliasTextField.getText(); 
+        String email = this.txtEmail.getText();
+        String CN = this.txtName.getText();
         char[] pin = this.txtPin.getPassword(); 
         String RA =  ((String)this.cmbSelectRA.getSelectedItem()); 
         String[] ou_l = RA.trim().split("[,\\s]+");   
         String OU = ou_l[0]; 
         String L = ou_l[1];
         
-        // Create a new key pair for new host cert 
+         // Create a new key pair for new cert 
         KeyPair keyPair = CAKeyPair.getNewKeyPair();
         PublicKey csrPublicKey = keyPair.getPublic();  
         PrivateKey csrPrivateKey = keyPair.getPrivate(); 
         
         // Create a PKCS#10 CSR string from keys and DN info  
-        CertificateRequestCreator csrCreator = new CertificateRequestCreator(
-                CertificateRequestCreator.TYPE.HOST, CN, OU, L, email);
+        // TODO - need to allow for CNs with the service/hostname format, e.g: 'host/davehost1.dl.ac.uk'
+        CertificateRequestCreator csrCreator = new CertificateRequestCreator(type, CN, OU, L, email);
         String pkcs10 = csrCreator.createCertificateRequest(csrPrivateKey, csrPublicKey);
+        //if(true){  System.out.println(pkcs10); return;}
         
-        // Send PKCS#10 CSR to server. Provide authCert/Key for PPPK . 
-        OnlineHostCertRequest onlineHostCertReq = new OnlineHostCertRequest(
-                authCert, authKey, String.valueOf(pin), email, pkcs10);
-        Pair<Boolean, String> result = onlineHostCertReq.doHostCSR();
+        WaitDialog.showDialog("Please wait"); 
+        
+        // send PKCS#10 to server
+        boolean success; 
+        String message;      
+        if (CertificateRequestCreator.TYPE.USER.equals(type)) {
+            CSRRequest csrRequest = new CSRRequest(
+                    pkcs10, HashUtil.getHash(String.valueOf(pin)), email);
+            message = csrRequest.getMessage();
+            success = csrRequest.isCSRREquestSuccess();
+        } else {
+            // Send PKCS#10 CSR to server. Provide authCert/Key for PPPK . 
+            OnlineHostCertRequest onlineHostCertReq = new OnlineHostCertRequest(authCert, authKey, 
+                    pkcs10, HashUtil.getHash(String.valueOf(pin)), email);
+            Pair<Boolean, String> result = onlineHostCertReq.doHostCSR();
+            message = result.second;
+            success = result.first;
+        }
+        WaitDialog.hideDialog();
         
         // If submitted ok, save a new self-signed cert in the keyStore and ReStore. 
-        if (result.first) {
+        if (success) {
             X509Certificate cert = CAKeyPair.createSelfSignedCertificate(keyPair, OU, L, CN);
             X509Certificate[] certs = {cert};
 
-            // First - attempt to reStore the keystore 
-            model.getClientKeyStore().setKeyEntry(newHostAlias, csrPrivateKey, passphrase, certs);
+            // First - reStore the keystore 
+            model.getClientKeyStore().setKeyEntry(newAlias, csrPrivateKey, model.getPassword(), certs);
             model.getClientKeyStore().reStore();
             // Second - add the new entry to the model map
-            KeyStoreEntryWrapper newCsrEntry = model.createKSEntryWrapperInstanceFromEntry(newHostAlias);
-            model.getKeyStoreEntryMap().put(newHostAlias, newCsrEntry);
+            KeyStoreEntryWrapper newCsrEntry = model.createKSEntryWrapperInstanceFromEntry(newAlias);
+            model.getKeyStoreEntryMap().put(newAlias, newCsrEntry);
             // Third - update this.storedAlias so that calling code can 
             // determine if request was successful or not. 
-            this.storedAlias = newHostAlias;
-            GeneralMessageDialog.showAndWait(this, "Host Request Successful", "Request Successful", JOptionPane.INFORMATION_MESSAGE);
-            this.dispose(); 
+            this.storedAlias = newAlias;
+            GeneralMessageDialog.showAndWait(this, "Request Successful", "Request Successful", JOptionPane.INFORMATION_MESSAGE);
+            this.dispose();
+
         } else {
-            GeneralMessageDialog.showAndWait(this, "Server responded an error: " + result.second, "Host CSR Error", JOptionPane.ERROR_MESSAGE);
-        }
+            GeneralMessageDialog.showAndWait(this, "Server responded an error: " + message, "CSR Error", JOptionPane.ERROR_MESSAGE);
+        }    
     }
-    
-    
     
     
     /**

@@ -9,6 +9,7 @@ import java.util.ResourceBundle;
 import javax.swing.JOptionPane;
 import net.sf.portecle.FPortecle;
 import net.sf.portecle.gui.SwingHelper;
+import net.sf.portecle.gui.error.DThrowable;
 import net.sf.portecle.gui.password.DGetNewPassword;
 import net.sf.portecle.gui.password.DGetPassword;
 import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
@@ -23,7 +24,7 @@ public class KeyStoreChangePasswordGuiHelper {
 
     private ClientKeyStoreCaServiceWrapper caKeyStoreModel;
     private Component parentCompoent;
-    private char[] PASSPHRASE;
+    //private char[] PASSPHRASE;
     
     private static final String RB_BASENAME = FPortecle.class.getPackage().getName() + "/resources";
     /**
@@ -31,10 +32,9 @@ public class KeyStoreChangePasswordGuiHelper {
      */
     public static final ResourceBundle RB = ResourceBundle.getBundle(RB_BASENAME);
 
-    public KeyStoreChangePasswordGuiHelper(Component parentCompoent, char[] passphrase) {
+    public KeyStoreChangePasswordGuiHelper(Component parentCompoent, ClientKeyStoreCaServiceWrapper caKeyStoreModel) {
         this.parentCompoent = parentCompoent;
-        this.PASSPHRASE = passphrase;
-        this.caKeyStoreModel = ClientKeyStoreCaServiceWrapper.getInstance(passphrase);
+        this.caKeyStoreModel = caKeyStoreModel; 
     }
 
     /**
@@ -55,7 +55,7 @@ public class KeyStoreChangePasswordGuiHelper {
         }
 
         String sPkcs12Password = new String(cPkcs12Password);
-        String sCurrentPassword = new String(this.PASSPHRASE);
+        String sCurrentPassword = new String(this.caKeyStoreModel.getPassword());
 
         if (!(sPkcs12Password.equals(sCurrentPassword))) {
             JOptionPane.showMessageDialog(parentCompoent, "The current keystore password you've entered is incorrect",
@@ -87,14 +87,15 @@ public class KeyStoreChangePasswordGuiHelper {
         String _pswdProperty = SysProperty.getValue("uk.ngs.ca.passphrase.property");
         String _pswd = new String(cPKCS12Password);
         System.setProperty(_pswdProperty, _pswd);
-        if (this.caKeyStoreModel.getClientKeyStore().reStorePassword(cPKCS12Password)) {
+        try {
+            this.caKeyStoreModel.getClientKeyStore().reStorePassword(cPKCS12Password);
             JOptionPane.showMessageDialog(parentCompoent, "Key Store password has successfully been changed",
                     "Password Change Successful", JOptionPane.INFORMATION_MESSAGE);
             return cPKCS12Password;
-        } else {
-            JOptionPane.showMessageDialog(parentCompoent, "An error occurred chaning the Key Store password",
-                    "Password Change Error", JOptionPane.ERROR_MESSAGE);
-            return null; 
+
+        } catch (Exception ex) {
+            DThrowable.showAndWait(null, "Password change error", ex);
+            return null;
         }
     }
 }

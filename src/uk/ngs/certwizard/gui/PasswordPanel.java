@@ -16,8 +16,10 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.io.File;
 import java.io.IOException;
+import java.security.KeyStoreException;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import net.sf.portecle.gui.error.DThrowable;
 import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
 import uk.ngs.ca.common.LocalBackup;
 import uk.ngs.ca.common.SystemStatus;
@@ -226,8 +228,12 @@ public class PasswordPanel extends javax.swing.JPanel  {
             if(!keyStoreFile.exists()){
                 ClientKeyStoreCaServiceWrapper.getInstance(passphrase).getClientKeyStore().reStore();
             }       
-        } catch (Exception ex) {
+        } catch (KeyStoreException ex) {
             JOptionPane.showMessageDialog(this, "Wrong Password? "+ ex.getCause().getMessage(), "Wrong Password", JOptionPane.ERROR_MESSAGE);
+            txtPassword.setText("");
+            return; 
+        } catch(Exception ex){
+            DThrowable.showAndWait(null, "Problem Occurred", ex);
             txtPassword.setText("");
             return; 
         }

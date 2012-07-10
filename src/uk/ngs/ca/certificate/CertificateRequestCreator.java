@@ -23,7 +23,7 @@ import org.bouncycastle.openssl.PEMWriter;
  * @see https://ssl-tools.verisign.com/checker/ 
  * 
  * @author xw75 (Xiao Wang) 
- * @author David Meredith
+ * @author David Meredith (modifications) 
  *
  */
 public class CertificateRequestCreator {
@@ -31,8 +31,8 @@ public class CertificateRequestCreator {
     private static final Logger myLogger = Logger.getLogger(CertificateRequestCreator.class.getName());
     
     private final String SIG_ALG; //"MD5withRSA";
-    private String C, O, OU, L, CN, Email;
-    private X509Name DN;
+    private final String C, O, OU, L, CN, Email, DN;
+    
     /**
      * Options for the PKCS#10 type. 
      */
@@ -52,19 +52,20 @@ public class CertificateRequestCreator {
         this.OU = OU.trim(); 
         if(L != null){
           this.L = L.trim(); 
-        }
+        } else this.L = null; 
         this.Email = email.trim(); 
         this.type = type; 
         
         // build the DN and throw IllegalArgExe if something is invaild 
-        this.createDN(); 
+        this.DN = this.createDN(); 
                  
     }
 
     /**
      * Concatenates all the user information to a DN
      */
-    private void createDN() {
+    private String createDN() {
+        String csrDN; 
         if (CN.equals("")) {
             throw new IllegalArgumentException("Invalid C");
         }
@@ -82,26 +83,27 @@ public class CertificateRequestCreator {
             throw new IllegalArgumentException("CN");
         }
 
-        if (TYPE.HOST.equals(this.type)) {
+        //if (TYPE.HOST.equals(this.type)) {
             if (!EmailValidator.getInstance().isValid(Email)) {
-                throw new IllegalArgumentException("AdminEmail");
+                throw new IllegalArgumentException("Invalid Email");
             }
-        }
+        //}
 
         if (TYPE.USER.equals(this.type)) { 
             // Should L be made optional ? 
             if (L==null || L.equals("")) {
-                DN = new X509Name("CN=" + CN + ", OU=" + OU + ", O=" + O + ", C=" + C);
+                csrDN = ("CN=" + CN + ", OU=" + OU + ", O=" + O + ", C=" + C);
             } else {
-                DN = new X509Name("CN=" + CN + ", L=" + L + ", OU=" + OU + ", O=" + O + ", C=" + C);
+                csrDN = ("CN=" + CN + ", L=" + L + ", OU=" + OU + ", O=" + O + ", C=" + C);
             }
         } else { //host certificate
             if (L==null || L.equals("")) {
-                DN = new X509Name("emailAddress=" + Email + ", CN=" + CN + ", OU=" + OU + ", O=" + O + ", C=" + C);
+                csrDN = ("emailAddress=" + Email + ", CN=" + CN + ", OU=" + OU + ", O=" + O + ", C=" + C);
             } else {
-                DN = new X509Name("emailAddress=" + Email + ", CN=" + CN + ", L=" + L + ", OU=" + OU + ", O=" + O + ", C=" + C);
+                csrDN = ("emailAddress=" + Email + ", CN=" + CN + ", L=" + L + ", OU=" + OU + ", O=" + O + ", C=" + C);
             }
         } 
+        return csrDN; 
     }
 
     /**
@@ -136,14 +138,32 @@ public class CertificateRequestCreator {
         values.add(new X509Extension(false, new DEROctetString(subjectAltName)));
         X509Extensions extensions = new X509Extensions(oids, values);
         Attribute attribute = new Attribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest, new DERSet(extensions));
-
-
+      
+        // TODO creating the PKCS#10 uses deprecated BC APIs. Need to update 
+        // to new way of creating PKCS#10 using BC. 
         try {
             if(TYPE.USER.equals(this.type)){
-                // DM: can's specify X500Principal for host as it may contain email attribute. 
-               request = new PKCS10CertificationRequest(SIG_ALG, new X500Principal(DN.toString()), pubkey, new DERSet(attribute), privkey);    
+                // X500Principal: The distinguished name must be specified using the 
+                // grammar defined in RFC 1779 or RFC 2253 (either format is ok). e.g. 
+                // "CN=Duke, OU=JavaSoft, O=Sun Microsystems, C=US"
+                // Note, we can't specify the email address in the DN (not RFC 1779 or 2253). 
+                request = new PKCS10CertificationRequest(SIG_ALG, new X500Principal(DN), 
+                       pubkey, new DERSet(attribute), privkey);    
             } else {
-               request = new PKCS10CertificationRequest(SIG_ALG, DN, pubkey, new DERSet(attribute), privkey); 
+                // DM: can't specify X500Principal for host as it contains email attribute. 
+                // X509Name: Takes an X509 dir name as a string of the format 
+                // "C=AU, ST=Victoria", or some such, converting it into an ordered set of name attributes
+                // Bool is for reverse DN. If reverse is true the oids and values 
+                // are listed out starting with the last element in the sequence (ala RFC 2253)
+                //  using 'openssl req -in pkcs10.txt -text' the DN is as follows: 
+                //  default: Subject: emailAddress=david.meredith@stfc.ac.uk, CN=host.dl.ac.uk, L=RAL, OU=CLRC, O=eScienceDev, C=UK
+                //  false:   Subject: emailAddress=david.meredith@stfc.ac.uk, CN=host.dl.ac.uk, L=RAL, OU=CLRC, O=eScienceDev, C=UK
+                //  true:    Subject: C=UK, O=eScienceDev, OU=CLRC, L=RAL, CN=host.dl.ac.uk/emailAddress=david.meredith@stfc.ac.uk
+                
+                // We specify false for a reverse DN to be consistent with OpenCA
+                // which seems to prefer PKCS#10 requests to have that DN style. 
+                request = new PKCS10CertificationRequest(SIG_ALG, new X509Name(true, DN), 
+                       pubkey, new DERSet(attribute), privkey); 
             }
             
             StringWriter writer = new StringWriter();

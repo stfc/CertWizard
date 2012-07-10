@@ -30,17 +30,17 @@ public class CertificateRenewRevokeGuiHelper {
 
     private ClientKeyStoreCaServiceWrapper caKeyStoreModel;
     private Component parentCompoent;
-    private char[] PASSPHRASE;
+    //private char[] PASSPHRASE;
     /**
      * Portecle Resource bundle base name
      */
     private static final String RB_BASENAME = FPortecle.class.getPackage().getName() + "/resources";
     public static final ResourceBundle RB = ResourceBundle.getBundle(RB_BASENAME);
 
-    public CertificateRenewRevokeGuiHelper(Component parentCompoent, char[] passphrase) {
+    public CertificateRenewRevokeGuiHelper(Component parentCompoent, ClientKeyStoreCaServiceWrapper caKeyStoreModel) {
         this.parentCompoent = parentCompoent;
-        this.PASSPHRASE = passphrase;
-        this.caKeyStoreModel = ClientKeyStoreCaServiceWrapper.getInstance(passphrase);
+        //this.PASSPHRASE = passphrase;
+        this.caKeyStoreModel = caKeyStoreModel;
     }
 
     /**
@@ -153,7 +153,9 @@ public class CertificateRenewRevokeGuiHelper {
                 WaitDialog.showDialog("Please wait, submitting renewal request");
                 String cert_id = selectedKSEW.getServerCertificateCSRInfo().getId();
                 CertificateDownload certDownload = new CertificateDownload(cert_id);
-                OnLineUserCertificateReKey rekey = new OnLineUserCertificateReKey(PASSPHRASE, newCsrRenewalAlias, certDownload.getCertificate());
+                OnLineUserCertificateReKey rekey = new OnLineUserCertificateReKey( 
+                        this.caKeyStoreModel, 
+                        newCsrRenewalAlias, certDownload.getCertificate());
                 boolean isReadyForReKey = rekey.isValidReKey();
 
                 if (isReadyForReKey) {
@@ -178,7 +180,7 @@ public class CertificateRenewRevokeGuiHelper {
                             }
                             return newCsrRenewalAlias;
 
-                        } catch (KeyStoreException ex) {
+                        } catch (Exception ex) {
                             DThrowable.showAndWait(null, "Problem Saving Renewal Certificate", ex);
                         }
 

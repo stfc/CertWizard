@@ -50,12 +50,8 @@ import uk.ngs.ca.util.KeyStoreChangePasswordGuiHelper;
 /**
  * GUI for displaying the keyStore entries in the user's
  * <tt>'$HOME/.ca/cakeystore.pkcs12'</tt> file. This class also manages
- * importing, exporting, deleting requesting, renewing certificates. <p> Lots of
- * refactoring is required and extracting logic out of this class into service
- * classes and helper function objects. The <tt>caKeyStoreModel</tt> needs to be
- * extracted into an external class that is accessible from other GUI
- * components. Lots of original xw75 code remains.
- *
+ * importing, exporting, deleting requesting, renewing certificates.  
+ * 
  * @author Xiao Wang
  * @author David Meredith (refactoring, javadoc)
  */
@@ -90,23 +86,24 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     public MainWindowPanel(char[] passphrase) {
         super();
         this.PASSPHRASE = passphrase;
-
-        System.setProperty(SysProperty.getValue("uk.ngs.ca.immegration.password.property"),
-                this.PASSPHRASE.toString());
+        System.setProperty(
+                SysProperty.getValue("uk.ngs.ca.immegration.password.property"),
+                this.PASSPHRASE.toString()
+                );
+        
         initComponents();
         loadImages();
-
-        // throws IllegalStateException on wrong password.    
-        this.caKeyStoreModel = ClientKeyStoreCaServiceWrapper.getInstance(this.PASSPHRASE);
-
         this.jComboBox1.setRenderer(new ComboBoxRenderer());
-
-        // populate the keystore by reading local file  
+        
+        // Load the model (the CA keyStore). 
         try {
-            this.caKeyStoreModel.loadFromFile();
-        } catch (KeyStoreException ex) {
-            DThrowable.showAndWait(null, "Could not load keystore", ex);
-        }
+            this.caKeyStoreModel = ClientKeyStoreCaServiceWrapper.getInstance(this.PASSPHRASE);
+            
+        } catch (Exception ex) {
+            Logger.getLogger(MainWindowPanel.class.getName()).log(Level.SEVERE, null, ex);
+            DThrowable.showAndWait(null, "Problem CA keyStore file", ex);
+        } 
+
         this.updateKeyStoreGuiFromModel();
         this.setComboFirstCertEntry();
     }
@@ -138,7 +135,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         //handled by the CAResource class.
         String latestVersion = motd.getLatestVersion();
         String certWizardVersion = SysProperty.getValue("ngsca.certwizard.versionNumber");
-        if (!(certWizardVersion.equals(latestVersion))) {
+        if (latestVersion != null && !(certWizardVersion.equals(latestVersion))) {
             JOptionPane.showMessageDialog(this, "A new version of the Certificate Wizard is available!\n"
                     + "Please go to www.ngs.ac.uk in order to obtain the latest version",
                     "New Version of Certificate Wizard", JOptionPane.INFORMATION_MESSAGE);
@@ -194,6 +191,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 btnImportCertificate.setEnabled(false); 
                 btnRenew.setEnabled(false);
                 btnChangeAlias.setEnabled(false); 
+                btnInstall.setEnabled(false); 
+                //btnExport.setEnabled(false); // uses a snapshot copy of keystore
+                btnDelete.setEnabled(false);
             } else {
                 btnCancelOnlineUpdate.setEnabled(false);
                 jProgressBar1.setEnabled(false);
@@ -206,6 +206,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 btnImportCertificate.setEnabled(true); 
                 btnRenew.setEnabled(true);
                 btnChangeAlias.setEnabled(true); 
+                btnInstall.setEnabled(true); 
+                //btnExport.setEnabled(true); 
+                btnDelete.setEnabled(true);
             }
         }
     };
@@ -230,13 +233,24 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
      */
     private void loadImages() {
         //Load the pet images and create an array of indexes.
-        images = new ImageIcon[3];
+        images = new ImageIcon[6];
         images[0] = createImageIcon("/uk/ngs/ca/images/certificate_node.gif");
         images[0].setDescription("Trusted certificate");
+        
         images[1] = createImageIcon("/uk/ngs/ca/images/key_node.gif");
         images[1].setDescription("Key");
+        
         images[2] = createImageIcon("/uk/ngs/ca/images/keypair_node.gif");
         images[2].setDescription("Key Pair (public and private keys)");
+        
+        images[3] = createImageIcon("/uk/ngs/ca/images/group_key.png"); 
+        images[3].setDescription("User Key Pair (public and private keys)");
+        
+        images[4] = createImageIcon("/uk/ngs/ca/images/server_key.png"); 
+        images[4].setDescription("Host Key Pair (public and private keys)");
+        
+        images[5] = createImageIcon("/uk/ngs/ca/images/key_go.png"); 
+        images[5].setDescription("Self signed Key Pair (CSR)");
     }
 
     /**
@@ -376,8 +390,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 this.certificateTypeLabel.setText("Key");
                 this.certificateTypeLabel.setIcon(this.images[1]);
             } else if (KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY.equals(selectedKeyStoreEntry.getEntryType())) {
-                this.certificateTypeLabel.setText("Certificate + Private Key");
-                this.certificateTypeLabel.setIcon(this.images[2]);
                 try {
                     X509Certificate x509Cert = this.caKeyStoreModel.getClientKeyStore().getX509Certificate(alias);
                     if (x509Cert != null) {
@@ -388,11 +400,27 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                         // as follows, so we prob don't want to display this. 
                         if (!"123456789".equals(serialNumber)) {
                             this.textFieldSerialNumber.setText(serialNumber);
-                        }
+                        } 
                         //this.labelSerialNumber.setEnabled(true);
                     }
                 } catch (Exception ignore) {
                     DThrowable.showAndWait(null, "Problem", ignore);
+                }
+                //this.certificateTypeLabel.setText("Certificate + Private Key");
+                //this.certificateTypeLabel.setIcon(this.images[2]);
+                if (selectedKeyStoreEntry.getX500PrincipalName().contains(" CSR ") 
+                        && selectedKeyStoreEntry.getX500PrincipalName().equals(selectedKeyStoreEntry.getIssuerName())) {
+                    this.certificateTypeLabel.setText("Cert Signing Request");
+                    this.certificateTypeLabel.setIcon(images[5]);
+                } else if (selectedKeyStoreEntry.getX500PrincipalName().equals(selectedKeyStoreEntry.getIssuerName())) {
+                    this.certificateTypeLabel.setText("Self Signed Cert");
+                    this.certificateTypeLabel.setIcon(images[5]);
+                } else if (selectedKeyStoreEntry.getX500PrincipalName().contains(".")) {
+                    this.certificateTypeLabel.setText("Host Cert + Private Key");
+                    this.certificateTypeLabel.setIcon(images[4]);
+                } else {
+                    this.certificateTypeLabel.setText("User Cert + Private Key");
+                    this.certificateTypeLabel.setIcon(images[3]);
                 }
             } else if (KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.TRUST_CERT_ENTRY.equals(selectedKeyStoreEntry.getEntryType())) {
                 this.certificateTypeLabel.setText("Trusted Third Party Certificate");
@@ -473,7 +501,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     /**
      * Renderer class for KeyStoreEntryWrapper objects for the combo box.
-     */
+     */ 
     class ComboBoxRenderer extends JLabel implements ListCellRenderer {
 
         public ComboBoxRenderer() {
@@ -507,11 +535,21 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 // Display an approprate icon dependng on keystore entry type
                 // server_key.png, group_key.png, key_go.png (CSR)
                 if (KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_ENTRY.equals(keyStoreEntry.getEntryType())) {
-                    this.setIcon(images[1]);
+                    this.setIcon(images[1]);                    
                 } else if (KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.TRUST_CERT_ENTRY.equals(keyStoreEntry.getEntryType())) {
                     this.setIcon(images[0]);
                 } else if (KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY.equals(keyStoreEntry.getEntryType())) {
-                    this.setIcon(images[2]);
+                    //this.setIcon(images[2]);
+                    
+                    if(keyStoreEntry.getX500PrincipalName().contains(" CSR ") && 
+                            keyStoreEntry.getIssuerName().equals(keyStoreEntry.getX500PrincipalName()) ){ 
+                        this.setIcon(images[5]);
+                    } else if(keyStoreEntry.getX500PrincipalName().contains(".")){
+                        this.setIcon(images[4]);
+                    } else {
+                        this.setIcon(images[3]); 
+                    }
+                    
                 } else {
                     // could set an unknown default
                 }
@@ -633,7 +671,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         }
         // Can only renew key_pairs types issued by our CA
         KeyStoreEntryWrapper selectedKSEW = (KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem();
-        CertificateRenewRevokeGuiHelper renewUtil = new CertificateRenewRevokeGuiHelper(this, PASSPHRASE);
+        CertificateRenewRevokeGuiHelper renewUtil = new CertificateRenewRevokeGuiHelper(this, this.caKeyStoreModel);
         String newCsrRenewalAlias = renewUtil.doRenew(selectedKSEW);
         if (newCsrRenewalAlias != null) {
             this.setComboSelectedItemByAlias(newCsrRenewalAlias);
@@ -657,7 +695,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         }
         // Can only revoke key_pairs types issued by our CA
         KeyStoreEntryWrapper selectedKSEW = (KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem();
-        CertificateRenewRevokeGuiHelper util = new CertificateRenewRevokeGuiHelper(this, PASSPHRASE);
+        CertificateRenewRevokeGuiHelper util = new CertificateRenewRevokeGuiHelper(this, this.caKeyStoreModel);
         util.doRevoke(selectedKSEW);
         this.updateKeyStoreGuiFromModel();
     }
@@ -674,7 +712,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             return;
         }
         try {
-            CertificateImportGuiHelper util = new CertificateImportGuiHelper(this, PASSPHRASE);
+            CertificateImportGuiHelper util = new CertificateImportGuiHelper(this, this.caKeyStoreModel);
             String newHeadCertImportAlias = util.doImportCertificateAction();
             if (newHeadCertImportAlias != null) {
                 this.setComboSelectedItemByAlias(newHeadCertImportAlias);
@@ -727,7 +765,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             // apply for a host cert, then go back and select which user cert to 
             // authenticate with. 
             Object[] options = {"Continue", "Cancel"};
-            int n = JOptionPane.showOptionDialog(this, "User certificate application\n\n"
+            int n = JOptionPane.showOptionDialog(this, "Confirm new User certificate application\n\n"
                     + "If you wish to apply for a HOST certificate, cancel and \n"
                     + "select a VALID User certificate from your pull down list.", 
                     "Confirm User certificate application", 
@@ -736,6 +774,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                     null,
                     options, 
                     options[0]);
+            
             
             if(JOptionPane.OK_OPTION == n){
                 userRequest = true;
@@ -748,9 +787,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             if (isOnlinePing()) {
                 Apply apply;
                 if (userRequest) {
-                    apply = new Apply(PASSPHRASE, Apply.CERT_TYPE.USER_CERT, null);
+                    apply = new Apply(this.caKeyStoreModel, Apply.CERT_TYPE.USER_CERT, null);
                 } else {
-                    apply = new Apply(PASSPHRASE, Apply.CERT_TYPE.HOST_CERT, selectedEntry.getAlias());
+                    apply = new Apply(this.caKeyStoreModel, Apply.CERT_TYPE.HOST_CERT, selectedEntry.getAlias());
                 }
 
                 apply.setModal(true);
@@ -801,7 +840,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         if (this.confirmBackgroundTaskRunning()) {
             return;
         }
-       KeyStoreChangePasswordGuiHelper pwChange = new KeyStoreChangePasswordGuiHelper(this, this.PASSPHRASE); 
+       KeyStoreChangePasswordGuiHelper pwChange = new KeyStoreChangePasswordGuiHelper(this, this.caKeyStoreModel); 
        char[] newPassword = pwChange.changeKeyStorePassword(); 
        if(newPassword != null){
            this.PASSPHRASE = newPassword; 
@@ -825,9 +864,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                     this.caKeyStoreModel.deleteEntry(((KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem()).getAlias());
                     this.caKeyStoreModel.getClientKeyStore().reStore();
                     this.updateKeyStoreGuiFromModel();
-                } catch (KeyStoreException ex) {
-                    Logger.getLogger(MainWindowPanel.class.getName()).log(Level.SEVERE, null, ex);
-                    JOptionPane.showMessageDialog(this, "Unable to delete KeyStore entry: " + ex.getMessage(), "Unable to delete KeyStore entry", JOptionPane.ERROR_MESSAGE);
+                } catch (Exception ex) {
+                    //JOptionPane.showMessageDialog(this, "Unable to delete KeyStore entry: " + ex.getMessage(), "Unable to delete KeyStore entry", JOptionPane.ERROR_MESSAGE);
+                    DThrowable.showAndWait(null, "Problem deleting KeyStore entry", ex);
                 }
             }
         }
@@ -852,10 +891,10 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             return;
         }
         String sAlias = selectedKSEW.getAlias();
-        // Get snapshot of the keystore (prevents interferance from background update thread)
-        KeyStore keyStoreCopy = this.caKeyStoreModel.getClientKeyStore().getKeyStoreCopy();
-
+        
         try {
+            // Get snapshot of the keystore (prevents interferance from background update thread)
+            KeyStore keyStoreCopy = this.caKeyStoreModel.getClientKeyStore().getKeyStoreCopy();
             // Get the entry's certificates
             X509Certificate[] certs;
             if (this.caKeyStoreModel.getClientKeyStore().isKeyEntry(sAlias)) {
@@ -875,7 +914,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             SwingHelper.showAndWait(dViewCertificate);
 
         } catch (Exception ex) {
-            DThrowable.showAndWait(null, null, ex);
+            DThrowable.showAndWait(null, "Problem Viewing Certificate", ex);
         }
     }
 
@@ -901,10 +940,10 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         // Get the entry
         String sAlias = selectedKSEW.getAlias();
         try {
-            CertificateExportGuiHelper certExportUtil = new CertificateExportGuiHelper(this, PASSPHRASE);
+            CertificateExportGuiHelper certExportUtil = new CertificateExportGuiHelper(this, this.caKeyStoreModel);
             return certExportUtil.doExportAction(sAlias);
-        } catch (KeyStoreException ex) {
-            DThrowable.showAndWait(null, null, ex);
+        } catch (Exception ex) {
+            DThrowable.showAndWait(null, "Problem Exporting Certificate", ex);
         }
         return false;
     }
