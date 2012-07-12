@@ -224,12 +224,14 @@ public class Apply extends javax.swing.JDialog {
                 }
             } catch (Exception ex) {
                 WaitDialog.hideDialog();
-                DThrowable.showAndWait(this, "Problem User CSR", ex);
+                DThrowable.showAndWait(this, "Problem Processing CSR Application", ex);
             }
         }
     } 
   
-
+    /**
+     * Process a User or a Host CSR application. 
+     */
     private void processCertApplication(ClientKeyStoreCaServiceWrapper model, 
             CertificateRequestCreator.TYPE type) throws KeyStoreException, IOException, CertificateException {
         String newAlias = this.aliasTextField.getText(); 
@@ -241,6 +243,8 @@ public class Apply extends javax.swing.JDialog {
         String OU = ou_l[0]; 
         String L = ou_l[1];
         
+        WaitDialog.showDialog("Please wait"); 
+        
          // Create a new key pair for new cert 
         KeyPair keyPair = CAKeyPair.getNewKeyPair();
         PublicKey csrPublicKey = keyPair.getPublic();  
@@ -250,10 +254,8 @@ public class Apply extends javax.swing.JDialog {
         // TODO - need to allow for CNs with the service/hostname format, e.g: 'host/davehost1.dl.ac.uk'
         CertificateRequestCreator csrCreator = new CertificateRequestCreator(type, CN, OU, L, email);
         String pkcs10 = csrCreator.createCertificateRequest(csrPrivateKey, csrPublicKey);
-        //if(true){  System.out.println(pkcs10); return;}
-        
-        WaitDialog.showDialog("Please wait"); 
-        
+        //if(true){  System.out.println(pkcs10); WaitDialog.hideDialog(); return;}
+         
         // send PKCS#10 to server
         boolean success; 
         String message;      

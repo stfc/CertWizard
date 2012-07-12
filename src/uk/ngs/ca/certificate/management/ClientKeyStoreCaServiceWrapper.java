@@ -134,7 +134,7 @@ public class ClientKeyStoreCaServiceWrapper {
         // Lets correspond to the java keytool entry types, see:
         // http://download.oracle.com/javase/1.4.2/docs/tooldocs/windows/keytool.html
         KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE type;
-
+        //boolean isCSR = false; 
         if (this.clientKeyStore.isCertificateEntry(sAlias)) {
             // A single public key certificate belonging and signed by another party
             type = KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.TRUST_CERT_ENTRY;
@@ -152,6 +152,13 @@ public class ClientKeyStoreCaServiceWrapper {
             X509Certificate cert = (X509Certificate) this.clientKeyStore.getCertificateChain(sAlias)[0];
             x500PrincipalName = cert.getSubjectX500Principal().toString();
             issuerName = cert.getIssuerX500Principal().toString();
+            // is this cert a self signed CSR cert ? 
+            //if(x500PrincipalName.equals(issuerName) && x500PrincipalName.contains(" CSR ") ){
+            //    String serialNumber = cert.getSerialNumber().toString();
+            //    if ("123456789".equals(serialNumber)) {
+            //        isCSR = true; 
+            //    }
+            //}
             notAfter = cert.getNotAfter();
             notBefore = cert.getNotBefore();
 
@@ -385,9 +392,16 @@ public class ClientKeyStoreCaServiceWrapper {
                         Element _roleElement = (Element) _roleList.item(0);
                         String _role = _roleElement.getChildNodes().item(0).getTextContent();
 
+                        // 
+                        String _useremail = null; 
                         NodeList _useremailList = _certElement.getElementsByTagName("useremail");
                         Element _useremailElement = (Element) _useremailList.item(0);
-                        String _useremail = _useremailElement.getChildNodes().item(0).getTextContent();
+                        if(_useremailElement != null){
+                            NodeList childNodes = _useremailElement.getChildNodes(); 
+                            if(childNodes != null && childNodes.item(0) != null){
+                               _useremail = childNodes.item(0).getTextContent();
+                            }
+                        }
 
                         NodeList _startdateList = _certElement.getElementsByTagName("startdate");
                         Element _startdateElement = (Element) _startdateList.item(0);
@@ -530,7 +544,10 @@ public class ClientKeyStoreCaServiceWrapper {
 
 
             if (downloadedCert == null) {
-                return false; // maybe we temporarily lost connection
+                // maybe we temporarily lost connection or the code that downloaded 
+                // the certificate above returned null? 
+                // Should probably report some kind of issue here to flag to the user. 
+                return false; 
             } else {
                 try {
                     PublicKey downloadedPublicKey = downloadedCert.getPublicKey();

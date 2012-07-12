@@ -5,7 +5,7 @@ import java.util.Date;
 /**
  * Data transfer object that represents an entry in a PKCS12 or JKS KeyStore.
  * A single instance can be shared by multiple threads and its state is mutable, 
- * therefore all access to member variables is synchronized. 
+ * therefore access to all member variables is synchronized. 
  * 
  * @author David Meredth
  */
@@ -140,6 +140,18 @@ public class KeyStoreEntryWrapper {
      */
     public synchronized void setNotAfter(Date notAfter) {
         this.notAfter = notAfter;
+    }
+    
+    /**
+     * @return True if this is certificate signing request certificate, otherwise false. 
+     */
+    public synchronized boolean isCSR() {
+        if (x500PrincipalName != null && issuerName != null
+                && x500PrincipalName.equals(issuerName) && x500PrincipalName.contains(" CSR ")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
 }

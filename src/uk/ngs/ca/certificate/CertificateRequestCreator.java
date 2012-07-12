@@ -6,10 +6,12 @@ package uk.ngs.ca.certificate;
 import java.io.StringWriter;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.Iterator;
 import java.util.Vector;
 import javax.security.auth.x500.X500Principal;
 import org.apache.commons.validator.routines.EmailValidator;
 import org.apache.log4j.Logger;
+import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -170,6 +172,10 @@ public class CertificateRequestCreator {
             PEMWriter pemWrite = new PEMWriter(writer);
             pemWrite.writeObject(request);
             pemWrite.close();
+            
+            //System.out.println(""+request.getCertificationRequestInfo().getSubject().toString());
+            //Vector theseOids = request.getCertificationRequestInfo().getSubject().getOIDs();
+            //ASN1Set set = request.getCertificationRequestInfo().getAttributes();
 
             myLogger.debug("[CertificateCreator] createCertificateRequest: successful");
             return writer.toString();

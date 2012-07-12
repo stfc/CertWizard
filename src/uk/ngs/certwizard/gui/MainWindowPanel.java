@@ -233,7 +233,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
      */
     private void loadImages() {
         //Load the pet images and create an array of indexes.
-        images = new ImageIcon[6];
+        images = new ImageIcon[7];
         images[0] = createImageIcon("/uk/ngs/ca/images/certificate_node.gif");
         images[0].setDescription("Trusted certificate");
         
@@ -250,7 +250,10 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         images[4].setDescription("Host Key Pair (public and private keys)");
         
         images[5] = createImageIcon("/uk/ngs/ca/images/key_go.png"); 
-        images[5].setDescription("Self signed Key Pair (CSR)");
+        images[5].setDescription("Certificate Signing Request");
+        
+        images[6] = createImageIcon("/uk/ngs/ca/images/key_delete.png"); 
+        images[6].setDescription("Self Signed Certificate");
     }
 
     /**
@@ -394,10 +397,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                     X509Certificate x509Cert = this.caKeyStoreModel.getClientKeyStore().getX509Certificate(alias);
                     if (x509Cert != null) {
                         String serialNumber = x509Cert.getSerialNumber().toString();
-                        // Xiao Wang chose to use self signed certs to represent
-                        // CSRs rather than an instance of sun.security.pkcs.PKCS10. 
-                        // This self signed cert defines a default serial number
-                        // as follows, so we prob don't want to display this. 
                         if (!"123456789".equals(serialNumber)) {
                             this.textFieldSerialNumber.setText(serialNumber);
                         } 
@@ -408,10 +407,13 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 }
                 //this.certificateTypeLabel.setText("Certificate + Private Key");
                 //this.certificateTypeLabel.setIcon(this.images[2]);
-                if (selectedKeyStoreEntry.getX500PrincipalName().contains(" CSR ") 
-                        && selectedKeyStoreEntry.getX500PrincipalName().equals(selectedKeyStoreEntry.getIssuerName())) {
+                if (selectedKeyStoreEntry.isCSR()) {
                     this.certificateTypeLabel.setText("Cert Signing Request");
                     this.certificateTypeLabel.setIcon(images[5]);
+                } 
+                else if(selectedKeyStoreEntry.getIssuerName().equals(selectedKeyStoreEntry.getX500PrincipalName())){
+                    this.certificateTypeLabel.setText("Self Signed Certificate");
+                    this.certificateTypeLabel.setIcon(images[6]);    
                 } else if (selectedKeyStoreEntry.getX500PrincipalName().equals(selectedKeyStoreEntry.getIssuerName())) {
                     this.certificateTypeLabel.setText("Self Signed Cert");
                     this.certificateTypeLabel.setIcon(images[5]);
@@ -539,17 +541,16 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 } else if (KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.TRUST_CERT_ENTRY.equals(keyStoreEntry.getEntryType())) {
                     this.setIcon(images[0]);
                 } else if (KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY.equals(keyStoreEntry.getEntryType())) {
-                    //this.setIcon(images[2]);
-                    
-                    if(keyStoreEntry.getX500PrincipalName().contains(" CSR ") && 
-                            keyStoreEntry.getIssuerName().equals(keyStoreEntry.getX500PrincipalName()) ){ 
-                        this.setIcon(images[5]);
+                    //this.setIcon(images[2]);                
+                    if(keyStoreEntry.isCSR() ){ 
+                        this.setIcon(images[5]); // CSR 
+                    } else if(keyStoreEntry.getX500PrincipalName().equals(keyStoreEntry.getIssuerName())){
+                        this.setIcon(images[6]); // Self signed cert 
                     } else if(keyStoreEntry.getX500PrincipalName().contains(".")){
-                        this.setIcon(images[4]);
+                        this.setIcon(images[4]); // Host cert (not self signed) 
                     } else {
-                        this.setIcon(images[3]); 
-                    }
-                    
+                        this.setIcon(images[3]); // User cert (not self signed)  
+                    }                 
                 } else {
                     // could set an unknown default
                 }
@@ -730,44 +731,63 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         if (this.confirmBackgroundTaskRunning()) {
             return;
         }
+       
+        boolean userRequest = true;
+        KeyStoreEntryWrapper selectedEntry = null;
+        
         // Apply for Host or User cert. 
-        boolean userRequest;
-        KeyStoreEntryWrapper selectedEntry = ((KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem());
-        if (selectedEntry.getServerCertificateCSRInfo() != null
-                && "VALID".equals(selectedEntry.getServerCertificateCSRInfo().getStatus()) 
-                && !selectedEntry.getX500PrincipalName().contains(".")) { 
-            // A VALID user cert is selected; then show dialog to ask if they 
-            // want to apply for a user or host cert (inform that the selected user 
-            // user cert will be used to authenticate the request if applying for host cert). 
+        // First check an item has been selected 
+        if (this.jComboBox1.getSelectedIndex() != -1 && this.jComboBox1.getSelectedItem() != null) {
+            selectedEntry = (KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem();
 
-            Object[] options = {"User", "Host", "Cancel"};
-            int n = JOptionPane.showOptionDialog(this,
-                    "Do you want to apply for a new User or Host certificate?\n\n"
-                    + "If you select Host, your currently selected User "
-                    + "certificate will authenticate your application: \n"
-                    + "["+selectedEntry.getAlias()+"]"+"  ["+selectedEntry.getX500PrincipalName()+"]",
-                    "Request New User or Host Certificate",
-                    JOptionPane.YES_NO_CANCEL_OPTION,
-                    JOptionPane.QUESTION_MESSAGE,
-                    null,
-                    options,
-                    options[0]);
-            if (JOptionPane.YES_OPTION == n) {
-                userRequest = true;
-            } else if (JOptionPane.NO_OPTION == n) {
-                userRequest = false;
-            } else {
-                return;
-            }
-        } else {
-            // If a VALID user cert is NOT selected; then show dialog to confirm 
-            // that they are applying for a new user cert, and if they want to 
+            // Second check that the item is a VALID user cert 
+            if (selectedEntry.getServerCertificateCSRInfo() != null
+                    && "VALID".equals(selectedEntry.getServerCertificateCSRInfo().getStatus())
+                    && !selectedEntry.getX500PrincipalName().contains(".")) {
+                // A VALID User cert is selected; show a dialog to ask if they 
+                // want to apply for a user or host cert (inform that the selected user 
+                // user cert will be used to authenticate the request if applying for host cert). 
+
+                Object[] options = {"User", "Host", "Cancel"};
+                int n = JOptionPane.showOptionDialog(this,
+                        "Do you want to apply for a new User or Host certificate?\n\n"
+                        + "If you select Host, your currently selected User "
+                        + "certificate will authenticate your application: \n"
+                        + "[" + selectedEntry.getAlias() + "]" + "  [" + selectedEntry.getX500PrincipalName() + "]",
+                        "Request New User or Host Certificate",
+                        JOptionPane.YES_NO_CANCEL_OPTION,
+                        JOptionPane.QUESTION_MESSAGE,
+                        null,
+                        options,
+                        options[0]);
+                if (JOptionPane.YES_OPTION == n) {
+                    userRequest = true;
+                } else if (JOptionPane.NO_OPTION == n) {
+                    userRequest = false;
+                } else {
+                    return;
+                }
+            } 
+        } 
+        
+        if(userRequest){
+            // Either this is the first user cert application or a VALID user 
+            // cert is NOT selected; therefore show a dialog to confirm 
+            // that they are applying for a new User cert, and if they want to 
             // apply for a host cert, then go back and select which user cert to 
             // authenticate with. 
-            Object[] options = {"Continue", "Cancel"};
-            int n = JOptionPane.showOptionDialog(this, "Confirm new User certificate application\n\n"
+            String message; 
+            if(this.jComboBox1.getItemCount() > 0){
+                message = "Confirm new User certificate application\n\n"
                     + "If you wish to apply for a HOST certificate, cancel and \n"
-                    + "select a VALID User certificate from your pull down list.", 
+                    + "select a VALID User certificate from your pull down list."; 
+            } else {
+                message = "Confirm User certificate application\n\n"
+                        + "If you wish to apply for a HOST certificate, you must first Import \n"
+                        + "or Apply for a valid UK e-Science User certificate."; 
+            }
+            Object[] options = {"Continue", "Cancel"};
+            int n = JOptionPane.showOptionDialog(this, message, 
                     "Confirm User certificate application", 
                     JOptionPane.OK_CANCEL_OPTION, 
                     JOptionPane.INFORMATION_MESSAGE, 
@@ -1949,10 +1969,10 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         int keyPairCount = getComboCertEntryCount();
         if (keyPairCount > 0) {
             if (keyPairCount == 1) {
-                doRefreshActionAsBackgroundTask(true);
+                doRefreshActionAsBackgroundTask(true); // boolean all 
             } else {
                 //Custom button text
-                Object[] options = {"All", "Selected Only"};
+                Object[] options = {"All", "Selected Only", "Cancel"};
                 int n = JOptionPane.showOptionDialog(this,
                         "Refresh all certificates or selected certificate only ",
                         "Refresh certificate status with UK CA",
@@ -1962,9 +1982,13 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                         options,
                         options[1]);
                 if (JOptionPane.YES_OPTION == n) {
-                    doRefreshActionAsBackgroundTask(true);
+                    // All 
+                    doRefreshActionAsBackgroundTask(true); // all == true
+                } else if (JOptionPane.NO_OPTION == n) {
+                    // Selected Only 
+                    doRefreshActionAsBackgroundTask(false); // all == false
                 } else {
-                    doRefreshActionAsBackgroundTask(false);
+                    // Cancel (do nothing)  
                 }
             }
         }

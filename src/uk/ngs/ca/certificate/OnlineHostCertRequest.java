@@ -21,7 +21,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import uk.ngs.ca.common.ClientHostName;
-import uk.ngs.ca.common.HashUtil;
 import uk.ngs.ca.common.Pair;
 import uk.ngs.ca.tools.property.SysProperty;
 
@@ -45,7 +44,7 @@ public class OnlineHostCertRequest {
 
     /**
      * Create a new instance. After creation call {@link #doHostCSR() } when
-     * ready.
+     * ready to perform the CSR request with the server.
      *
      * @param authCert Used to authenticate the CSR request with the server.
      * @param privateKey This must be the corresponding private key to
@@ -196,7 +195,7 @@ public class OnlineHostCertRequest {
                     }
                 }
             } catch (Exception ex) {
-                logger.warn("Could not parse server error response XML doc");
+                logger.warn("Could not parse server error response XML doc", ex);
             }
         } else if (response.getStatus().equals(Status.CLIENT_ERROR_NOT_FOUND)) {
             //404
@@ -220,7 +219,7 @@ public class OnlineHostCertRequest {
             representation = new DomRepresentation(MediaType.APPLICATION_XML);
             d = representation.getDocument();
         } catch (IOException ex) {
-            throw new IllegalStateException("Coding error - can't create empty dom doc");
+            throw new IllegalStateException("Coding error - can't create empty dom doc", ex);
         }
 
         Element rootElement = d.createElement("Bulk");

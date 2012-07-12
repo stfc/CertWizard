@@ -18,12 +18,9 @@ import uk.ngs.ca.common.GuiExecutor;
 public class OnlineStatus extends javax.swing.JPanel /*implements Observer*/ {
 
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
-    // our ping check task 
-    private Runnable pingCheckTask = new PingCheckTask(); 
     // Records whether the last ping check completed ok 
     private AtomicBoolean pingedOK = new AtomicBoolean(false); 
     
-
     /**
      * Creates new form OnlineStatus
      */
@@ -45,8 +42,7 @@ public class OnlineStatus extends javax.swing.JPanel /*implements Observer*/ {
         // http://bugs.sun.com/view_bug.do;jsessionid=e13cfc6ea10a4ffffffffce8c9244b60e54d?bug_id=6880336 
         //pingTask = new PingTask();
         //pingTask.addPropertyChangeListener(pingTaskPropertyListener);
-        
-        executor.scheduleWithFixedDelay(pingCheckTask, 0, 10, TimeUnit.MINUTES);
+        executor.scheduleWithFixedDelay(new PingCheckTask(), 0, 10, TimeUnit.MINUTES);
     }
 
     /**
@@ -173,8 +169,10 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
         // Clicking to start this task should not clash with another ping task 
         // because the button that calls this method is disabled when a task
         // executes. 
-        Runnable localPingCheckTask = new PingCheckTask();
-        localPingCheckTask.run();
+        Runnable sleepTask = new PingCheckTask(); 
+        Thread t = new Thread(sleepTask); 
+        t.setDaemon(true);
+        t.start();
     }
 
     /**
@@ -223,13 +221,26 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
         @Override
         public void run() {
             try {
-                updateGUI(true); 
+                updateGUI(true);
+                // call the ping 
                 pingedOK.set(PingService.getPingService().isPingService());   
             } finally {
                 updateGUI(false);
             }
         }
     }
+    
+    /*private class SleepTask implements Runnable {
+        @Override
+        public void run() {
+            try {
+                updateGUI(true);
+                try { Thread.sleep(3000);} catch(Exception ignore){}
+            } finally {
+                updateGUI(false);
+            }
+        }
+    }*/
         
     
     /**
