@@ -21,6 +21,11 @@ import java.util.Iterator;
 import java.util.Random;
 import javax.security.auth.x500.X500Principal;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
@@ -183,6 +188,7 @@ public class OnLineUserCertificateReKey {
         // public keyid in the request message payload/body. 
         // We subsequently expect a 401 response challenge. 
         Representation representation = getRepresentation();
+        
         Request request = new Request(Method.POST, new Reference(CSRURL), representation);
         request = setupHeaders(request);
         Response response = client.handle(request);
@@ -450,7 +456,16 @@ public class OnLineUserCertificateReKey {
             eltName.appendChild(d.createTextNode(_version));
             rootElement.appendChild(eltName);
 
-            d.normalizeDocument();
+            d.normalizeDocument();           
+            
+            /*TransformerFactory transFactory = TransformerFactory.newInstance();
+            Transformer transformer = transFactory.newTransformer();
+            StringWriter buffer = new StringWriter();
+            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+            transformer.transform(new DOMSource(d),
+            new StreamResult(buffer));
+            String str = buffer.toString();
+            System.out.println(str);*/
         } catch (Exception ep) {
             ep.printStackTrace();
             return null;

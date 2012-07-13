@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import net.sf.portecle.DGetAlias;
 import net.sf.portecle.DViewCertificate;
 import net.sf.portecle.FPortecle;
@@ -357,10 +358,10 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             }
         }
     }
-
+    
     /**
      * Update other GUI components based on selected combo item (note, no reload
-     * of keystore !)
+     * of keystore !). 
      */
     private void updateGUIPanel() {
         // nullify/clear the gui components first
@@ -379,6 +380,8 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         this.certificateTypeLabel.setText("");
         this.certificateTypeLabel.setIconTextGap(10);
         this.certificateTypeLabel.setIcon(null);
+        
+        this.pnlAllDetails.setBorder(new TitledBorder("Selected Certificate Details")); 
 
         // now udpate 
         KeyStoreEntryWrapper selectedKeyStoreEntry = (KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem();
@@ -392,6 +395,8 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             if (KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_ENTRY.equals(selectedKeyStoreEntry.getEntryType())) {
                 this.certificateTypeLabel.setText("Key");
                 this.certificateTypeLabel.setIcon(this.images[1]);
+                this.pnlAllDetails.setBorder(new TitledBorder("Selected Key Details")); 
+
             } else if (KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY.equals(selectedKeyStoreEntry.getEntryType())) {
                 try {
                     X509Certificate x509Cert = this.caKeyStoreModel.getClientKeyStore().getX509Certificate(alias);
@@ -410,6 +415,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 if (selectedKeyStoreEntry.isCSR()) {
                     this.certificateTypeLabel.setText("Cert Signing Request");
                     this.certificateTypeLabel.setIcon(images[5]);
+                    this.pnlAllDetails.setBorder(new TitledBorder("Selected Certificate Signing Request Details")); 
+                    
+
                 } 
                 else if(selectedKeyStoreEntry.getIssuerName().equals(selectedKeyStoreEntry.getX500PrincipalName())){
                     this.certificateTypeLabel.setText("Self Signed Certificate");
@@ -733,6 +741,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         }
        
         boolean userRequest = true;
+        boolean ask = true; 
         KeyStoreEntryWrapper selectedEntry = null;
         
         // Apply for Host or User cert. 
@@ -762,15 +771,17 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                         options[0]);
                 if (JOptionPane.YES_OPTION == n) {
                     userRequest = true;
+                    ask = false; 
                 } else if (JOptionPane.NO_OPTION == n) {
                     userRequest = false;
+                    ask = false; 
                 } else {
                     return;
                 }
             } 
         } 
         
-        if(userRequest){
+        if(userRequest && ask){
             // Either this is the first user cert application or a VALID user 
             // cert is NOT selected; therefore show a dialog to confirm 
             // that they are applying for a new User cert, and if they want to 
@@ -778,13 +789,13 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             // authenticate with. 
             String message; 
             if(this.jComboBox1.getItemCount() > 0){
-                message = "Confirm new User certificate application\n\n"
-                    + "If you wish to apply for a HOST certificate, cancel and \n"
-                    + "select a VALID User certificate from your pull down list."; 
+                message = "<html>You are about to apply for a new <font color=red>User</font> certificate<br/><br/>"
+                    + "If you wish to apply for a HOST certificate, cancel and<br/>"
+                    + "select a <font color=green>[VALID]</font> User certificate from your pull down list.</html>"; 
             } else {
-                message = "Confirm User certificate application\n\n"
-                        + "If you wish to apply for a HOST certificate, you must first Import \n"
-                        + "or Apply for a valid UK e-Science User certificate."; 
+                message = "<html>You are about to apply for a new <font color=red>User</font> certificate<br/><br/>"
+                        + "If you wish to apply for a HOST certificate, you must first Import<br/>"
+                        + "or Apply for a valid UK e-Science User certificate.</html>"; 
             }
             Object[] options = {"Continue", "Cancel"};
             int n = JOptionPane.showOptionDialog(this, message, 
@@ -1382,9 +1393,11 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         caCertStatusTextField.setEditable(false);
         caCertStatusTextField.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
         caCertStatusTextField.setText("Unknown");
+        caCertStatusTextField.setToolTipText("Status of selected certificate with the UK eScience CA");
         caCertStatusTextField.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
 
         jLabel2.setText("Status:");
+        jLabel2.setToolTipText("Status of selected certificate with the UK eScience CA");
 
         aliasTextField.setEditable(false);
         aliasTextField.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
@@ -1806,7 +1819,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                             .add(org.jdesktop.layout.GroupLayout.TRAILING, jProgressBar1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .add(org.jdesktop.layout.GroupLayout.TRAILING, labelOnlineUpdate, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 14, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                             .add(org.jdesktop.layout.GroupLayout.TRAILING, btnCancelOnlineUpdate, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 14, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                        .add(0, 0, Short.MAX_VALUE)))
+                        .add(0, 2, Short.MAX_VALUE)))
                 .add(8, 8, 8))
         );
 

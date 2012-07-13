@@ -5,6 +5,7 @@
 package uk.ngs.ca.util;
 
 import java.awt.Component;
+import java.awt.Window;
 import java.io.*;
 import java.security.*;
 import java.security.cert.Certificate;
@@ -29,10 +30,10 @@ import org.bouncycastle.openssl.PEMWriter;
 import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
 
 /**
- * Helper class for assisting with exporting of certificates from the 
- * applications managed keyStore. 
- * The methods invoked by this class present GUI components during their processing. 
- * 
+ * Helper class for assisting with exporting of certificates from the
+ * applications managed keyStore. The methods invoked by this class present GUI
+ * components during their processing.
+ *
  * @author David Meredith
  */
 public class CertificateExportGuiHelper {
@@ -57,10 +58,20 @@ public class CertificateExportGuiHelper {
         //this.PASSPHRASE = passphrase;
         this.parentCompoent = parentCompoent;
         //this.caKeyStoreModel = ClientKeyStoreCaServiceWrapper.getInstance(this.PASSPHRASE);
-        this.caKeyStoreModel = caKeyStoreModel; 
+        this.caKeyStoreModel = caKeyStoreModel;
     }
 
-
+    
+    public static Window findWindow(Component c) {
+        if (c == null) {
+            return JOptionPane.getRootFrame();
+        } else if (c instanceof Window) {
+            return (Window) c;
+        } else {
+            return findWindow(c.getParent());
+        }
+    }
+    
     /**
      * Let the user export the selected entry. Based on Portecle.
      *
@@ -76,9 +87,10 @@ public class CertificateExportGuiHelper {
             // a new KeyStoreWrapper because this is required by
             // the DExport constructor.
             // Pass a snapshot of the keystore when exporting. 
-            DExport dExport = new DExport(null,
+            
+            DExport dExport = new DExport(findWindow(parentCompoent), 
                     new KeyStoreWrapper(this.caKeyStoreModel.getClientKeyStore().getKeyStoreCopy()), sAlias);
-            //dExport.setLocationRelativeTo(this);
+            dExport.setLocationRelativeTo(this.parentCompoent);
             SwingHelper.showAndWait(dExport);
             if (!dExport.exportSelected()) {
                 return false; // User canceled the dialog
@@ -162,8 +174,8 @@ public class CertificateExportGuiHelper {
 
             // First get a new password for the PKCS #12 keystore
             DGetNewPassword dGetNewPassword =
-                    new DGetNewPassword(null, RB.getString("FPortecle.Pkcs12Password.Title"));
-            //dGetNewPassword.setLocationRelativeTo(this);
+                    new DGetNewPassword(findWindow(parentCompoent), RB.getString("FPortecle.Pkcs12Password.Title")); 
+            dGetNewPassword.setLocationRelativeTo(parentCompoent);
             SwingHelper.showAndWait(dGetNewPassword);
             char[] newPKCS12Password = dGetNewPassword.getPassword();
             if (newPKCS12Password == null) {
@@ -276,7 +288,7 @@ public class CertificateExportGuiHelper {
             DGetNewPassword dGetNewPassword =
                     new DGetNewPassword(null, RB.getString("FPortecle.PrivateKeyExportPassword.Title"));
             dGetNewPassword.setLocationByPlatform(true);
-            //dGetNewPassword.setLocationRelativeTo(this);
+            dGetNewPassword.setLocationRelativeTo(this.parentCompoent);
             SwingHelper.showAndWait(dGetNewPassword);
 
             char[] password = dGetNewPassword.getPassword();

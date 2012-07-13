@@ -5,6 +5,7 @@
 package uk.ngs.ca.util;
 
 import java.awt.Component;
+import java.awt.Cursor;
 import java.security.KeyStoreException;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
@@ -18,19 +19,18 @@ import uk.ngs.ca.certificate.client.CertificateDownload;
 import uk.ngs.ca.certificate.client.RevokeRequest;
 import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
 import uk.ngs.ca.certificate.management.KeyStoreEntryWrapper;
-import uk.ngs.certwizard.gui.WaitDialog;
+//import uk.ngs.certwizard.gui.WaitDialog;
 
 /**
- * Helper class for performing certificate renewals and revocations. 
- * The methods invoked by this class present GUI components during their processing. 
- * 
+ * Helper class for performing certificate renewals and revocations. The methods
+ * invoked by this class present GUI components during their processing.
+ *
  * @author David Meredith
  */
 public class CertificateRenewRevokeGuiHelper {
 
     private ClientKeyStoreCaServiceWrapper caKeyStoreModel;
     private Component parentCompoent;
-    //private char[] PASSPHRASE;
     /**
      * Portecle Resource bundle base name
      */
@@ -39,17 +39,16 @@ public class CertificateRenewRevokeGuiHelper {
 
     public CertificateRenewRevokeGuiHelper(Component parentCompoent, ClientKeyStoreCaServiceWrapper caKeyStoreModel) {
         this.parentCompoent = parentCompoent;
-        //this.PASSPHRASE = passphrase;
         this.caKeyStoreModel = caKeyStoreModel;
     }
 
     /**
-     * Lead the user through the revocation process for the given keyStore entry.
-     * The method generates GUI components during its processing. 
-     * The method does not make any changes to the application's keyStore file. 
-     * 
+     * Lead the user through the revocation process for the given keyStore
+     * entry. The method generates GUI components during its processing. The
+     * method does not make any changes to the application's keyStore file.
+     *
      * @param selectedKSEW
-     * @return true if revoked, otherwise false. 
+     * @return true if revoked, otherwise false.
      */
     public boolean doRevoke(KeyStoreEntryWrapper selectedKSEW) {
         if (selectedKSEW != null
@@ -61,7 +60,10 @@ public class CertificateRenewRevokeGuiHelper {
             if (JOptionPane.OK_OPTION == ok) {
                 String reason = "todo"; // TODO: use an inputDialog to get the reason as below
                 //JOptionPane.showInputDialog(this, "message", "reason for revokation", JO)
-                WaitDialog.showDialog("Revoke");
+                //WaitDialog.showDialog("Revoke");
+                parentCompoent.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));     
+                
+                 
                 long cert_id = new Long(selectedKSEW.getServerCertificateCSRInfo().getId()).longValue();
                 RevokeRequest revokeRequest = new RevokeRequest(
                         this.caKeyStoreModel.getClientKeyStore().getPrivateKey(selectedKSEW.getAlias()),
@@ -77,12 +79,13 @@ public class CertificateRenewRevokeGuiHelper {
                         //caKeyStoreModel.getClientKeyStore().reStore(); 
                     }
                 } catch (KeyStoreException ex) {
+                    parentCompoent.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));  
                     DThrowable.showAndWait(null, "Problem Revoking Certificate", ex);
                 }
-                //this.updateKeyStoreGuiFromModel();
-
-                WaitDialog.hideDialog();
-
+               
+                //WaitDialog.hideDialog();
+                parentCompoent.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));     
+                
 
                 if (revoked) {
                     JOptionPane.showMessageDialog(parentCompoent, revokeRequest.getMessage(), "Certificate revoked", JOptionPane.INFORMATION_MESSAGE);
@@ -100,11 +103,12 @@ public class CertificateRenewRevokeGuiHelper {
 
     /**
      * Lead the user through the renewal process for the given keyStore entry.
-     * The method generates GUI components during its processing. 
-     * The method creates and persists a new CSR certificate in the application's keyStore file. 
+     * The method generates GUI components during its processing. The method
+     * creates and persists a new CSR certificate in the application's keyStore
+     * file.
      *
      * @param selectedKSEW
-     * @return the keyStore alias of the newly added renewal CSR.  
+     * @return the keyStore alias of the newly added renewal CSR.
      */
     public String doRenew(KeyStoreEntryWrapper selectedKSEW) {
         // Can only renew key_pairs types issued by our CA
@@ -112,6 +116,12 @@ public class CertificateRenewRevokeGuiHelper {
                 && KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY.equals(selectedKSEW.getEntryType())
                 && selectedKSEW.getServerCertificateCSRInfo() != null
                 && "VALID".equals(((KeyStoreEntryWrapper) selectedKSEW).getServerCertificateCSRInfo().getStatus())) {
+            
+            if(selectedKSEW.getX500PrincipalName().contains(".")){
+                JOptionPane.showMessageDialog(parentCompoent, "Host cert renewals not yet supported. Coming very soon !",
+                    "Host cert renewals not yet supported", JOptionPane.WARNING_MESSAGE);
+                return null; 
+            }
 
             int ok = JOptionPane.showConfirmDialog(parentCompoent, "Are you sure you want to renew the selected certificate?", "Renew Certificate", JOptionPane.OK_CANCEL_OPTION);
             if (JOptionPane.OK_OPTION == ok) {
@@ -126,7 +136,7 @@ public class CertificateRenewRevokeGuiHelper {
                     newCsrRenewalAlias = getNewEntryAliasHelper(newCsrRenewalAlias, "FPortecle.KeyPairEntryAlias.Title", false);
 
                     if (newCsrRenewalAlias == null) {
-                        WaitDialog.hideDialog(); //user hit cancel
+                        //WaitDialog.hideDialog(); //user hit cancel
                         return null;
                     }
 
@@ -138,30 +148,33 @@ public class CertificateRenewRevokeGuiHelper {
                                 MessageFormat.format("The keystore already contains an entry with the alias " + newCsrRenewalAlias + "\n"
                                 + "Please enter a unique alias", newCsrRenewalAlias),
                                 RB.getString("FPortecle.RenameEntry.Title"), JOptionPane.ERROR_MESSAGE);
-                        WaitDialog.hideDialog();
+                        //WaitDialog.hideDialog();
                         return null;
 
                     }
 
                 } catch (KeyStoreException ex) {
-                    DThrowable.showAndWait(null, null, ex);
+                    DThrowable.showAndWait(null, "Problem checking keyStore", ex);
                 }
 
                 // Submit the renewal request saving the new csr renewal under the 
                 // new alias in the keystore. The existing cert that is selected 
                 // for renewal is left untouched.  
-                WaitDialog.showDialog("Please wait, submitting renewal request");
+                //WaitDialog.showDialog("Please wait, submitting renewal request");
+                
+                parentCompoent.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));    
                 String cert_id = selectedKSEW.getServerCertificateCSRInfo().getId();
                 CertificateDownload certDownload = new CertificateDownload(cert_id);
-                OnLineUserCertificateReKey rekey = new OnLineUserCertificateReKey( 
-                        this.caKeyStoreModel, 
+                OnLineUserCertificateReKey rekey = new OnLineUserCertificateReKey(
+                        this.caKeyStoreModel,
                         newCsrRenewalAlias, certDownload.getCertificate());
                 boolean isReadyForReKey = rekey.isValidReKey();
 
                 if (isReadyForReKey) {
                     // Submit renewal here (does not reStore keyStore but does add a new entry for CSR) 
                     boolean submittedOk = rekey.doPosts();
-                    WaitDialog.hideDialog();
+                    parentCompoent.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));    
+                
                     if (submittedOk) {
                         JOptionPane.showMessageDialog(parentCompoent, "The renewal request has been submitted", "Renewal request successful", JOptionPane.INFORMATION_MESSAGE);
 
@@ -192,7 +205,7 @@ public class CertificateRenewRevokeGuiHelper {
                     //this.updateKeyStoreGuiFromModel();
 
                 } else {
-                    WaitDialog.hideDialog();
+                    parentCompoent.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
                     JOptionPane.showMessageDialog(parentCompoent, "The selected certificate is not valid to renew", "wrong certificate", JOptionPane.WARNING_MESSAGE);
                 }
             }

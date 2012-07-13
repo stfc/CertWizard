@@ -43,7 +43,9 @@ public final class ClientKeyStore {
     // b) prevent dirty reads by different threads (visiblity) 
     // The keyStore is confined to this object, it is never leaked/published. 
     private volatile KeyStore keyStore; 
-    private final String key_KeyStoreFilePath ;
+    private final String keyStoreFilePath ;
+    private final String backupKeyStoreFilePath; 
+    private final String backupDir; 
     private char[] PASSPHRASE = null;
     private String errorMessage = null;
     private static ClientKeyStore clientKeyStore = null;
@@ -83,7 +85,9 @@ public final class ClientKeyStore {
     private ClientKeyStore(char[] passphrase) throws KeyStoreException, IOException, CertificateException{
         String caDir = System.getProperty("user.home") + File.separator + ".ca";
         this.PASSPHRASE = passphrase;
-        this.key_KeyStoreFilePath = caDir + File.separator + SysProperty.getValue("ngsca.key.keystore.file");
+        this.keyStoreFilePath = caDir + File.separator + SysProperty.getValue("ngsca.key.keystore.file");
+        this.backupDir = caDir + File.separator + "backup"; 
+        this.backupKeyStoreFilePath = backupDir + File.separator + SysProperty.getValue("ngsca.key.keystore.file")+".backup";
         this.keyStore = this.getKeyStoreCopy();
     }
     
@@ -101,7 +105,7 @@ public final class ClientKeyStore {
      * @return the full path of the managed keyStore file  
      */
     public String getKeyStoreFilePath() {
-        return this.key_KeyStoreFilePath;
+        return this.keyStoreFilePath;
     }
 
     /**
@@ -119,9 +123,9 @@ public final class ClientKeyStore {
             KeyStore ks = PKCS12KeyStoreUnlimited.getInstance();
             FileInputStream fis = null;
             try {
-                File f = new File(this.key_KeyStoreFilePath);
+                File f = new File(this.keyStoreFilePath);
                 if (f.exists() && f.length() != 0L) {
-                    fis = new FileInputStream(key_KeyStoreFilePath);
+                    fis = new FileInputStream(keyStoreFilePath);
                     ks.load(fis, this.PASSPHRASE);
                 } else {
                     ks.load(null, null);
@@ -160,13 +164,22 @@ public final class ClientKeyStore {
      */
     public synchronized void reStore() throws IOException, KeyStoreException, CertificateException {
         // must first create a swap file incase anything goes wrong 
-        File srcFile = new File(this.key_KeyStoreFilePath);
-        File swpFile = null; 
-        if(srcFile.exists() && srcFile.length() > 0l){
-            swpFile = new File(this.key_KeyStoreFilePath+".swp"); 
-            FileUtils.copyFile(srcFile, swpFile, true);
+        File srcFile = new File(this.keyStoreFilePath);
+        File swpFile = new File(this.keyStoreFilePath+".swp"); 
+        File bckFile = new File(this.backupKeyStoreFilePath); 
+        // create the backup dir if don't already exist. 
+        File fbackupDir = new File(this.backupDir); 
+        if(!fbackupDir.exists()){
+            fbackupDir.mkdir(); 
         }
-            
+        
+        if(srcFile.exists() && srcFile.length() > 0l){
+            // create swap file first 
+            FileUtils.copyFile(srcFile, swpFile, true);
+            // now update backup file 
+            FileUtils.copyFile(srcFile, bckFile, true);
+        }
+        
         FileOutputStream fos = null;
         try {
             fos = new FileOutputStream(srcFile);

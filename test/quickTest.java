@@ -4,13 +4,15 @@
  */
 
 
+import java.awt.BorderLayout;
+import java.awt.Cursor;
 import java.awt.Dimension;
-import javax.swing.JOptionPane;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
+import javax.swing.*;
+import net.sf.portecle.gui.error.DThrowable;
 import org.junit.*;
 import static org.junit.Assert.*;
 import org.junit.Test;
+import uk.ngs.ca.common.GuiExecutor;
 import uk.ngs.certwizard.gui.GeneralMessageDialog;
 
 /**
@@ -43,10 +45,37 @@ public class quickTest {
 
     @Test
     public void hello() {
-        String text = "adfaasdfafaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        /*String text = "adfaasdfafaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
                 + "aaaaaaaaaaaaaaaaaaaaaaaa\n"
                 + "asssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss"; 
-        GeneralMessageDialog.showAndWait(null, text, "title", JOptionPane.ERROR_MESSAGE); 
+        GeneralMessageDialog.showAndWait(null, text, "title", JOptionPane.ERROR_MESSAGE); */
+        
+        final JDialog dlg = new JDialog();
+        dlg.setModal(true);
+        dlg.setTitle("Please wait...");
+        //JProgressBar dpb = new JProgressBar();
+        //dpb.setIndeterminate(true);
+        //dlg.add(BorderLayout.CENTER, dpb);
+        dlg.add(BorderLayout.CENTER, new JLabel("Processing"));
+        //dlg.add(BorderLayout.NORTH, new JLabel("Progress..."));
+        dlg.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+        dlg.setSize(300, 50);
+        //dlg.setLocationRelativeTo(this);
+        GuiExecutor.instance().execute(new Runnable() {
+
+            public void run() {
+                dlg.setVisible(true);
+            }
+        }); 
+        
+
+        try {
+            Thread.sleep(3000);
+            dlg.dispose();
+        } catch (Exception ex) {
+            dlg.dispose();
+        }
 
     }
+
 }

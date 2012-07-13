@@ -5,7 +5,9 @@
  */
 package uk.ngs.certwizard.gui;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Toolkit;
 import java.io.IOException;
 import java.net.URL;
@@ -15,7 +17,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import javax.swing.JOptionPane;
+import javax.swing.*;
 import net.sf.portecle.gui.error.DThrowable;
 import org.apache.commons.validator.routines.DomainValidator;
 import org.apache.commons.validator.routines.EmailValidator;
@@ -25,10 +27,7 @@ import uk.ngs.ca.certificate.client.CSRRequest;
 import uk.ngs.ca.certificate.client.PingService;
 import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
 import uk.ngs.ca.certificate.management.KeyStoreEntryWrapper;
-import uk.ngs.ca.common.CAKeyPair;
-import uk.ngs.ca.common.HashUtil;
-import uk.ngs.ca.common.MyPattern;
-import uk.ngs.ca.common.Pair;
+import uk.ngs.ca.common.*;
 import uk.ngs.ca.info.CAInfo;
 
 /**
@@ -49,6 +48,8 @@ public class Apply extends javax.swing.JDialog {
     private final X509Certificate authCert;
     private final PrivateKey authKey; 
     private final ClientKeyStoreCaServiceWrapper model; 
+    
+    //private ProgressMonitor progressMonitor;
     
     
     /**
@@ -74,7 +75,7 @@ public class Apply extends javax.swing.JDialog {
      */
     public Apply(ClientKeyStoreCaServiceWrapper model, CERT_TYPE certType, String keyStoreAliasToAuthHostApply) throws IOException, KeyStoreException, CertificateException {
         this.certType = certType;
-        this.model = model; 
+        this.model = model;    
         initComponents();
             
         if(CERT_TYPE.HOST_CERT.equals(this.certType)){
@@ -216,19 +217,44 @@ public class Apply extends javax.swing.JDialog {
                         + "the helpdesk at support@grid-support.ac.uk.", "Server Connection Fault", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            try {
+            
+  
+            setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));           
+            try { 
+                /*progressMonitor = new ProgressMonitor(Apply.this,
+                                  "Please Wait", "", 0, 100);
+                progressMonitor.setProgress(0);*/
                 if (CERT_TYPE.USER_CERT.equals(this.certType)) {
                     this.processCertApplication(model, CertificateRequestCreator.TYPE.USER);
                 } else {
                     this.processCertApplication(model, CertificateRequestCreator.TYPE.HOST);
                 }
+                //Task t = new Task(); 
+                //t.execute();
+                setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR)); 
             } catch (Exception ex) {
-                WaitDialog.hideDialog();
+                setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
                 DThrowable.showAndWait(this, "Problem Processing CSR Application", ex);
             }
         }
     } 
-  
+    
+    
+    /*private class Task extends SwingWorker<Void, Void>{
+        @Override
+        protected Void doInBackground() throws Exception {
+            Thread.sleep(3000); 
+            return null; 
+        }
+        @Override
+        public void done() {
+            System.out.println("done in AWT event dispatch thread");
+            progressMonitor.close();
+        }
+    }*/
+    
+    
+    
     /**
      * Process a User or a Host CSR application. 
      */
@@ -243,7 +269,7 @@ public class Apply extends javax.swing.JDialog {
         String OU = ou_l[0]; 
         String L = ou_l[1];
         
-        WaitDialog.showDialog("Please wait"); 
+        //WaitDialog.showDialog("Please wait"); 
         
          // Create a new key pair for new cert 
         KeyPair keyPair = CAKeyPair.getNewKeyPair();
@@ -272,7 +298,7 @@ public class Apply extends javax.swing.JDialog {
             message = result.second;
             success = result.first;
         }
-        WaitDialog.hideDialog();
+        //WaitDialog.hideDialog();
         
         // If submitted ok, save a new self-signed cert in the keyStore and ReStore. 
         if (success) {
