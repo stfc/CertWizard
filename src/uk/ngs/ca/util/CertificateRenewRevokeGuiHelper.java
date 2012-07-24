@@ -64,13 +64,13 @@ public class CertificateRenewRevokeGuiHelper {
                 parentCompoent.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));     
                 
                  
-                long cert_id = new Long(selectedKSEW.getServerCertificateCSRInfo().getId()).longValue();
+                final long cert_id = new Long(selectedKSEW.getServerCertificateCSRInfo().getId()).longValue();
                 RevokeRequest revokeRequest = new RevokeRequest(
                         this.caKeyStoreModel.getClientKeyStore().getPrivateKey(selectedKSEW.getAlias()),
                         cert_id, reason);
                 // do the revokation with the CA and block (note, this has 
                 // no interaction with the keystore) 
-                boolean revoked = revokeRequest.doPosts();
+                final boolean revoked = revokeRequest.doPosts();
 
                 // Just reload the selected entry rather than refreshing all 
                 try {
@@ -158,16 +158,19 @@ public class CertificateRenewRevokeGuiHelper {
                 }
 
                 // Submit the renewal request saving the new csr renewal under the 
-                // new alias in the keystore. The existing cert that is selected 
+                // new alias in the keystore. The existing cert that was selected 
                 // for renewal is left untouched.  
                 //WaitDialog.showDialog("Please wait, submitting renewal request");
                 
-                parentCompoent.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));    
+                parentCompoent.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));   
+                
+                // need error checking here. 
                 String cert_id = selectedKSEW.getServerCertificateCSRInfo().getId();
                 CertificateDownload certDownload = new CertificateDownload(cert_id);
+                
                 OnLineUserCertificateReKey rekey = new OnLineUserCertificateReKey(
-                        this.caKeyStoreModel,
-                        newCsrRenewalAlias, certDownload.getCertificate());
+                        this.caKeyStoreModel, newCsrRenewalAlias, certDownload.getCertificate());
+                
                 boolean isReadyForReKey = rekey.isValidReKey();
 
                 if (isReadyForReKey) {
