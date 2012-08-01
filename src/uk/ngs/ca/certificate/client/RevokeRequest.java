@@ -37,7 +37,7 @@ import uk.ngs.ca.tools.property.SysProperty;
 
 /**
  *
- * @author xw75
+ * @author xw75 (Xiao Wang) 
  */
 public class RevokeRequest {
 
@@ -48,6 +48,7 @@ public class RevokeRequest {
     private String MESSAGE = null;
     private PrivateKey privateKey;
 
+    
     public RevokeRequest(PrivateKey privateKey, long cert_id, String reason) {
         this.privateKey = privateKey;
         this.cert_id = cert_id;
@@ -144,7 +145,7 @@ public class RevokeRequest {
                 _form.add("opaque", _opaqueP.getValue());
                 /* */
                 client = new Client(Protocol.HTTPS);
-//please note you have to call getRepresentation() again, otherwise it will be null. Why???
+                //please note you have to call getRepresentation() again, otherwise it will be null. Why???
                 request = new Request(Method.POST, new Reference(REVOKEURL), getRepresentation());
                 request.getAttributes().put("org.restlet.http.headers", _form);
                 org.restlet.data.ClientInfo _info = new org.restlet.data.ClientInfo();

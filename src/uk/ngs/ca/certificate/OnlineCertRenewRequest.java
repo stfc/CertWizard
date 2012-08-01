@@ -50,6 +50,8 @@ public class OnlineCertRenewRequest {
 
     /**
      * Create a new instance. After creation call {@link #doRenewal() }. 
+     * No validity checks are performed on the given certificate, it is up to 
+     * the calling client to test for expiry and yet to be valid. 
      *
      * @param authAndRenewCert The certificate that is to be renewed and used for
      * PPPK authentication. The DN of this certificate is extracted and used 
@@ -81,7 +83,6 @@ public class OnlineCertRenewRequest {
             throw new IllegalArgumentException("Invalid email");
         }
 
-        // Currently we create the new 
         String dn = this.authCert.getSubjectDN().getName();
         //String C = _retrieveDataFromDN(dn, "C=");
         //String O = _retrieveDataFromDN(dn, "O=");
@@ -97,7 +98,9 @@ public class OnlineCertRenewRequest {
             type = CertificateRequestCreator.TYPE.USER;
         }
 
-        // Create the PKCS#10 string 
+        // Create the PKCS#10 string. Note that email is used to create 
+        // both the PKCS#10 DN and is specified as the CSR XML email element (see below).
+        // This is required because the server will complain if they are different. 
         CertificateRequestCreator csrCreator = new CertificateRequestCreator(type, CN, OU, L, this.email);
         this.pkcs10String = csrCreator.createCertificateRequest(csrKeyPair.getPrivate(), csrKeyPair.getPublic());
     }

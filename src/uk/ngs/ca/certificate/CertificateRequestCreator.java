@@ -25,7 +25,7 @@ import org.bouncycastle.openssl.PEMWriter;
  * @see https://ssl-tools.verisign.com/checker/ 
  * 
  * @author xw75 (Xiao Wang) 
- * @author David Meredith (modifications) 
+ * @author David Meredith (some modifications) 
  *
  */
 public class CertificateRequestCreator {
@@ -49,7 +49,7 @@ public class CertificateRequestCreator {
      * @param CN
      * @param OU
      * @param L
-     * @param email 
+     * @param email Only used when type is HOST. 
      * @throws IllegalArgumentException if any of the given values are empty.
      */
     public CertificateRequestCreator(TYPE type, String CN, String OU, String L, String email) {
@@ -138,7 +138,6 @@ public class CertificateRequestCreator {
         if(TYPE.HOST.equals(this.type)){
             subjectAltName = new GeneralNames(new GeneralName(GeneralName.rfc822Name, Email));
         } else {
-            // TODO need to check this is correct. 
             subjectAltName = new GeneralNames(new GeneralName(GeneralName.rfc822Name, "DNS: "+CN)); 
         }
         Vector oids = new Vector(); // legacy required by BC. 
@@ -169,7 +168,7 @@ public class CertificateRequestCreator {
                 //  false:   Subject: emailAddress=david.meredith@stfc.ac.uk, CN=host.dl.ac.uk, L=RAL, OU=CLRC, O=eScienceDev, C=UK
                 //  true:    Subject: C=UK, O=eScienceDev, OU=CLRC, L=RAL, CN=host.dl.ac.uk/emailAddress=david.meredith@stfc.ac.uk
                 
-                // We specify false for a reverse DN to be consistent with OpenCA
+                // We specify true for a reverse DN to be consistent with OpenCA
                 // which seems to prefer PKCS#10 requests to have that DN style. 
                 request = new PKCS10CertificationRequest(SIG_ALG, new X509Name(true, DN), 
                        pubkey, new DERSet(attribute), privkey); 

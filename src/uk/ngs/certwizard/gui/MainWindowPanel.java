@@ -713,10 +713,14 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         if (!isOnlinePing()) {
             return;
         }
-        // Can only revoke key_pairs types issued by our CA
-        KeyStoreEntryWrapper selectedKSEW = (KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem();
-        CertificateRenewRevokeGuiHelper util = new CertificateRenewRevokeGuiHelper(this, this.caKeyStoreModel);
-        util.doRevoke(selectedKSEW);
+        try {
+            // Can only revoke key_pairs types issued by our CA
+            KeyStoreEntryWrapper selectedKSEW = (KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem();
+            CertificateRenewRevokeGuiHelper util = new CertificateRenewRevokeGuiHelper(this, this.caKeyStoreModel);
+            util.doRevoke(selectedKSEW);
+        } catch (Exception ex) {
+            DThrowable.showAndWait(null, "Problem Revoking Certificate", ex);
+        }
         this.updateKeyStoreGuiFromModel();
     }
 

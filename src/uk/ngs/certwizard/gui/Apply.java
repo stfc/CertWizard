@@ -143,7 +143,7 @@ public class Apply extends javax.swing.JDialog {
                 // do nothing 
             } else {
                 complete = false;
-                text = text + "\nYour name input should be \"Firstname Lastname\", please try again.";
+                text = text + "\nYour name input should be lowercase \"firstname lastname\", please try again.";
             }
         } else {
             if (DomainValidator.getInstance().isValid(this.txtName.getText())) {
@@ -230,12 +230,12 @@ public class Apply extends javax.swing.JDialog {
                 } else {
                     this.processCertApplication(model, CertificateRequestCreator.TYPE.HOST);
                 }
-                //Task t = new Task(); 
-                //t.execute();
-                setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR)); 
+
             } catch (Exception ex) {
                 setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
                 DThrowable.showAndWait(this, "Problem Processing CSR Application", ex);
+            } finally {
+                setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR)); 
             }
         }
     } 
@@ -262,6 +262,9 @@ public class Apply extends javax.swing.JDialog {
     private void processCertApplication(ClientKeyStoreCaServiceWrapper model, 
             CertificateRequestCreator.TYPE type) throws KeyStoreException, IOException, CertificateException {
         String newAlias = this.aliasTextField.getText(); 
+        // Note that same email is value is used to create PKCS#10 request and 
+        // specify in the CSR email XML element. This is required otherwise the 
+        // server will complain that emails don't match. 
         String email = this.txtEmail.getText();
         String CN = this.txtName.getText();
         char[] pin = this.txtPin.getPassword(); 
