@@ -5,7 +5,6 @@
  */
 package uk.ngs.certwizard.gui;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Toolkit;
@@ -14,20 +13,22 @@ import java.net.URL;
 import java.security.KeyPair;
 import java.security.KeyStoreException;
 import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import javax.swing.*;
+import javax.swing.JOptionPane;
 import net.sf.portecle.gui.error.DThrowable;
 import org.apache.commons.validator.routines.DomainValidator;
 import org.apache.commons.validator.routines.EmailValidator;
 import uk.ngs.ca.certificate.CertificateRequestCreator;
 import uk.ngs.ca.certificate.OnlineHostCertRequest;
-import uk.ngs.ca.certificate.client.CSRRequest;
+import uk.ngs.ca.certificate.OnlineUserCertRequest;
 import uk.ngs.ca.certificate.client.PingService;
 import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
 import uk.ngs.ca.certificate.management.KeyStoreEntryWrapper;
-import uk.ngs.ca.common.*;
+import uk.ngs.ca.common.CAKeyPair;
+import uk.ngs.ca.common.HashUtil;
+import uk.ngs.ca.common.MyPattern;
+import uk.ngs.ca.common.Pair;
 import uk.ngs.ca.info.CAInfo;
 
 /**
@@ -146,7 +147,7 @@ public class Apply extends javax.swing.JDialog {
             }
         } else {
             if (DomainValidator.getInstance().isValid(this.txtName.getText())) {
-                // TODO: may have to cope with 'service/host.domain.ac.uk' 
+                // TODO: have to cope with 'service/host.domain.ac.uk' 
                 // do nothing 
             } else {
                 complete = false;
@@ -180,11 +181,11 @@ public class Apply extends javax.swing.JDialog {
             }
         }
 
-        if (this.txtPin.getPassword().length == 0) {
+        if (this.txtPin.getPassword().length < 10) {
             complete = false;
             text = text + "\nEnter a PIN";
         }
-        if (this.txtConfirm.getPassword().length == 0) {
+        if (this.txtConfirm.getPassword().length < 10) {
             complete = false;
             text = text + "\nEnter the PIN again for confirmation";
         }
@@ -272,21 +273,19 @@ public class Apply extends javax.swing.JDialog {
         //WaitDialog.showDialog("Please wait"); 
         
          // Create a new key pair for new cert 
-        KeyPair keyPair = CAKeyPair.getNewKeyPair();
-        PublicKey csrPublicKey = keyPair.getPublic();  
-        PrivateKey csrPrivateKey = keyPair.getPrivate(); 
+        KeyPair csrKeyPair = CAKeyPair.getNewKeyPair();
         
         // Create a PKCS#10 CSR string from keys and DN info  
         // TODO - need to allow for CNs with the service/hostname format, e.g: 'host/davehost1.dl.ac.uk'
         CertificateRequestCreator csrCreator = new CertificateRequestCreator(type, CN, OU, L, email);
-        String pkcs10 = csrCreator.createCertificateRequest(csrPrivateKey, csrPublicKey);
+        String pkcs10 = csrCreator.createCertificateRequest(csrKeyPair.getPrivate(), csrKeyPair.getPublic());
         //if(true){  System.out.println(pkcs10); WaitDialog.hideDialog(); return;}
          
         // send PKCS#10 to server
         boolean success; 
         String message;      
         if (CertificateRequestCreator.TYPE.USER.equals(type)) {
-            CSRRequest csrRequest = new CSRRequest(
+            OnlineUserCertRequest csrRequest = new OnlineUserCertRequest(
                     pkcs10, HashUtil.getHash(String.valueOf(pin)), email);
             message = csrRequest.getMessage();
             success = csrRequest.isCSRREquestSuccess();
@@ -302,11 +301,11 @@ public class Apply extends javax.swing.JDialog {
         
         // If submitted ok, save a new self-signed cert in the keyStore and ReStore. 
         if (success) {
-            X509Certificate cert = CAKeyPair.createSelfSignedCertificate(keyPair, OU, L, CN);
+            X509Certificate cert = CAKeyPair.createSelfSignedCertificate(csrKeyPair, OU, L, CN);
             X509Certificate[] certs = {cert};
 
             // First - reStore the keystore 
-            model.getClientKeyStore().setKeyEntry(newAlias, csrPrivateKey, model.getPassword(), certs);
+            model.getClientKeyStore().setKeyEntry(newAlias, csrKeyPair.getPrivate(), model.getPassword(), certs);
             model.getClientKeyStore().reStore();
             // Second - add the new entry to the model map
             KeyStoreEntryWrapper newCsrEntry = model.createKSEntryWrapperInstanceFromEntry(newAlias);

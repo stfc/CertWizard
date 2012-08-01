@@ -33,7 +33,7 @@ public class CertificateRequestCreator {
     private static final Logger myLogger = Logger.getLogger(CertificateRequestCreator.class.getName());
     
     private final String SIG_ALG; //"MD5withRSA";
-    private final String C, O, OU, L, CN, Email, DN;
+    private final String C, O, OU, L, CN, DN, Email;
     
     /**
      * Options for the PKCS#10 type. 
@@ -42,9 +42,15 @@ public class CertificateRequestCreator {
     private TYPE type; 
 
     /**
-     * Create a new certificate request.
+     * Create a new instance. The <tt>email</tt> value is only used when type is 
+     * HOST for pre-pending the PKCS#10 DN with 'emailAddress=email@value'. 
      * 
-     * @throws IllegalArgumentException if any of the given values are empty. 
+     * @param type
+     * @param CN
+     * @param OU
+     * @param L
+     * @param email 
+     * @throws IllegalArgumentException if any of the given values are empty.
      */
     public CertificateRequestCreator(TYPE type, String CN, String OU, String L, String email) {
         this.C = uk.ngs.ca.tools.property.SysProperty.getValue("ngsca.cert.c").trim();
@@ -54,42 +60,43 @@ public class CertificateRequestCreator {
         this.OU = OU.trim(); 
         if(L != null){
           this.L = L.trim(); 
-        } else this.L = null; 
-        this.Email = email.trim(); 
+        } else this.L = null;
         this.type = type; 
+        this.Email = email; 
+        
         
         // build the DN and throw IllegalArgExe if something is invaild 
-        this.DN = this.createDN(); 
+        this.DN = this.initDN(); 
                  
     }
 
     /**
      * Concatenates all the user information to a DN
      */
-    private String createDN() {
+    private String initDN() {
         String csrDN; 
-        if (CN.equals("")) {
+        if (C.equals("")) {
             throw new IllegalArgumentException("Invalid C");
         }
         if (O.equals("")) {
-            throw new IllegalArgumentException("O");
+            throw new IllegalArgumentException("Invalid O");
         }
         if (OU.equals("")) {
-            throw new IllegalArgumentException("OU");
+            throw new IllegalArgumentException("Invalid OU");
         }
         // Should L be made optional ? 
         //if (L.equals("")) {
         //      throw new IllegalArgumentException("L");
         //}
         if (CN.equals("")) {
-            throw new IllegalArgumentException("CN");
+            throw new IllegalArgumentException("Invalid CN");
         }
 
-        //if (TYPE.HOST.equals(this.type)) {
+        if (TYPE.HOST.equals(this.type)) {
             if (!EmailValidator.getInstance().isValid(Email)) {
                 throw new IllegalArgumentException("Invalid Email");
             }
-        //}
+        }
 
         if (TYPE.USER.equals(this.type)) { 
             // Should L be made optional ? 

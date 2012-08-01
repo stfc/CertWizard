@@ -678,12 +678,23 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         if (!isOnlinePing()) {
             return;
         }
-        // Can only renew key_pairs types issued by our CA
-        KeyStoreEntryWrapper selectedKSEW = (KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem();
-        CertificateRenewRevokeGuiHelper renewUtil = new CertificateRenewRevokeGuiHelper(this, this.caKeyStoreModel);
-        String newCsrRenewalAlias = renewUtil.doRenew(selectedKSEW);
-        if (newCsrRenewalAlias != null) {
-            this.setComboSelectedItemByAlias(newCsrRenewalAlias);
+        
+        try {
+            // Can only renew key_pairs types issued by our CA
+            KeyStoreEntryWrapper selectedKSEW = (KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem();
+            CertificateRenewRevokeGuiHelper renewUtil = new CertificateRenewRevokeGuiHelper(this, this.caKeyStoreModel);
+            String newCsrRenewalAlias = renewUtil.doRenew(selectedKSEW);
+            if (newCsrRenewalAlias != null) {          
+                // reload the combo entries before we select the selected entry
+                this.reloadComboFromModel();
+                this.setComboSelectedItemByAlias(newCsrRenewalAlias);
+                KeyStoreEntryWrapper kew = (KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem();
+                if (caKeyStoreModel.onlineUpdateKeyStoreEntry(kew)) {
+                    // we don't need to reStore (no online state is saved to keystore file)
+                }
+            }
+        } catch (Exception ex) {
+            DThrowable.showAndWait(null, "Problem Applying for Certificate", ex);
         }
         this.updateKeyStoreGuiFromModel();
     }

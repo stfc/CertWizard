@@ -290,7 +290,7 @@ public final class ClientKeyStore {
      * @param alias a suggested alias (can be null, a new meaningless alias will be created instead)
      * @return alias of new keyStore entry or null if a problem occurred. 
      */
-    public synchronized String createNewSelfSignedCert(String alias, String ou, String l, String cn) throws KeyStoreException {
+    /*public synchronized String createNewSelfSignedCert(String alias, String ou, String l, String cn) throws KeyStoreException {
             KeyPair keyPair = CAKeyPair.getNewKeyPair();
             // the self signed certificate has some hardwired values - why?
             X509Certificate cert = CAKeyPair.createSelfSignedCertificate(keyPair, ou, l, cn );
@@ -301,7 +301,7 @@ public final class ClientKeyStore {
             }
             this.keyStore.setKeyEntry(alias, keyPair.getPrivate(), PASSPHRASE, certs);
             return alias;
-    }
+    }*/
 
     /*public synchronized String getAlias( X509Certificate cert ){
         try{

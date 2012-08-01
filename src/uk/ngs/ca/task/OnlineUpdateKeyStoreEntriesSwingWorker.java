@@ -4,7 +4,6 @@
  */
 package uk.ngs.ca.task;
 
-import java.security.KeyStoreException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;

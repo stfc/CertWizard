@@ -5,20 +5,8 @@
 
 package uk.ngs.ca.certificate.management;
 
-import uk.ngs.ca.certificate.OnLineUserCertificateRequest;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import org.junit.*;
 import uk.ngs.ca.tools.property.SysProperty;
-import java.util.Iterator;
-import java.util.List;
-import java.security.KeyPair;
-import uk.ngs.ca.common.CAKeyPair;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import static org.junit.Assert.*;
 
 /**
  *

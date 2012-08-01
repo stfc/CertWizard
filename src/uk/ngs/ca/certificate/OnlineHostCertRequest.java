@@ -1,12 +1,10 @@
 package uk.ngs.ca.certificate;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.math.BigInteger;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Date;
-import javax.xml.parsers.DocumentBuilderFactory;
 import org.apache.log4j.Logger;
 import org.restlet.Client;
 import org.restlet.Request;
@@ -17,9 +15,6 @@ import org.restlet.representation.Representation;
 import org.restlet.util.Series;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
 import uk.ngs.ca.common.ClientHostName;
 import uk.ngs.ca.common.Pair;
 import uk.ngs.ca.tools.property.SysProperty;
@@ -114,8 +109,9 @@ public class OnlineHostCertRequest {
      */
     private Pair<Boolean, String> respondToPPPKChallenge(Response response) {
         Status status = response.getStatus();
+        // We expect CLIENT_ERROR_UNAUTHORIZED as the response from the intial request. 
         if (!status.equals(Status.CLIENT_ERROR_UNAUTHORIZED)) {
-            return Pair.create(false, "CLIENT_ERROR_UNAUTHORIZED");
+            return Pair.create(false, "UNAUTHORIZED");
         }
         Series<Parameter> headers = (Series) response.getAttributes().get("org.restlet.http.headers");
         Parameter realmP = headers.getFirst("realm");
@@ -166,51 +162,12 @@ public class OnlineHostCertRequest {
             return Pair.create(true, "SUCCESS_CREATED");   // 201 
 
         } else {
-            String detailError = this.getServerErrorMessage(response);
+            String detailError = OnlineCertUtil.getServerErrorMessage(response);
             return Pair.create(false, detailError+" ["+response.getStatus()+"]");
         }
     }
 
-    /**
-     * Try and parse the server error response XML doc (if any) and return a
-     * message.
-     */
-    private String getServerErrorMessage(Response response) {
-        if (response.getStatus().equals(Status.SUCCESS_ACCEPTED)) {
-            // 202 - This means that the server understood the request, but 
-            // there were errors/problems. In this scenario, the server sends 
-            // back an XML document that wraps the cause. 
-            try {
-                String xmlResponse = response.getEntityAsText();
-                DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-                InputSource source = new InputSource(new StringReader(xmlResponse));
-                Document responseDoc = factory.newDocumentBuilder().parse(source);
-                if (responseDoc != null) {
-                    NodeList allTextNodes = responseDoc.getElementsByTagName("text");
-                    if (allTextNodes != null) {
-                        Node node_minor_text = allTextNodes.item(1);
-                        if (node_minor_text != null) {
-                            return node_minor_text.getTextContent();
-                        }
-                    }
-                }
-            } catch (Exception ex) {
-                logger.warn("Could not parse server error response XML doc", ex);
-            }
-        } else if (response.getStatus().equals(Status.CLIENT_ERROR_NOT_FOUND)) {
-            //404
-            return "There is no such service. Please check system configure file.";
-        } else if (response.getStatus().equals(Status.CLIENT_ERROR_FORBIDDEN)) {
-            //403
-            return "Failed authentication. Please contact the helpdesk";
-        } else if (response.getStatus().equals(Status.CLIENT_ERROR_METHOD_NOT_ALLOWED)) {
-            //405
-            return "Server does not support POST.";
-        } else {
-            return "A problem occurred submitting the request. Please contact the helpdesk.";
-        }
-        return "";
-    }
+ 
 
     private Representation getDomRepresentation() {
         DomRepresentation representation;

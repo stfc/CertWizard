@@ -205,13 +205,20 @@ public class ClientKeyStoreCaServiceWrapper {
     }*/
     
     /**
-     * Requests an online update of the given keyStore entry object and updates the keyStore model accordingly. 
+     * Requests an online update of the given keyStore entry object and updates 
+     * the state of the given keyStoreEntryWrapper and the keyStore model accordingly. 
      * Important: the keyStore is <b>NOT reStored to disk</b>. 
      * This method is long running and could be run in a background thread. 
      * The data model it modifies is itself thread safe (delegation of thread safety to model).
+     * <p>
+     * The method will only return true if the <b>keyStore</b> is updated. This only occurs 
+     * if the certificate stored in the keyStore identified by the keyStoreEntryWrapper 
+     * was updated. The state of the keyStoreEntryWrapper's {@link CertificateCSRInfo} 
+     * object may be updated and the method will still return false if the keyStore
+     * was not updated. 
      * 
      * @param keyStoreEntryWrapper
-     * @return true if the keyStoreEntry was updated in the keyStore, otherwise false. 
+     * @return true if the keyStore (not the keyStoreEntryWrapper) was updated, otherwise false. 
      * @throws KeyStoreException 
      */
     public boolean onlineUpdateKeyStoreEntry(KeyStoreEntryWrapper keyStoreEntryWrapper) throws KeyStoreException {

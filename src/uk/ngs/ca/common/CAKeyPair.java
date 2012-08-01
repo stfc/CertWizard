@@ -4,12 +4,11 @@
 package uk.ngs.ca.common;
 
 import java.math.BigInteger;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.Provider;
+import java.security.*;
 import java.security.cert.X509Certificate;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.logging.Level;
 import org.apache.log4j.Logger;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
@@ -363,15 +362,16 @@ public class CAKeyPair {
 
 
     /**
-     * create a self signed certificate. the certificate is restore in keystore file with private key.
+     * Create a self signed certificate using the given keyPair and DN parameters. 
      *
      * @param keyPair
-     * @return X509Certificate
+     * @param ou
+     * @param l
+     * @param cn
+     * @return the newly created certificate .
+     * @throws IllegalStateException if an issue occurs when creating the cert. 
      */
-    public static X509Certificate createSelfSignedCertificate(KeyPair keyPair, String ou, String l, String cn) {
-        //KeyPair _rootKeyPair = CAKeyPair.getNewKeyPair();
-        X509Certificate createdCert = null;
-
+    public static X509Certificate createSelfSignedCertificate(KeyPair keyPair, String ou, String l, String cn)  {
         
         Calendar now = Calendar.getInstance();
         Date startDate = now.getTime();
@@ -435,17 +435,27 @@ public class CAKeyPair {
         v3certGen.setPublicKey(keyPair.getPublic());
 
         v3certGen.setSignatureAlgorithm(SIG_ALG);
-     
-
         try {
             //rootCert = v1certGen.generateX509Certificate(_rootKeyPair.getPrivate(), "BC");
-            createdCert = v3certGen.generateX509Certificate(keyPair.getPrivate(), "BC");
-
-        } catch (Exception ep) {
-            ep.printStackTrace();
-        } finally {
-            return createdCert;
+            return v3certGen.generateX509Certificate(keyPair.getPrivate(), "BC");
+            
+            // For now lets throw an IllegalStateException; the application is 
+            // in control of generating the cert and so if an exception is thrown
+            // here it is not due to bad input and is not something we can control. 
+        } catch (NoSuchProviderException ex) {
+            java.util.logging.Logger.getLogger(CAKeyPair.class.getName()).log(Level.SEVERE, null, ex);
+            throw new IllegalStateException(ex); 
+        } catch (SecurityException ex) {
+            java.util.logging.Logger.getLogger(CAKeyPair.class.getName()).log(Level.SEVERE, null, ex);
+            throw new IllegalStateException(ex); 
+        } catch (SignatureException ex) {
+            java.util.logging.Logger.getLogger(CAKeyPair.class.getName()).log(Level.SEVERE, null, ex);
+            throw new IllegalStateException(ex); 
+        } catch (InvalidKeyException ex) {
+            java.util.logging.Logger.getLogger(CAKeyPair.class.getName()).log(Level.SEVERE, null, ex);
+            throw new IllegalStateException(ex); 
         }
+        //return null; 
     }
 
 }
