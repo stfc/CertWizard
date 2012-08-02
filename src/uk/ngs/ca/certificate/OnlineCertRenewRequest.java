@@ -34,7 +34,8 @@ import uk.ngs.ca.tools.property.SysProperty;
  * must be provided in order to authenticate the request using the PPPK protocol.
  * The renewal cert is not modified. 
  *
- * @author David Meredith (based on xw75 original version) 
+ * @author Xiao Wang 
+ * @author David Meredith (modifications) 
  */
 public class OnlineCertRenewRequest {
 

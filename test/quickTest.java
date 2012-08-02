@@ -7,6 +7,7 @@
 import java.awt.BorderLayout;
 import java.awt.Cursor;
 import java.awt.Dimension;
+import java.util.regex.Pattern;
 import javax.swing.*;
 import net.sf.portecle.gui.error.DThrowable;
 import org.junit.*;
@@ -44,11 +45,22 @@ public class quickTest {
     //
 
     @Test
+    public void hello(){
+        Pattern alphaNumericOnly = Pattern.compile("[0-9A-Za-z\\s_\\.,]+"); 
+        String seq = "' adfa "; 
+        assertFalse(alphaNumericOnly.matcher(seq).matches());
+        seq = "dave this is theworld 111343 com_ad."; 
+        assertTrue(alphaNumericOnly.matcher(seq).matches());
+        
+        System.out.println("done dave");
+    }
+    
+    /*@Test
     public void hello() {
-        /*String text = "adfaasdfafaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-                + "aaaaaaaaaaaaaaaaaaaaaaaa\n"
-                + "asssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss"; 
-        GeneralMessageDialog.showAndWait(null, text, "title", JOptionPane.ERROR_MESSAGE); */
+        //String text = "adfaasdfafaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        //        + "aaaaaaaaaaaaaaaaaaaaaaaa\n"
+        //        + "asssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss"; 
+        //GeneralMessageDialog.showAndWait(null, text, "title", JOptionPane.ERROR_MESSAGE); 
         
         final JDialog dlg = new JDialog();
         dlg.setModal(true);
@@ -76,6 +88,6 @@ public class quickTest {
             dlg.dispose();
         }
 
-    }
+    }*/
 
 }

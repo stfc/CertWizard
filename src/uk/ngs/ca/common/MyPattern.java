@@ -44,7 +44,7 @@ public class MyPattern {
 
     private String _getCN(String myCN) {
         String cn = "";
-        Pattern p = Pattern.compile("[^-()a-z0-9\\s]");
+        Pattern p = Pattern.compile("[^-()A-Za-z0-9\\s]");
         char[] mychar = myCN.toCharArray();
         boolean isSpace = false;
         for (int i = 0; i < mychar.length; i++) {

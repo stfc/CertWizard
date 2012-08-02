@@ -266,7 +266,7 @@ public class Apply extends javax.swing.JDialog {
         // specify in the CSR email XML element. This is required otherwise the 
         // server will complain that emails don't match. 
         String email = this.txtEmail.getText();
-        String CN = this.txtName.getText();
+        String CN = this.txtName.getText().toLowerCase();
         char[] pin = this.txtPin.getPassword(); 
         String RA =  ((String)this.cmbSelectRA.getSelectedItem()); 
         String[] ou_l = RA.trim().split("[,\\s]+");   

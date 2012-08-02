@@ -13,7 +13,10 @@ import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.ResourceBundle;
+import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
 import net.sf.portecle.DGetAlias;
 import net.sf.portecle.FPortecle;
@@ -38,6 +41,8 @@ public class CertificateRenewRevokeGuiHelper {
 
     private ClientKeyStoreCaServiceWrapper caKeyStoreModel;
     private Component parentComponent;
+    private final Pattern alphaNumericPattern = Pattern.compile("[0-9A-Za-z\\s_\\.,]+"); 
+    
     /**
      * Portecle Resource bundle base name
      */
@@ -150,7 +155,7 @@ public class CertificateRenewRevokeGuiHelper {
         if (selectedKSEW == null
                 || !KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY.equals(selectedKSEW.getEntryType())
                 || selectedKSEW.getServerCertificateCSRInfo() == null
-                || !"VALID".equals(((KeyStoreEntryWrapper) selectedKSEW).getServerCertificateCSRInfo().getStatus())
+                || !"VALID".equals(selectedKSEW.getServerCertificateCSRInfo().getStatus())
                 || this.caKeyStoreModel.getClientKeyStore().getX509Certificate(selectedKSEW.getAlias()) == null ) {
             // Can only renew key_pairs types issued by our CA    
             JOptionPane.showMessageDialog(parentComponent, "Only VALID certificates known by the UK CA can be renewed",
@@ -164,40 +169,71 @@ public class CertificateRenewRevokeGuiHelper {
 //            return null;
 //        }
 
-        if (JOptionPane.showConfirmDialog(parentComponent, 
-                "Are you sure you want to renew the selected certificate?\n\n"
-                    + "Alias: ["+ selectedKSEW.getAlias()+"]\n"
-                    + "DN: ["+ selectedKSEW.getX500PrincipalName()+"]\n"
-                    + "Email: ["+selectedKSEW.getServerCertificateCSRInfo().getUserEmail()+"]", 
-                "Renew Certificate", JOptionPane.YES_NO_OPTION) 
-                != JOptionPane.YES_OPTION) {
-            return null; 
-        }
+        
+        // Check we are renewing a cert with time left and ask user to confirm. 
+        Calendar todaysDate = Calendar.getInstance();
+        Date endDate = selectedKSEW.getNotAfter();
+        if (endDate.after(todaysDate.getTime())) {
+            // endDate is after today (hence we have time left) 
+            long diffDays = (endDate.getTime() - todaysDate.getTimeInMillis()) / (24 * 60 * 60 * 1000);
 
-        // Ask user for a new alias for the renewal (provide suitable suggestion)
-        JOptionPane.showMessageDialog(parentComponent, "You will now be prompted to enter a new unique alias\n"
-                + "for your certificate to be renewed.", "Certificate Renewal", JOptionPane.INFORMATION_MESSAGE);
-        String newCsrRenewalAlias = selectedKSEW.getAlias();
-        newCsrRenewalAlias = getNewEntryAliasHelper(newCsrRenewalAlias+"_renew", "FPortecle.KeyPairEntryAlias.Title", false);
-        if (newCsrRenewalAlias == null) {
-            return null; //user hit cancel
+            int messageType;
+            String renewMessagePrefix;
+            if (diffDays > 56) {
+                messageType = JOptionPane.WARNING_MESSAGE;
+                renewMessagePrefix = "There is more than 8 weeks validity left. Are you sure you want to renew?\n";
+            } else {
+                messageType = JOptionPane.INFORMATION_MESSAGE;
+                renewMessagePrefix = "Are you sure you want to renew this certificate?\n";
+            }
+            if (JOptionPane.showConfirmDialog(parentComponent,
+                    renewMessagePrefix + "Alias: [" + selectedKSEW.getAlias() + "]\n"
+                    + "DN: [" + selectedKSEW.getX500PrincipalName() + "]\n"
+                    + "Email: [" + selectedKSEW.getServerCertificateCSRInfo().getUserEmail() + "]",
+                    "Renew Certificate", JOptionPane.YES_NO_OPTION, messageType)
+                    != JOptionPane.YES_OPTION) {
+                return null; // user pressed no. 
+            }
+        } else {
+            JOptionPane.showMessageDialog(parentComponent, "Invalid Renewal",
+                    "Can't renew expired certificate", JOptionPane.ERROR_MESSAGE);
+            return null;
         }
-
-        // Get and assert email. 
+        
+        // Get and assert valid email. 
         // There are instances where we have no email address recorded against 
         // a host certificate in the CA db (this is due to unrelated CA issues). 
         // Must code defensively to ensure that an email is always provided. 
-        // We also want to provide the opportunity to change the email on renew. 
         String email = selectedKSEW.getServerCertificateCSRInfo().getUserEmail();
-        if (!EmailValidator.getInstance().isValid(email)) {
-            email = this.getNewEmailHelper(email); 
+        if (email == null || !EmailValidator.getInstance().isValid(email)) { 
+            // In the future, we will want to provide the opportunity to change the 
+            // email on renew, but for now we have to barf and ask for it to be reported. 
+            //email = this.getNewEmailHelper(email);
+            String message = "Unable to renew. The email associated with this certificate is invalid.\n"
+                    + "This is due to a known issue on our CA server.\n"
+                    + "Please report this to the helpdesk (support@grid-support.ac.uk) and copy the following:\n"
+                    + "DN: ["+ selectedKSEW.getX500PrincipalName()+"]\n"
+                    + "CertId: ["+selectedKSEW.getServerCertificateCSRInfo().getId()+"]\n"
+                    + "Email: ["+selectedKSEW.getServerCertificateCSRInfo().getUserEmail()+"]\n"; 
+            GeneralMessageDialog.showAndWait(parentComponent, message, "Renew Error", JOptionPane.ERROR_MESSAGE);
+            return null; 
         } else {
-            // TODO The email currently recorded against this certificate is ... 
+            // TODO In future - The email currently recorded against this certificate is ... 
             // Do you want to update the email? 
             //email = this.getNewEmailHelper(email); 
         }
         if(email == null){
             return null; // user hit cancel 
+        }
+
+
+        // Ask user for a new alias for the renewal (provide suitable suggestion)
+        JOptionPane.showMessageDialog(parentComponent, "You will now be prompted to enter a new unique alias.\n"
+                + "This is simply a memorable display name/tag for your new certificate.", "Certificate Renewal", JOptionPane.INFORMATION_MESSAGE);
+        String newCsrRenewalAlias = selectedKSEW.getAlias();
+        newCsrRenewalAlias = getNewEntryAliasHelper(newCsrRenewalAlias+"_renew", "FPortecle.KeyPairEntryAlias.Title", false);
+        if (newCsrRenewalAlias == null) {
+            return null; //user hit cancel
         }
 
         //if(true) return null; 
@@ -328,9 +364,10 @@ public class CertificateRenewRevokeGuiHelper {
         sReason = JOptionPane.showInputDialog(parentComponent, "Reason to Revoke:", sReason);
         if (sReason == null) return null;
 
-        if (sReason.trim().length() < 5) {
+        
+        if (sReason.trim().length() < 5 || !alphaNumericPattern.matcher(sReason).matches()) {
             JOptionPane.showMessageDialog(parentComponent,
-                    "Invalid Revocation Reason - Please enter a reason for revocation (min 5 chars)",
+                    "Invalid Revocation Reason - Please enter a reason for revocation (min 5 chars, alphanumerics only)",
                     "Invalid Revocation", JOptionPane.ERROR_MESSAGE);
             // recurse  
             return getNewRevocationReasonHelper(sReason);
