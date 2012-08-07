@@ -39,6 +39,8 @@ import uk.ngs.ca.certificate.client.PingService;
 import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
 import uk.ngs.ca.certificate.management.KeyStoreEntryWrapper;
 import uk.ngs.ca.certificate.management.KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE;
+import uk.ngs.ca.common.CertUtil;
+import uk.ngs.ca.common.CertUtil;
 import uk.ngs.ca.common.GuiExecutor;
 import uk.ngs.ca.common.SystemStatus;
 import uk.ngs.ca.task.OnlineUpdateKeyStoreEntriesSwingWorker;
@@ -536,7 +538,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             KeyStoreEntryWrapper keyStoreEntry = (KeyStoreEntryWrapper) value;
             // can be null if the keyStore is empty ! 
             if (keyStoreEntry != null) {
-                String displayText = "[" + keyStoreEntry.getAlias() + "]  [" + keyStoreEntry.getX500PrincipalName() + "]";
+                String x500PrincipalName = keyStoreEntry.getX500PrincipalName(); 
+                String cn = CertUtil.extractDnAttribute(x500PrincipalName, CertUtil.DNAttributeType.CN); 
+                String displayText = "[" + keyStoreEntry.getAlias() + "]   [" + cn + "]";
                 this.setText(displayText);
 
                 // want to display the modified date too
@@ -578,6 +582,8 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             return this;
         }
     }
+    
+
 
     /**
      * Return the appropriate display colour according to the given state
@@ -755,9 +761,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             return;
         }
        
-        boolean userRequest = true;
-        boolean ask = true; 
         KeyStoreEntryWrapper selectedEntry = null;
+        /*boolean userRequest = true;
+        boolean ask = true; 
         
         // Apply for Host or User cert. 
         // First check an item has been selected 
@@ -827,8 +833,8 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             } else {
                 return; 
             }
-        }
-
+        }*/
+        boolean userRequest = true; // remove and uncomment above when ready to deploy host cert support.    
         try {
             if (isOnlinePing()) {
                 Apply apply;
@@ -1871,7 +1877,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     }//GEN-LAST:event_btnDeleteActionPerformed
 
     private void btnNewCertificateRequestMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnNewCertificateRequestMouseEntered
-        setMOD("Request a new user or host certificate");
+        setMOD("Request a new user certificate"); // todo - replace with Request a new user or host certificate. 
     }//GEN-LAST:event_btnNewCertificateRequestMouseEntered
 
     private void btnNewCertificateRequestMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnNewCertificateRequestMouseExited

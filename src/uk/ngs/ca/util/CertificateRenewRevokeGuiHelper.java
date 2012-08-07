@@ -83,6 +83,13 @@ public class CertificateRenewRevokeGuiHelper {
             return false; 
             
         } 
+        
+        // TODO - need to remove this once host certs are suppored. 
+        if (selectedKSEW.getX500PrincipalName().contains(".")) {
+            JOptionPane.showMessageDialog(parentComponent, "Host cert revocations not yet supported. Coming very soon !",
+                    "Host cert revocations not yet supported", JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
   
         if (JOptionPane.showConfirmDialog(parentComponent, 
                 "Are you sure you want to revoke the selected certificate?\n\n"
@@ -163,11 +170,12 @@ public class CertificateRenewRevokeGuiHelper {
             return null; 
         }
 
-//        if (selectedKSEW.getX500PrincipalName().contains(".")) {
-//            JOptionPane.showMessageDialog(parentCompoent, "Host cert renewals not yet supported. Coming very soon !",
-//                    "Host cert renewals not yet supported", JOptionPane.WARNING_MESSAGE);
-//            return null;
-//        }
+        // TODO - need to remove this once host certs are suppored. 
+        if (selectedKSEW.getX500PrincipalName().contains(".")) {
+            JOptionPane.showMessageDialog(parentComponent, "Host cert renewals not yet supported. Coming very soon !",
+                    "Host cert renewals not yet supported", JOptionPane.WARNING_MESSAGE);
+            return null;
+        }
 
         
         // Check we are renewing a cert with time left and ask user to confirm. 

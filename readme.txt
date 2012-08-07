@@ -74,9 +74,11 @@ java uk.ngs.certwizard.gui.CertWizardMain
 TODOs:
 ======
 There are lots of to do items. Much of the code needs refactoring (many parts 
-are rather poorly written and involves much legacy). 
+are rather poorly written and includes 3rd party legacy). 
 
-- Display the certificate serial number 
+- Show location of keyStore file (not just on password panel). 
+- Just show the alias in the pull down list? or alias + CN 
+- When importing a cert, provide more useful info on what an alias is - a memorable display name. 
 - Display a different icon for self-signed CSRs 
 - When exporting certs, need to change the perms on *nix box much like 
   when installing the pem files.
