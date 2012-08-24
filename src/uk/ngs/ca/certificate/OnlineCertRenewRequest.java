@@ -1,20 +1,14 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package uk.ngs.ca.certificate;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.PrivateKey;
-import java.security.cert.CertificateExpiredException;
-import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Random;
-import org.apache.commons.validator.routines.EmailValidator;
 import org.restlet.Client;
 import org.restlet.Request;
 import org.restlet.Response;
@@ -23,6 +17,7 @@ import org.restlet.ext.xml.DomRepresentation;
 import org.restlet.representation.Representation;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import uk.ngs.ca.common.CertUtil;
 import uk.ngs.ca.common.ClientHostName;
 import uk.ngs.ca.common.HashUtil;
 import uk.ngs.ca.common.Pair;
@@ -35,97 +30,67 @@ import uk.ngs.ca.tools.property.SysProperty;
  * The renewal cert is not modified. 
  *
  * @author Xiao Wang 
- * @author David Meredith (modifications) 
+ * @author David Meredith (some modifications) 
  */
 public class OnlineCertRenewRequest {
 
     public static final String CSRURL = SysProperty.getValue("uk.ngs.ca.request.csr.url");
     public static final String USERAGENT = SysProperty.getValue("uk.ngs.ca.request.useragent");
-    public static final String SIG_ALG = SysProperty.getValue("ngsca.cert.signature.algorithm");
+    //private static final String SIG_ALG = SysProperty.getValue("ngsca.cert.signature.algorithm");
     
     private final String email;
-    private final X509Certificate authCert;
+    private final X509Certificate authAndRenewCert;
     private final PrivateKey authPrivateKey;
     private final String pkcs10String;
-    private final String OU, L, CN; 
+    private final String attrOU, attrL, attrCN; 
 
     /**
      * Create a new instance. After creation call {@link #doRenewal() }. 
      * No validity checks are performed on the given certificate, it is up to 
      * the calling client to test for expiry and yet to be valid. 
      *
-     * @param authAndRenewCert The certificate that is to be renewed and used for
+     * @param authAndRenewCertP The certificate that is to be renewed and used for
      * PPPK authentication. The DN of this certificate is extracted and used 
      * to build the PKCS#10 DN. 
-     * @param authPrivateKey The certificates corresponding private key (is only 
-     * used for PPPK authentication).
+     * @param authPrivateKeyP Certificate private key (used for PPPK authentication).
      * @param csrKeyPair The key pair used to create the PKCS#10 request. 
-     * @param email Used to specify the email element in the CSR XML document
+     * @param emailAddressP Used to specify the email element in the CSR XML document
      * and is the email value that will be associated with the renewed
-     * certificate. If the given certificate is a host cert, this email value is
-     * pre-fixed to the DN of the PKCS#10 using the 'emailAddress=' RDN attribute.
-     * @throws CertificateExpiredException If the given cert has expired.
-     * @throws CertificateNotYetValidException If the given cert is not yet valid. 
-     * @throws InvalidArgumentException if the email is not a valid email address.
+     * certificate. 
      */
-    public OnlineCertRenewRequest(X509Certificate authAndRenewCert, PrivateKey authPrivateKey, 
-            KeyPair csrKeyPair, String email){
+    public OnlineCertRenewRequest(X509Certificate authAndRenewCertP, PrivateKey authPrivateKeyP, 
+            KeyPair csrKeyPair, String emailAddressP){
 
-        this.authCert = authAndRenewCert;
-        this.email = email;
-        this.authPrivateKey = authPrivateKey;
-        if(this.authPrivateKey == null) throw new NullPointerException("toRenewPrivateKey is null"); 
-
-        // Only want to renew valid certs (in future, will need allow renewal
-        // within expiry tolerance period) 
-        //this.authCert.checkValidity();
+        this.authAndRenewCert = authAndRenewCertP;
+        this.email = emailAddressP;
+        this.authPrivateKey = authPrivateKeyP;
+        if(this.authPrivateKey == null) { throw new NullPointerException("toRenewPrivateKey is null"); }
         
-        if (!EmailValidator.getInstance().isValid(this.email)) {
-            throw new IllegalArgumentException("Invalid email");
-        }
+        // Get the DN string from the X509Certificate. 
+        // Use authCert.getSubjectX500Principal().toString() to ensure EMAILADDRESS is listed in DN string 
+        // (this is not portable: authCert.getSubjectDN().getName() - is denigrated)
+        // (this does not provide email attribute in x500: authCert.getSubjectX500Principal().getName()) 
+        String dn = this.authAndRenewCert.getSubjectX500Principal().toString();         
+        dn = CertUtil.prepareDNforOpenCA(dn, true);  // will want to ask the user here.....
+        this.attrCN = CertUtil.extractDnAttribute(dn, CertUtil.DNAttributeType.CN); 
+        this.attrOU = CertUtil.extractDnAttribute(dn, CertUtil.DNAttributeType.OU); 
+        this.attrL = CertUtil.extractDnAttribute(dn, CertUtil.DNAttributeType.L); 
 
-        String dn = this.authCert.getSubjectDN().getName();
-        //String C = _retrieveDataFromDN(dn, "C=");
-        //String O = _retrieveDataFromDN(dn, "O=");
-        OU = _retrieveDataFromDN(dn, "OU=");
-        L = _retrieveDataFromDN(dn, "L=");
-        CN = _retrieveDataFromDN(dn, "CN=");
-        
-        // Detemine if this is a host or user renewal 
-        CertificateRequestCreator.TYPE type;
-        if (CN.contains(".")) {
-            type = CertificateRequestCreator.TYPE.HOST;
-        } else {
-            type = CertificateRequestCreator.TYPE.USER;
-        }
-
-        // Create the PKCS#10 string. Note that email is used to create 
-        // both the PKCS#10 DN and is specified as the CSR XML email element (see below).
-        // This is required because the server will complain if they are different. 
-        CertificateRequestCreator csrCreator = new CertificateRequestCreator(type, CN, OU, L, this.email);
+        // Create the PKCS#10 string. 
+        CertificateRequestCreator csrCreator = new CertificateRequestCreator(dn, this.email);
         this.pkcs10String = csrCreator.createCertificateRequest(csrKeyPair.getPrivate(), csrKeyPair.getPublic());
     }
     
     public String getOU(){
-        return this.OU; 
+        return this.attrOU; 
     }
     public String getL(){
-        return this.L; 
+        return this.attrL; 
     }
     public String getCN(){
-        return this.CN; 
+        return this.attrCN; 
     }
 
-    private String _retrieveDataFromDN(String dn, String data) {
-        int index = dn.indexOf(data);
-        index = index + data.length();
-        String result = dn.substring(index);
-        int _index = result.indexOf(",");
-        if (_index != -1) {
-            result = result.substring(0, _index);
-        }
-        return result.trim();
-    }
 
     /**
      * Call the server with the renewal request.
@@ -193,13 +158,13 @@ public class OnlineCertRenewRequest {
         if (_opaqueP == null) {
             String _keyid = _keyidP.getValue();
             int index = _keyid.indexOf(".");
-            String m = _keyid.substring(0, index).toUpperCase();
+            String m = _keyid.substring(0, index).toUpperCase(Locale.ENGLISH);
             String q = getPrivateExponent(this.authPrivateKey);
 
             String _nonce = _nonceP.getValue() + ":" + new Date().getTime();
-            _nonce = _nonce.toLowerCase();
+            _nonce = _nonce.toLowerCase(Locale.ENGLISH);
             String c = asciiToHex(_nonce);
-            c = c.toUpperCase();
+            c = c.toUpperCase(Locale.ENGLISH);
             BigInteger b_c = new BigInteger(c, 16);
             BigInteger b_q = new BigInteger(q, 16);
             BigInteger b_m = new BigInteger(m, 16);
@@ -301,7 +266,7 @@ public class OnlineCertRenewRequest {
 
         // We include the keyid string as the <PublicKey> element so that 
         // the server can then issue a 401 response challenge for this pubkey. 
-        RSAPublicKey authRSAPublicKey = (RSAPublicKey) this.authCert.getPublicKey();
+        RSAPublicKey authRSAPublicKey = (RSAPublicKey) this.authAndRenewCert.getPublicKey();
         String modulusString = authRSAPublicKey.getModulus().toString(16);
         String exponentString = authRSAPublicKey.getPublicExponent().toString(16);
         String keyString = modulusString + "." + exponentString;

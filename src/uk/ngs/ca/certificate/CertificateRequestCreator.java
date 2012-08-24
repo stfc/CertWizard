@@ -1,23 +1,24 @@
-/*
- * This file is part of NGS CA project.
- */
 package uk.ngs.ca.certificate;
 
+import java.io.IOException;
 import java.io.StringWriter;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.util.Iterator;
+import java.security.SignatureException;
 import java.util.Vector;
 import javax.security.auth.x500.X500Principal;
-import org.apache.commons.validator.routines.EmailValidator;
 import org.apache.log4j.Logger;
-import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.bouncycastle.openssl.PEMWriter;
+import uk.ngs.ca.common.CertUtil;
+
 
 /**
  * Create a new PKCS#10 certification request as a string. 
@@ -32,87 +33,37 @@ public class CertificateRequestCreator {
 
     private static final Logger myLogger = Logger.getLogger(CertificateRequestCreator.class.getName());
     
-    private final String SIG_ALG; //"MD5withRSA";
-    private final String C, O, OU, L, CN, DN, Email;
+    private final String sig_alg; //"MD5withRSA";
+    private final String attrCN, attrDN, email;
     
     /**
      * Options for the PKCS#10 type. 
      */
     public enum TYPE {HOST, USER};
-    private TYPE type; 
-
+    private final TYPE type; 
+    
     /**
-     * Create a new instance. The <tt>email</tt> value is only used when type is 
-     * HOST for pre-pending the PKCS#10 DN with 'emailAddress=email@value'. 
+     * Create a new instance. On creation, the given dn is parsed to determine
+     * if the dn is a user or host certificate request (it is considered at 
+     * host cert if the CN contains a dot '.' char). 
+     * <p/>
+     * For user certificates, the <tt>emailAddress</tt> is used as the value for the  
+     * SubjectAlternativeName extension in the certificate generated from the PKCS#10 request.
+     * For host certificates, the CN is used as the SubjectAlternativeName. 
      * 
-     * @param type
-     * @param CN
-     * @param OU
-     * @param L
-     * @param email Only used when type is HOST. 
-     * @throws IllegalArgumentException if any of the given values are empty.
+     * @param dn
+     * @param emailAddress 
      */
-    public CertificateRequestCreator(TYPE type, String CN, String OU, String L, String email) {
-        this.C = uk.ngs.ca.tools.property.SysProperty.getValue("ngsca.cert.c").trim();
-        this.O = uk.ngs.ca.tools.property.SysProperty.getValue("ngsca.cert.o").trim();
-        this.SIG_ALG = uk.ngs.ca.tools.property.SysProperty.getValue("ngsca.cert.signature.algorithm").trim();
-        this.CN = CN.trim(); 
-        this.OU = OU.trim(); 
-        if(L != null){
-          this.L = L.trim(); 
-        } else this.L = null;
-        this.type = type; 
-        this.Email = email; 
-        
-        
-        // build the DN and throw IllegalArgExe if something is invaild 
-        this.DN = this.initDN(); 
-                 
-    }
-
-    /**
-     * Concatenates all the user information to a DN
-     */
-    private String initDN() {
-        String csrDN; 
-        if (C.equals("")) {
-            throw new IllegalArgumentException("Invalid C");
-        }
-        if (O.equals("")) {
-            throw new IllegalArgumentException("Invalid O");
-        }
-        if (OU.equals("")) {
-            throw new IllegalArgumentException("Invalid OU");
-        }
-        // Should L be made optional ? 
-        //if (L.equals("")) {
-        //      throw new IllegalArgumentException("L");
-        //}
-        if (CN.equals("")) {
-            throw new IllegalArgumentException("Invalid CN");
-        }
-
-        if (TYPE.HOST.equals(this.type)) {
-            if (!EmailValidator.getInstance().isValid(Email)) {
-                throw new IllegalArgumentException("Invalid Email");
-            }
-        }
-
-        if (TYPE.USER.equals(this.type)) { 
-            // Should L be made optional ? 
-            if (L==null || L.equals("")) {
-                csrDN = ("CN=" + CN + ", OU=" + OU + ", O=" + O + ", C=" + C);
-            } else {
-                csrDN = ("CN=" + CN + ", L=" + L + ", OU=" + OU + ", O=" + O + ", C=" + C);
-            }
-        } else { //host certificate
-            if (L==null || L.equals("")) {
-                csrDN = ("emailAddress=" + Email + ", CN=" + CN + ", OU=" + OU + ", O=" + O + ", C=" + C);
-            } else {
-                csrDN = ("emailAddress=" + Email + ", CN=" + CN + ", L=" + L + ", OU=" + OU + ", O=" + O + ", C=" + C);
-            }
-        } 
-        return csrDN; 
+    public CertificateRequestCreator(String dn, String emailAddress){
+       this.sig_alg = uk.ngs.ca.tools.property.SysProperty.getValue("ngsca.cert.signature.algorithm").trim();
+       this.attrDN = dn; 
+       this.attrCN = CertUtil.extractDnAttribute(dn, CertUtil.DNAttributeType.CN); 
+       this.email = emailAddress;
+       if(this.attrCN.contains(".")){
+           type = TYPE.HOST; 
+       } else {
+           type = TYPE.USER; 
+       }
     }
 
     /**
@@ -125,9 +76,7 @@ public class CertificateRequestCreator {
      * @throws IllegalStateException if the PKCS#10 can't be created. 
      */
     public String createCertificateRequest(PrivateKey privkey, PublicKey pubkey) {
-
         PKCS10CertificationRequest request;
-
         
         // Create an attribute for the request
         // A common use case is to include an email address in the SubjectAlternative 
@@ -135,10 +84,10 @@ public class CertificateRequestCreator {
         // For a user request, the SUBJECT_ALT_NAME is the userEmail. 
         // For a host request, the SUBJECT_ALT_NAME is of the form 'DNS: host.name.ac.uk' 
         GeneralNames subjectAltName; 
-        if(TYPE.HOST.equals(this.type)){
-            subjectAltName = new GeneralNames(new GeneralName(GeneralName.rfc822Name, Email));
+        if(TYPE.USER.equals(this.type)){
+            subjectAltName = new GeneralNames(new GeneralName(GeneralName.rfc822Name, email));
         } else {
-            subjectAltName = new GeneralNames(new GeneralName(GeneralName.rfc822Name, "DNS: "+CN)); 
+            subjectAltName = new GeneralNames(new GeneralName(GeneralName.rfc822Name, "DNS: "+attrCN)); 
         }
         Vector oids = new Vector(); // legacy required by BC. 
         Vector values = new Vector();
@@ -155,7 +104,7 @@ public class CertificateRequestCreator {
                 // grammar defined in RFC 1779 or RFC 2253 (either format is ok). e.g. 
                 // "CN=Duke, OU=JavaSoft, O=Sun Microsystems, C=US"
                 // Note, we can't specify the email address in the DN (not RFC 1779 or 2253). 
-                request = new PKCS10CertificationRequest(SIG_ALG, new X500Principal(DN), 
+                request = new PKCS10CertificationRequest(sig_alg, new X500Principal(attrDN), 
                        pubkey, new DERSet(attribute), privkey);    
             } else {
                 // DM: can't specify X500Principal for host as it contains email attribute. 
@@ -168,9 +117,9 @@ public class CertificateRequestCreator {
                 //  false:   Subject: emailAddress=david.meredith@stfc.ac.uk, CN=host.dl.ac.uk, L=RAL, OU=CLRC, O=eScienceDev, C=UK
                 //  true:    Subject: C=UK, O=eScienceDev, OU=CLRC, L=RAL, CN=host.dl.ac.uk/emailAddress=david.meredith@stfc.ac.uk
                 
-                // We specify true for a reverse DN to be consistent with OpenCA
+                // We specify true for a reverse DN (starts with C) to be consistent with OpenCA
                 // which seems to prefer PKCS#10 requests to have that DN style. 
-                request = new PKCS10CertificationRequest(SIG_ALG, new X509Name(true, DN), 
+                request = new PKCS10CertificationRequest(sig_alg, new X509Name(true, attrDN), 
                        pubkey, new DERSet(attribute), privkey); 
             }
             
@@ -185,14 +134,98 @@ public class CertificateRequestCreator {
 
             myLogger.debug("[CertificateCreator] createCertificateRequest: successful");
             return writer.toString();
-        } catch (Exception ex) {
-            myLogger.error("[CertificateCreator] createCertificateRequest: failed. " + ex.toString());
-            // This could be considered a coding error because we control the 
+        } catch(NoSuchAlgorithmException ex){
+            // These exceptions are considered coding errors; because we control the 
             // security provider, algorithm and generate the private key so we 
             // don't expect any bad values. 
+            myLogger.error("[CertificateCreator] createCertificateRequest: failed. " + ex.toString());
             throw new IllegalStateException("Failed to make PKCS#10", ex);  
-        } 
+        } catch (NoSuchProviderException ex){
+            myLogger.error("[CertificateCreator] createCertificateRequest: failed. " + ex.toString());
+            throw new IllegalStateException("Failed to make PKCS#10", ex);  
+        } catch (InvalidKeyException ex){
+            myLogger.error("[CertificateCreator] createCertificateRequest: failed. " + ex.toString());
+            throw new IllegalStateException("Failed to make PKCS#10", ex);  
+        } catch (SignatureException ex){
+            myLogger.error("[CertificateCreator] createCertificateRequest: failed. " + ex.toString());
+            throw new IllegalStateException("Failed to make PKCS#10", ex);  
+        } catch(IOException ex){
+            myLogger.error("[CertificateCreator] createCertificateRequest: failed. " + ex.toString());
+            throw new IllegalStateException("Failed to make PKCS#10", ex);  
+        }
     }
 
+/**
+     * Create a new instance. The <tt>email</tt> value is only used when type is 
+     * HOST for pre-pending the PKCS#10 DN with 'emailAddress=email@value'. 
+     * 
+     * @param type
+     * @param cn
+     * @param ou
+     * @param l
+     * @param emailAddress Only used when type is HOST. 
+     * @param includeEmailInDn 
+     * @throws IllegalArgumentException if any of the given values are empty.
+     */
+    /*public CertificateRequestCreator(TYPE type, String cn, String ou, String l, String emailAddress, boolean includeEmailInDn) {
+        String c = uk.ngs.ca.tools.property.SysProperty.getValue("ngsca.cert.c").trim();
+        String o = uk.ngs.ca.tools.property.SysProperty.getValue("ngsca.cert.o").trim();
+        this.sig_alg = uk.ngs.ca.tools.property.SysProperty.getValue("ngsca.cert.signature.algorithm").trim();
+        
+        ou = ou.trim(); 
+        if(l != null){
+          l = l.trim(); 
+        } else {
+            l = null;
+        }
+        this.type = type; 
+        this.email = emailAddress; 
+        
+        if (c.equals("")) {
+            throw new IllegalArgumentException("Invalid C");
+        }
+        if (o.equals("")) {
+            throw new IllegalArgumentException("Invalid O");
+        }
+        if (ou.equals("")) {
+            throw new IllegalArgumentException("Invalid OU");
+        }
+        // Should L be made optional ? 
+        //if (L.equals("")) {
+        //      throw new IllegalArgumentException("L");
+        //}
+        this.attrCN = cn.trim(); 
+        if (this.attrCN.equals("")) {
+            throw new IllegalArgumentException("Invalid CN");
+        }
 
+        if (TYPE.HOST.equals(this.type)) {
+            if (!EmailValidator.getInstance().isValid(this.email)) {
+                throw new IllegalArgumentException("Invalid Email");
+            }
+        }
+
+        if (TYPE.USER.equals(this.type)) { 
+            // Should L be made optional ? 
+            if (l==null || l.equals("")) {
+                this.attrDN = ("CN=" + this.attrCN + ", OU=" + ou + ", O=" + o + ", C=" + c);
+            } else {
+                this.attrDN = ("CN=" + this.attrCN + ", L=" + l + ", OU=" + ou + ", O=" + o + ", C=" + c);
+            }
+        } else { //host certificate
+            if (l==null || l.equals("")) {
+                if (includeEmailInDn) {
+                    this.attrDN = ("emailAddress=" + this.email + ", CN=" + this.attrCN + ", OU=" + ou + ", O=" + o + ", C=" + c);
+                } else {
+                    this.attrDN = ("CN=" + this.attrCN + ", OU=" + ou + ", O=" + o + ", C=" + c);
+                }
+            } else {
+                if (includeEmailInDn) {
+                    this.attrDN = ("emailAddress=" + this.email + ", CN=" + this.attrCN + ", L=" + l + ", OU=" + ou + ", O=" + o + ", C=" + c);
+                } else {
+                    this.attrDN = ("CN=" + this.attrCN + ", L=" + l + ", OU=" + ou + ", O=" + o + ", C=" + c);
+                }
+            }
+        }
+    }*/
 }

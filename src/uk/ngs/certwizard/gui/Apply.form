@@ -4,7 +4,7 @@
   <NonVisualComponents>
     <Container class="javax.swing.JDesktopPane" name="jDesktopPane1">
       <Properties>
-        <Property name="name" type="java.lang.String" value="jDesktopPane1"/>
+        <Property name="name" type="java.lang.String" value="jDesktopPane1" noResource="true"/>
       </Properties>
 
       <Layout class="org.netbeans.modules.form.compat2.layouts.support.JLayeredPaneSupportLayout"/>
@@ -279,13 +279,13 @@
     <Component class="javax.swing.JLabel" name="labelRequestorId">
       <Properties>
         <Property name="text" type="java.lang.String" value="Requestor Identitiy"/>
-        <Property name="name" type="java.lang.String" value="labelRequestorId"/>
+        <Property name="name" type="java.lang.String" value="labelRequestorId" noResource="true"/>
       </Properties>
     </Component>
     <Component class="javax.swing.JTextField" name="txtDN">
       <Properties>
         <Property name="editable" type="boolean" value="false"/>
-        <Property name="name" type="java.lang.String" value="txtDN"/>
+        <Property name="name" type="java.lang.String" value="txtDN" noResource="true"/>
       </Properties>
     </Component>
   </SubComponents>

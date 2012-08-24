@@ -80,6 +80,7 @@ are rather poorly written and includes 3rd party legacy).
 - Just show the alias in the pull down list? or alias + CN 
 - When importing a cert, provide more useful info on what an alias is - a memorable display name. 
 - Display a different icon for self-signed CSRs 
+- Don't have Aberdeen as "default" - it is too easy to fill in other fields and forget about RA field - it should be a string value that you can't select like "Please enter RA" 
 - When exporting certs, need to change the perms on *nix box much like 
   when installing the pem files.
 - OnLineUserCertificateReKey.java and CSRRequest.java both test for HTTP 202 

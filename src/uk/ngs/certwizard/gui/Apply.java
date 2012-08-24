@@ -1,8 +1,3 @@
-/*
- * Apply.java
- *
- * Created on 05-Mar-2010, 15:11:52
- */
 package uk.ngs.certwizard.gui;
 
 import java.awt.Color;
@@ -96,7 +91,7 @@ public class Apply extends javax.swing.JDialog {
        
 
         CAInfo caInfo = new CAInfo();
-        RAs = caInfo.getRAs(); // concat of: "OU+" "+L"
+        RAs = caInfo.getRAs(); // concat of: "OU+" "+L"       
         javax.swing.DefaultComboBoxModel m = new javax.swing.DefaultComboBoxModel(RAs);
         cmbSelectRA.setModel(m);
 
@@ -266,21 +261,25 @@ public class Apply extends javax.swing.JDialog {
         // specify in the CSR email XML element. This is required otherwise the 
         // server will complain that emails don't match. 
         String email = this.txtEmail.getText();
-        String CN = this.txtName.getText().toLowerCase();
+        String cn = this.txtName.getText().toLowerCase();
         char[] pin = this.txtPin.getPassword(); 
         String RA =  ((String)this.cmbSelectRA.getSelectedItem()); 
         String[] ou_l = RA.trim().split("[,\\s]+");   
-        String OU = ou_l[0]; 
-        String L = ou_l[1];
-        
-        //WaitDialog.showDialog("Please wait"); 
+        String ou = ou_l[0]; 
+        String l = ou_l[1];
+        String c = uk.ngs.ca.tools.property.SysProperty.getValue("ngsca.cert.c").trim();
+        String o = uk.ngs.ca.tools.property.SysProperty.getValue("ngsca.cert.o").trim();
+        // validation. 
+      
+        String attrDN = ("CN=" + cn + ", L=" + l + ", OU=" + ou + ", O=" + o + ", C=" + c);
         
          // Create a new key pair for new cert 
         KeyPair csrKeyPair = CAKeyPair.getNewKeyPair();
         
         // Create a PKCS#10 CSR string from keys and DN info  
         // TODO - need to allow for CNs with the service/hostname format, e.g: 'host/davehost1.dl.ac.uk'
-        CertificateRequestCreator csrCreator = new CertificateRequestCreator(type, CN, OU, L, email);
+        //CertificateRequestCreator csrCreator = new CertificateRequestCreator(type, CN, OU, L, email, false);
+        CertificateRequestCreator csrCreator = new CertificateRequestCreator(attrDN, email);
         String pkcs10 = csrCreator.createCertificateRequest(csrKeyPair.getPrivate(), csrKeyPair.getPublic());
         //if(true){  System.out.println(pkcs10); WaitDialog.hideDialog(); return;}
          
@@ -304,7 +303,7 @@ public class Apply extends javax.swing.JDialog {
         
         // If submitted ok, save a new self-signed cert in the keyStore and ReStore. 
         if (success) {
-            X509Certificate cert = CAKeyPair.createSelfSignedCertificate(csrKeyPair, OU, L, CN);
+            X509Certificate cert = CAKeyPair.createSelfSignedCertificate(csrKeyPair, ou, l, cn);
             X509Certificate[] certs = {cert};
 
             // First - reStore the keystore 
