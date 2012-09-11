@@ -51,6 +51,8 @@ Configuration:
  xml file and can store multiple public certs for convenience. Note, when
 adding the base64 encoded pem file, do not have any spaces after <hostcert>
 and before </hostcert> 
+To export a pem from a p12 use openssl with (-clcerts = only out client certs, -nokeys don't export key): 
+openssl pkcs12 -clcerts -nokeys -in somepkcs12file.p12 -out hostcert.pem
 
 
 Build / Compile
@@ -97,3 +99,5 @@ are rather poorly written and includes 3rd party legacy).
 - Remove oxford myproxy server
 - Add gridpp myproxy server (lcgrbp01.gridpp.rl.ac.uk:7512)
 - New server cert for voms (check) 
+
+

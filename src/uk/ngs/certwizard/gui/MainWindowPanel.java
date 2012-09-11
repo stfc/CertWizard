@@ -21,6 +21,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import net.sf.portecle.DGetAlias;
@@ -96,6 +97,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         initComponents();
         loadImages();
         this.jComboBox1.setRenderer(new ComboBoxRenderer());
+        this.jComboBox1.setMaximumRowCount(20); 
         
         // Load the model (the CA keyStore). 
         try {
@@ -989,6 +991,30 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             JOptionPane.showMessageDialog(this, "Please select a certificate!", "No certificate selected", JOptionPane.INFORMATION_MESSAGE);
             return false;
         }
+        // Provide a warning if user is trying to export a self signed cert (e.g CSR) 
+        try {
+            X509Certificate cert = this.caKeyStoreModel.getClientKeyStore().getX509Certificate(selectedKSEW.getAlias());
+            if (cert != null) {
+                X500Principal subject = cert.getSubjectX500Principal();
+                X500Principal issuer = cert.getIssuerX500Principal();
+                if (subject.equals(issuer)) {
+                    String selfSignedMessageType = "This is a self signed certificate."; 
+                    if(selectedKSEW.isCSR()){ 
+                        selfSignedMessageType = "This is a self signed certificate signing request (CSR)"; 
+                    }
+                    String message = selfSignedMessageType + "\nAre you sure you want to export?"; 
+                    int n = JOptionPane.showConfirmDialog(this, message, 
+                            "Confirm Export", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                    if (JOptionPane.YES_OPTION != n) {
+                        return false;
+                    }
+                }
+            }
+        } catch (KeyStoreException ex) {
+            DThrowable.showAndWait(null, "Problem Testing for Self Signed Cert when Exporting", ex);
+            return false;
+        }
+        
         // Get the entry
         String sAlias = selectedKSEW.getAlias();
         try {
@@ -1441,7 +1467,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         dRemaining.setEditable(false);
         dRemaining.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
 
-        jLabel6.setText("Renew On:");
+        jLabel6.setText("Renew From:");
 
         rDue.setEditable(false);
         rDue.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)));
@@ -1597,7 +1623,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                         .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                             .add(pnlAllDetailsLayout.createSequentialGroup()
                                 .add(vFromTo)
-                                .add(16, 16, 16)
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                                 .add(jLabel6)
                                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                                 .add(rDue, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 144, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
@@ -1611,7 +1637,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                                         .add(45, 45, 45))
                                     .add(pnlAllDetailsLayout.createSequentialGroup()
                                         .add(certEmailTextField)
-                                        .add(20, 20, 20)))
+                                        .add(18, 18, 18)))
                                 .add(pnlAllDetailsLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                                     .add(jLabel5)
                                     .add(jLabel7))

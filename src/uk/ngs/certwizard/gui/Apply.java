@@ -91,9 +91,11 @@ public class Apply extends javax.swing.JDialog {
        
 
         CAInfo caInfo = new CAInfo();
-        RAs = caInfo.getRAs(); // concat of: "OU+" "+L"       
-        javax.swing.DefaultComboBoxModel m = new javax.swing.DefaultComboBoxModel(RAs);
+        RAs = caInfo.getRAs(); // concat of: "OU+" "+L"   
+        javax.swing.DefaultComboBoxModel m = new javax.swing.DefaultComboBoxModel(RAs);      
         cmbSelectRA.setModel(m);
+        cmbSelectRA.insertItemAt("Select your RA...", 0);
+        cmbSelectRA.setSelectedIndex(0); 
 
         URL iconURL = Apply.class.getResource("/uk/ngs/ca/images/ngs-icon.png");
         if (iconURL != null) {
@@ -117,7 +119,7 @@ public class Apply extends javax.swing.JDialog {
     }
 
     /**
-     * Process the user pressing the Apply button.
+     * Apply button pressed.
      */
     private void doApplyButton() {
         boolean complete = true;
@@ -188,16 +190,22 @@ public class Apply extends javax.swing.JDialog {
             complete = false; 
             text = text + "\nPIN numbers do not match"; 
         }
-
-        String testRA = (String) this.cmbSelectRA.getSelectedItem(); 
-        if(testRA == null || testRA.trim().length() ==0){
-            complete = false; 
-            text = text + "\nInvalid RA selection"; 
+        
+        if (this.cmbSelectRA.getSelectedIndex() == -1 || this.cmbSelectRA.getSelectedIndex() == 0) {
+            complete = false;
+            text = text + "\nInvalid RA selection";
+            
         } else {
-            String[] ou_l = testRA.trim().split("[,\\s]+"); 
-            if(ou_l.length != 2){
-               complete = false; 
-               text = text + "\nInvalid RA selection. Please contact support@grid-support.ac.uk and report this problem";  
+            String testRA = (String) this.cmbSelectRA.getSelectedItem();
+            if (testRA == null || testRA.trim().length() == 0) {
+                complete = false;
+                text = text + "\nInvalid RA selection";
+            } else {
+                String[] ou_l = testRA.trim().split("[,\\s]+");
+                if (ou_l.length != 2) {
+                    complete = false;
+                    text = text + "\nInvalid RA selection. Please contact support@grid-support.ac.uk and report this problem";
+                }
             }
         }
         
@@ -613,7 +621,7 @@ public class Apply extends javax.swing.JDialog {
 
     private void txtConfirmKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtConfirmKeyReleased
         // TODO add your handling code here:
-        String pin = new String(txtPin.getPassword());
+        /*String pin = new String(txtPin.getPassword());
         String confirm = new String(txtConfirm.getPassword());
         if (pin.equals(confirm)) {
             this.btnApply.setEnabled(true);
@@ -623,29 +631,29 @@ public class Apply extends javax.swing.JDialog {
             this.btnApply.setEnabled(false);
             jLabel5.setForeground(Color.red);
             setInformation("Your pin and confirmation must match");
-        }
+        }*/
     }//GEN-LAST:event_txtConfirmKeyReleased
 
     private boolean isInputReady() {
-        boolean isReady = true;
         String pin = new String(txtPin.getPassword());
         String confirm = new String(txtConfirm.getPassword());
         if (!pin.equals(confirm)) {
-            isReady = false;
+            return false;
+        }
+        if (this.txtPin.getPassword().length < 10) {
+            return false;
+        }       
+        if(!EmailValidator.getInstance().isValid(this.txtEmail.getText())){
+            return false; 
         }
         if (this.txtName.getText().isEmpty()) {
-            isReady = false;
+            return false;
         }
-        if (this.txtEmail.getText().isEmpty()) {
-            isReady = false;
+        if(this.cmbSelectRA.getSelectedIndex() == -1 || this.cmbSelectRA.getSelectedIndex() == 0){
+            return false; 
         }
-        if (this.txtPin.getPassword().length == 0) {
-            isReady = false;
-        }
-        if (this.txtConfirm.getPassword().length == 0) {
-            isReady = false;
-        }
-        return isReady;
+        this.btnApply.setEnabled(true);
+        return true;
     }
 
     private void txtPinFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_txtPinFocusGained

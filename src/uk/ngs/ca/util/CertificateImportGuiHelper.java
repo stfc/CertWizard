@@ -5,6 +5,7 @@
 package uk.ngs.ca.util;
 
 import java.awt.Component;
+import java.awt.Cursor;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -186,9 +187,12 @@ public class CertificateImportGuiHelper {
         }
 
         // Get an alias for the new keystore entry
-        String newHeadCertImportAlias = dImportKeyPair.getAlias();
+        //String newHeadCertImportAlias = dImportKeyPair.getAlias();
+        //if (newHeadCertImportAlias == null) {
+          String newHeadCertImportAlias = X509CertUtil.getCertificateAlias(X509CertUtil.convertCertificate(certChain[0]));
+        //}
         if (newHeadCertImportAlias == null) {
-            newHeadCertImportAlias = X509CertUtil.getCertificateAlias(X509CertUtil.convertCertificate(certChain[0]));
+            newHeadCertImportAlias = "My imported certificate"; 
         }
 
         newHeadCertImportAlias = getNewEntryAliasHelper(newHeadCertImportAlias, "FPortecle.KeyPairEntryAlias.Title", false);
@@ -197,6 +201,7 @@ public class CertificateImportGuiHelper {
         }
 
         // Check entry does not already exist in the keystore
+        // TODO - can do better than just return here if the alias does exist. 
         if (this.caKeyStoreModel.getClientKeyStore().containsAlias(newHeadCertImportAlias)) {
             JOptionPane.showMessageDialog(
                     parentCompoent,
@@ -205,46 +210,51 @@ public class CertificateImportGuiHelper {
                     RB.getString("FPortecle.RenameEntry.Title"), JOptionPane.ERROR_MESSAGE);
             return null;
         }
+        try {
+            this.parentCompoent.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 
-        // get a list of aliases that exist in the keyStore before we import.   
-        ArrayList<String> preImportAliases = Collections.list(this.caKeyStoreModel.getClientKeyStore().aliases());
+            // get a list of aliases that exist in the keyStore before we import.   
+            ArrayList<String> preImportAliases = Collections.list(this.caKeyStoreModel.getClientKeyStore().aliases());
 
-        // Add a new key entry to the keystore (private key and CERT CHAIN)
-        // and reStore (save the keystore to file and reload from file) 
-        this.caKeyStoreModel.getClientKeyStore().setKeyEntry(newHeadCertImportAlias, privateKey, this.caKeyStoreModel.getPassword(), certChain);
-        this.caKeyStoreModel.getClientKeyStore().reStore();
+            // Add a new key entry to the keystore (private key and CERT CHAIN)
+            // and reStore (save the keystore to file and reload from file) 
+            this.caKeyStoreModel.getClientKeyStore().setKeyEntry(newHeadCertImportAlias, privateKey, this.caKeyStoreModel.getPassword(), certChain);
+            this.caKeyStoreModel.getClientKeyStore().reStore();
 
-        // Note, the reStore above reloads the keyStore object from file. 
-        // If the keyStore object is NOT reloaded from file, then 
-        // enumerating all the aliases excludes any TRUSTED certs imported 
-        // as part of a chain? (I would expect that importing a certChain 
-        // would mean the list of trust cert aliases would also be included
-        // without having to reload the keyStore object from file - but 
-        // this may be a java issue?). 
-        //Enumeration<String> aliases = this.caKeyStoreModel.getClientKeyStore().aliases();
-        //while(aliases.hasMoreElements()){System.out.println("alias "+aliases.nextElement()); }
+            // Note, the reStore above reloads the keyStore object from file. 
+            // If the keyStore object is NOT reloaded from file, then 
+            // enumerating all the aliases excludes any TRUSTED certs imported 
+            // as part of a chain? (I would expect that importing a certChain 
+            // would mean the list of trust cert aliases would also be included
+            // without having to reload the keyStore object from file - but 
+            // this may be a java issue?). 
+            //Enumeration<String> aliases = this.caKeyStoreModel.getClientKeyStore().aliases();
+            //while(aliases.hasMoreElements()){System.out.println("alias "+aliases.nextElement()); }
 
-        // get a list of aliases that now exist after the import 
-        ArrayList<String> postImportAliases = Collections.list(this.caKeyStoreModel.getClientKeyStore().aliases());
+            // get a list of aliases that now exist after the import 
+            ArrayList<String> postImportAliases = Collections.list(this.caKeyStoreModel.getClientKeyStore().aliases());
 
-        // Create new entires only for the newly imported aliases that 
-        // did not previously exist before the import. 
-        for (int i = 0; i < postImportAliases.size(); i++) {
-            if (!preImportAliases.contains(postImportAliases.get(i))) {
-                KeyStoreEntryWrapper newImport = this.caKeyStoreModel.createKSEntryWrapperInstanceFromEntry(postImportAliases.get(i));
-                this.caKeyStoreModel.getKeyStoreEntryMap().put(postImportAliases.get(i), newImport);
+            // Create new entires only for the newly imported aliases that 
+            // did not previously exist before the import. 
+            for (int i = 0; i < postImportAliases.size(); i++) {
+                if (!preImportAliases.contains(postImportAliases.get(i))) {
+                    KeyStoreEntryWrapper newImport = this.caKeyStoreModel.createKSEntryWrapperInstanceFromEntry(postImportAliases.get(i));
+                    this.caKeyStoreModel.getKeyStoreEntryMap().put(postImportAliases.get(i), newImport);
+                }
             }
-        }
-        
-        if (SystemStatus.getInstance().getIsOnline()) {
-            KeyStoreEntryWrapper kew = caKeyStoreModel.getKeyStoreEntryMap().get(newHeadCertImportAlias);
-            if (caKeyStoreModel.onlineUpdateKeyStoreEntry(kew)) {
-                // we don't need to reStore (no online state is saved to keystore file)
-                //caKeyStoreModel.getClientKeyStore().reStore(); 
-            }
-        }
 
-        return newHeadCertImportAlias;
+            if (SystemStatus.getInstance().getIsOnline()) {
+                KeyStoreEntryWrapper kew = caKeyStoreModel.getKeyStoreEntryMap().get(newHeadCertImportAlias);
+                if (caKeyStoreModel.onlineUpdateKeyStoreEntry(kew)) {
+                    // we don't need to reStore (no online state is saved to keystore file)
+                    //caKeyStoreModel.getClientKeyStore().reStore(); 
+                }
+            }
+
+            return newHeadCertImportAlias;
+        } finally {
+            this.parentCompoent.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+        }
     }
 
     /**
