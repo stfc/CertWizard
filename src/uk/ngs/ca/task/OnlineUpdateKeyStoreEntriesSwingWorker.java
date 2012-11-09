@@ -4,11 +4,16 @@
  */
 package uk.ngs.ca.task;
 
+import java.io.File;
+import java.io.IOException;
+import java.security.KeyStoreException;
+import java.security.cert.CertificateException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
 import uk.ngs.ca.certificate.client.PingService;
 import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
@@ -36,6 +41,7 @@ public class OnlineUpdateKeyStoreEntriesSwingWorker extends SwingWorker<Void, Ob
     private final Map<String, KeyStoreEntryWrapper> updateEntriesByAlias;
     private final ClientKeyStoreCaServiceWrapper caKeyStoreModel;
     private final MainWindowPanel pane;
+    private Exception exception = null; 
 
     
     public OnlineUpdateKeyStoreEntriesSwingWorker(final Map<String, KeyStoreEntryWrapper> updateEntriesByAlias,
@@ -46,7 +52,7 @@ public class OnlineUpdateKeyStoreEntriesSwingWorker extends SwingWorker<Void, Ob
     }
 
     @Override
-    protected Void doInBackground() throws Exception {
+    protected Void doInBackground()  {
         try {
             //runningFlag.set(true); 
             
@@ -86,17 +92,32 @@ public class OnlineUpdateKeyStoreEntriesSwingWorker extends SwingWorker<Void, Ob
             }
 
 
-        } catch (Exception ex) {
+        } catch (KeyStoreException ex) {
             // swallow and log the exception
-            Logger.getLogger(MainWindowPanel.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
-        }
+            Logger.getLogger(OnlineUpdateKeyStoreEntriesSwingWorker.class.getName()).log(Level.SEVERE, null, ex);
+            this.exception = ex; 
+        } catch(IOException ex){
+           Logger.getLogger(OnlineUpdateKeyStoreEntriesSwingWorker.class.getName()).log(Level.SEVERE, null, ex); 
+           this.exception = ex; 
+        } catch(CertificateException ex){
+           Logger.getLogger(OnlineUpdateKeyStoreEntriesSwingWorker.class.getName()).log(Level.SEVERE, null, ex);  
+           this.exception = ex; 
+        }   
+        //if(true){ this.exception = new Exception("test it"); }
         return null;
     }
 
     @Override
     public void done() {
-        //System.out.println("done in swing worker");
+        //System.out.println("done in swing worker");      
+        if (this.exception != null) {
+            JOptionPane.showMessageDialog(null,  
+                    "Please contact the helpdesk. A backup of your keystore is located in:\n"
+                    + System.getProperty("user.home")+File.separator+".ca\n"+
+                    "Exeption message: "+this.exception.getMessage(), 
+                    "Keystore problem",
+                    JOptionPane.WARNING_MESSAGE);
+        }
         pane.updateKeyStoreGuiFromModel();
     }
 
