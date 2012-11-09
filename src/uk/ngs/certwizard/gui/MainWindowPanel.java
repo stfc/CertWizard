@@ -6,16 +6,19 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.Format;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -77,12 +80,12 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
      */
     public static final ResourceBundle RB = ResourceBundle.getBundle(RB_BASENAME);
     //private final AtomicBoolean onlineUpdateTaskRunning = new AtomicBoolean(false); 
-    //private final ExecutorService invokeOnceBackgroundExec = Executors.newSingleThreadExecutor();
+    private final ExecutorService invokeOnceBackgroundExec = Executors.newSingleThreadExecutor();
     //private final ScheduledExecutorService schedBackgroundExec = Executors.newSingleThreadScheduledExecutor();
     //private BackgroundTask<Void> runningOnlineUpdateTask;  // confined to AWT event thread. 
     private OnlineUpdateKeyStoreEntriesSwingWorker onlineUpdateTask = new OnlineUpdateKeyStoreEntriesSwingWorker(null, null, null);
     private ScheduledExecutorService messageOfDayExecutor = Executors.newSingleThreadScheduledExecutor();
-
+    
     /**
      * Creates new form MainWindowPanel
      */
@@ -91,22 +94,25 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         this.PASSPHRASE = passphrase;
         System.setProperty(
                 SysProperty.getValue("uk.ngs.ca.immegration.password.property"),
-                this.PASSPHRASE.toString()
-                );
+                this.PASSPHRASE.toString() );
         
         initComponents();
         loadImages();
         this.jComboBox1.setRenderer(new ComboBoxRenderer());
         this.jComboBox1.setMaximumRowCount(20); 
-        
-        // Load the model (the CA keyStore). 
         try {
+            // Load the model (the CA keyStore). 
             this.caKeyStoreModel = ClientKeyStoreCaServiceWrapper.getInstance(this.PASSPHRASE);
-            
-        } catch (Exception ex) {
+        } catch (KeyStoreException ex) {
             Logger.getLogger(MainWindowPanel.class.getName()).log(Level.SEVERE, null, ex);
-            DThrowable.showAndWait(null, "Problem CA keyStore file", ex);
-        } 
+            DThrowable.showAndWait(null, "KeyStoreException CA keyStore file", ex);
+        } catch (IOException ex) {
+            Logger.getLogger(MainWindowPanel.class.getName()).log(Level.SEVERE, null, ex);
+            DThrowable.showAndWait(null, "IOException CA keyStore file", ex);
+        } catch (CertificateException ex) {
+            Logger.getLogger(MainWindowPanel.class.getName()).log(Level.SEVERE, null, ex);
+            DThrowable.showAndWait(null, "CertificateException CA keyStore file", ex);
+        }
 
         this.updateKeyStoreGuiFromModel();
         this.setComboFirstCertEntry();
@@ -114,17 +120,19 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
     /**
      * Do some post object construction checks. Shows modal message dialogs if
-     * a) no certificates exist in the managed CA keystore b) a newer version of
-     * the certificate wizard is available.
+     * there are no certificates in the managed CA keystore and if a newer version 
+     * of the certificate wizard is available. Also start background certificate 
+     * status task. 
      */
     public void doPostConstruct() {
-        // start the background tasks before we show any dialogs. 
+        // Start the background tasks before we show any dialogs. 
         messageOfDayExecutor.scheduleWithFixedDelay(new MessageOfDayTask(), 0, 30, TimeUnit.MINUTES);
         onlineUpdateTask = new OnlineUpdateKeyStoreEntriesSwingWorker(
                 caKeyStoreModel.getKeyStoreEntryMap(), caKeyStoreModel, this);
         onlineUpdateTask.addPropertyChangeListener(onlineUpdateTaskPropertyListener);
         onlineUpdateTask.execute();
 
+        // Check if we have an empty keystore. 
         if (this.caKeyStoreModel.getKeyStoreEntryMap().isEmpty()) {
             JOptionPane.showMessageDialog(this,
                     "You have no certificates. Please either:\n"
@@ -135,31 +143,58 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                     JOptionPane.INFORMATION_MESSAGE);
 
         }
-        //Now fetch the latest version from the server. Required info is in DBCAInfo, ultimately
-        //handled by the CAResource class.
-        String latestVersion = motd.getLatestVersion();
-        String certWizardVersion = SysProperty.getValue("ngsca.certwizard.versionNumber");
-        if (latestVersion != null && !(certWizardVersion.equals(latestVersion))) {
-            JOptionPane.showMessageDialog(this, "A new version of the Certificate Wizard is available!\n"
-                    + "Please go to www.ngs.ac.uk in order to obtain the latest version",
-                    "New Version of Certificate Wizard", JOptionPane.INFORMATION_MESSAGE);
-        }
+        // Check the version in background thread (todo - need to add a menu
+        //  item so that user can check for updates when the choose to). 
+        this.invokeOnceBackgroundExec.execute(new VersionUpdateTask()); 
     }
-
-    private class MessageOfDayTask implements Runnable {
+    
+    /**
+     * Check with the server for the latest cwiz version and enqueue a dialog 
+     * to display in the AWT event dispatch thread if a new version exists. 
+     */
+    private class VersionUpdateTask implements Runnable {
+        private String latestVersion;
 
         public void run() {
-            final String motdtext = motd.getText();
-            // update the gui in the AWT event dispatch thread. 
+            latestVersion = motd.getLatestVersion();
+            // MUST update the gui in the AWT event dispatch thread. 
             GuiExecutor.instance().execute(new Runnable() {
-
                 public void run() {
-                    stringMotD = motdtext;
-                    setMOD(motdtext);
+                    String certWizardVersion = SysProperty.getValue("ngsca.certwizard.versionNumber");
+                    if (latestVersion != null && (!certWizardVersion.equals(latestVersion))) {
+                        JOptionPane.showMessageDialog(null, "A new version of the Certificate Wizard is available!\n"
+                                + "Please go to www.ngs.ac.uk in order to obtain the latest version",
+                                "New Version of Certificate Wizard", JOptionPane.INFORMATION_MESSAGE);
+                    }
                 }
             });
         }
     }
+
+    /**
+     * Check with the server for the latest message of the day an enqueue an 
+     * update to the GUI on the AWT event dispatch thread. 
+     */
+    private class MessageOfDayTask implements Runnable {
+        private String motdtext;
+            
+        public void run() {
+            // Try to download motd and latest version only if online. 
+            if(SystemStatus.getInstance().getIsOnline()){
+               motdtext = motd.getText();                       
+                // MUST update the gui in the AWT event dispatch thread. 
+                GuiExecutor.instance().execute(new Runnable() {
+                    public void run() {
+                        if(motdtext != null){
+                            stringMotD = motdtext;
+                            setMOD(motdtext);
+                        }
+                    }
+                });
+            }
+        }
+    }
+    
     /**
      * Handle onlineUpdateTask property changes (runs in AWT Event thread)
      */

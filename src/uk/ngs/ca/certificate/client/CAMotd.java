@@ -19,6 +19,7 @@ import org.restlet.data.Form;
 import org.restlet.Response;
 import org.restlet.Request;
 import org.restlet.data.Method;
+import org.restlet.data.Status;
 import org.restlet.ext.xml.DomRepresentation;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -87,6 +88,10 @@ public class CAMotd {
             request.setClientInfo(info);
 
             Response response = c.handle(request);
+            //response.getStatus().
+            if(!response.getStatus().equals(Status.SUCCESS_OK)){
+                return null; 
+            }
 
             Document document = new DomRepresentation(response.getEntity()).getDocument(); //response.getEntityAsDom().getDocument();
             // transform the Document into a String

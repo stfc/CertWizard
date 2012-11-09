@@ -13,6 +13,7 @@ import javax.swing.SwingWorker;
 import uk.ngs.ca.certificate.client.PingService;
 import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
 import uk.ngs.ca.certificate.management.KeyStoreEntryWrapper;
+import uk.ngs.ca.common.SystemStatus;
 import uk.ngs.certwizard.gui.MainWindowPanel;
 
 /**
@@ -48,9 +49,14 @@ public class OnlineUpdateKeyStoreEntriesSwingWorker extends SwingWorker<Void, Ob
     protected Void doInBackground() throws Exception {
         try {
             //runningFlag.set(true); 
-            if (!PingService.getPingService().isPingService()) {
-                return null; // no point if not online 
+            
+            if(!SystemStatus.getInstance().getIsOnline()){
+                // we are not online, so try to ping....
+                if (!PingService.getPingService().isPingService()) {
+                    return null; // no point if not online 
+                }
             }
+            
             // Run online update for each keyStore entry in application thread. 
             boolean updated = false;
             int i = 0;

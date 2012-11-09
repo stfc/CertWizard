@@ -108,7 +108,7 @@ public final class PingService {
 
             String pingURL = SysProperty.getValue("uk.ngs.ca.request.pingservice.url");
             Client client = new Client(new Context(), Protocol.HTTPS);
-            client.setConnectTimeout(SysProperty.getTimeoutMilliSecs());  // in milliseconds (8 secs). TODO: should be editable and stored in .properties file 
+            client.setConnectTimeout(SysProperty.getTimeoutMilliSecs());  // in milliseconds (5 secs). TODO: should be editable and stored in .properties file 
 
 
             Request request = new Request(Method.GET, new Reference(pingURL));
@@ -123,13 +123,9 @@ public final class PingService {
             System.out.println("pinging URL [" + pingURL+"]");
 
             response = client.handle(request);
-            //System.out.println("==============after response====================");
-            //System.out.println("======== STATUS RECEIVED" + response.getStatus().toString() + " ===============================================");
             if (response.getStatus().equals(Status.SUCCESS_OK)) {
                 isPing = true;
             }
-            //System.out.println("==============isPing true====================");
-
             //Representation out = response.getEntity();
             //out.write(System.out);
 
