@@ -91,5 +91,12 @@ are poorly written with 3rd party legacy).
 - Edit/choose Colours 
 - Remove oxford myproxy server
 - Add gridpp myproxy server (lcgrbp01.gridpp.rl.ac.uk:7512)
+- BUG 
+  I've found something unexpected when using the Certwizard - if I go to 4) Myproxy 
+  Servers and press the Get Trust Roots buttons, then on the dialog box that appears if, 
+  instead of choosing Yes or No, I click the close window button on the top right 
+  then it goes off and downloads the trust roots - I'd expect it to treat trying 
+  to close the dialog box as equivalent to pressing No rather than pressing Yes.
+
 
 
