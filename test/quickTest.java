@@ -7,6 +7,7 @@
 import java.awt.BorderLayout;
 import java.awt.Cursor;
 import java.awt.Dimension;
+import java.text.Normalizer;
 import java.util.regex.Pattern;
 import javax.swing.*;
 import net.sf.portecle.gui.error.DThrowable;
@@ -14,6 +15,7 @@ import org.junit.*;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import uk.ngs.ca.common.GuiExecutor;
+import uk.ngs.ca.common.MyPattern;
 import uk.ngs.certwizard.gui.GeneralMessageDialog;
 
 /**
@@ -43,17 +45,50 @@ public class quickTest {
     // TODO add test methods here.
     // The methods must be annotated with annotation @Test. For example:
     //
-
+    
     @Test
-    public void hello(){
-        Pattern alphaNumericOnly = Pattern.compile("[0-9A-Za-z\\s_\\.,]+"); 
-        String seq = "' adfa "; 
-        assertFalse(alphaNumericOnly.matcher(seq).matches());
-        seq = "dave this is theworld 111343 com_ad."; 
-        assertTrue(alphaNumericOnly.matcher(seq).matches());
-        
-        System.out.println("done dave");
+    public void testNormalizier(){
+      String s = "garçoné";
+      String ss = Normalizer.normalize(s, Normalizer.Form.NFD);
+      System.out.println(ss);
+      String normal = stripAccents(s); 
+      assertEquals("garcone", normal);
     }
+
+    //http://blog.smartkey.co.uk/2009/10/how-to-strip-accents-from-strings-using-java-6/
+    public static String stripAccents(String s) {
+        s = Normalizer.normalize(s, Normalizer.Form.NFD);
+        s = s.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+        return s;
+    }
+    
+    @Test
+    public void testAssciAlphaNumericOnly(){
+        //Pattern alphaNumericOnly = Pattern.compile("[0-9A-Za-z\\s_\\.,]+"); 
+        Pattern alphaNumericSpaceOnly = Pattern.compile("[0-9A-Za-z\\s]+");
+        
+        String illegalChar = "' adfa "; 
+        assertFalse(alphaNumericSpaceOnly.matcher(illegalChar).matches());
+
+        illegalChar = "davídó garçoné"; // extended 
+        assertFalse(alphaNumericSpaceOnly.matcher(illegalChar).matches());
+        
+        String okSeq  = "DAVE this is theworld 111343 comc ad"; 
+        assertTrue(alphaNumericSpaceOnly.matcher(okSeq).matches());
+    }
+    
+    @Test
+    public void testMyPattern(){
+        MyPattern mp = new MyPattern(); 
+        //String cn = mp._getCN("davídó garçoné"); 
+        //System.out.println(cn);
+        boolean validCN = mp.isValidCN("davídó garçoné");
+        //mp.getCN();
+        assertFalse(validCN); 
+    }
+    
+    
+    
     
     /*@Test
     public void hello() {

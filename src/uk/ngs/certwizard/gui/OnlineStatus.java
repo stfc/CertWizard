@@ -20,6 +20,7 @@ public class OnlineStatus extends javax.swing.JPanel /*implements Observer*/ {
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     // Records whether the last ping check completed ok 
     private AtomicBoolean pingedOK = new AtomicBoolean(false); 
+    //private Runnable sleepTask; 
     
     /**
      * Creates new form OnlineStatus
@@ -59,6 +60,7 @@ public class OnlineStatus extends javax.swing.JPanel /*implements Observer*/ {
         jLabel1 = new javax.swing.JLabel();
         timeoutTextField = new javax.swing.JTextField();
         jLabel2 = new javax.swing.JLabel();
+        cancelPingButton = new javax.swing.JButton();
 
         setToolTipText("Online CA status indicates whether the tool can contact the UK Certification Authority Server");
 
@@ -89,6 +91,14 @@ public class OnlineStatus extends javax.swing.JPanel /*implements Observer*/ {
 
         jLabel2.setText("Connect timeout (secs)");
 
+        cancelPingButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/uk/ngs/ca/images/stopRedCrossIcon.gif"))); // NOI18N
+        cancelPingButton.setToolTipText("Cancel the online Ping.");
+        cancelPingButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cancelPingButtonActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -97,22 +107,26 @@ public class OnlineStatus extends javax.swing.JPanel /*implements Observer*/ {
                 .addContainerGap()
                 .addComponent(jLabel1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(onlineLabel, javax.swing.GroupLayout.DEFAULT_SIZE, 315, Short.MAX_VALUE)
-                .addGap(30, 30, 30)
+                .addComponent(onlineLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGap(79, 79, 79)
                 .addComponent(jLabel2)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(timeoutTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(31, 31, 31)
+                .addGap(4, 4, 4)
+                .addComponent(cancelPingButton, javax.swing.GroupLayout.PREFERRED_SIZE, 24, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(2, 2, 2)
                 .addComponent(connectButton, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(connectButton, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-            .addComponent(timeoutTextField)
+            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addComponent(timeoutTextField)
+                .addComponent(cancelPingButton, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jLabel2))
             .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                 .addComponent(jLabel1)
-                .addComponent(onlineLabel)
-                .addComponent(jLabel2))
+                .addComponent(onlineLabel))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -122,16 +136,19 @@ public class OnlineStatus extends javax.swing.JPanel /*implements Observer*/ {
     }//GEN-LAST:event_connectButtonActionPerformed
 
 private void timeoutTextFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_timeoutTextFieldActionPerformed
-// TODO add your handling code here:
     //this.doChangeTimeout();
 }//GEN-LAST:event_timeoutTextFieldActionPerformed
 
 private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_timeoutTextFieldFocusLost
-// TODO add your handling code here:
     //this.doChangeTimeout();
 }//GEN-LAST:event_timeoutTextFieldFocusLost
 
+    private void cancelPingButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelPingButtonActionPerformed
+        this.updateGUI(false); 
+    }//GEN-LAST:event_cancelPingButtonActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton cancelPingButton;
     private javax.swing.JButton connectButton;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
@@ -169,6 +186,7 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
         // Clicking to start this task should not clash with another ping task 
         // because the button that calls this method is disabled when a task
         // executes. 
+        //sleepTask = null; 
         Runnable sleepTask = new PingCheckTask(); 
         Thread t = new Thread(sleepTask); 
         t.setDaemon(true);
@@ -200,6 +218,7 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
                     onlineLabel.setText("Pinging Server...");
                     onlineLabel.setForeground(Color.RED);
                     connectButton.setEnabled(false);
+                    cancelPingButton.setEnabled(true);
                 } else {
                     Date lastOnline = new Date();
                     if(pingedOK.get()){
@@ -210,6 +229,7 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
                         onlineLabel.setForeground(Color.RED);
                     }
                     connectButton.setEnabled(true);
+                    cancelPingButton.setEnabled(false);
                 }
             }
         });
@@ -222,7 +242,7 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
         public void run() {
             try {
                 updateGUI(true);
-                // call the ping 
+                // call the ping in new thread
                 pingedOK.set(PingService.getPingService().isPingService());   
             } finally {
                 updateGUI(false);

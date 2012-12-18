@@ -137,7 +137,7 @@ public class Apply extends javax.swing.JDialog {
         if (CERT_TYPE.USER_CERT.equals(this.certType)) {
             MyPattern pattern = new MyPattern();
             if (pattern.isValidCN(this.txtName.getText())) {
-                // do nothing 
+                this.txtName.setText(pattern.getCN());
             } else {
                 complete = false;
                 text = text + "\nYour name input should be lowercase \"firstname lastname\", please try again.";
@@ -221,6 +221,7 @@ public class Apply extends javax.swing.JDialog {
                         + "the helpdesk at support@grid-support.ac.uk.", "Server Connection Fault", JOptionPane.ERROR_MESSAGE);
                 return;
             }
+            if(true)return; 
             
   
             setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));           
