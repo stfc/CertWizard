@@ -10,6 +10,7 @@ import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
 import net.sf.portecle.gui.error.DThrowable;
 import org.apache.commons.validator.routines.DomainValidator;
@@ -22,32 +23,31 @@ import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
 import uk.ngs.ca.certificate.management.KeyStoreEntryWrapper;
 import uk.ngs.ca.common.CAKeyPair;
 import uk.ngs.ca.common.HashUtil;
-import uk.ngs.ca.common.MyPattern;
 import uk.ngs.ca.common.Pair;
 import uk.ngs.ca.info.CAInfo;
 
 /**
  * Modal dialog for requesting new host and user certificates.
  *
- * @author kjm22495
  * @author Xiao Wang
  * @author David Meredith (modifications, javadoc)
  */
 public class Apply extends javax.swing.JDialog {
 
-    private final String mainInfo = "Please enter all the information";
+    private final String startInfo = "Please enter all the information";
     private final String readyInfo = "Your input is ready, please click Apply button to request certificate or click Cancel button to cancel";
     private String[] RAs;
     //private final Pattern emailPattern = Pattern.compile("[-\\.a-zA-Z0-9_]+@[-a-zA-Z0-9\\.]+\\.[a-z]+");
     private String storedAlias;
-    
     private final X509Certificate authCert;
-    private final PrivateKey authKey; 
-    private final ClientKeyStoreCaServiceWrapper model; 
-    
+    private final PrivateKey authKey;
+    private final ClientKeyStoreCaServiceWrapper model;
+    private final Pattern cnPattern = Pattern.compile("[-()a-zA-Z0-9\\s]+");
+    private final javax.swing.ImageIcon errorIcon = new javax.swing.ImageIcon(getClass().getResource("/help_panel_html/images/error.png"));
+    private final javax.swing.ImageIcon acceptIcon = new javax.swing.ImageIcon(getClass().getResource("/help_panel_html/images/accept.png"));
+
+
     //private ProgressMonitor progressMonitor;
-    
-    
     /**
      * Options for the type of certificate application.
      */
@@ -58,63 +58,64 @@ public class Apply extends javax.swing.JDialog {
     private CERT_TYPE certType = CERT_TYPE.USER_CERT;
 
     /**
-     * Create a new Apply dialog. 
-     * 
-     * @param model CertWizard data model 
-     * @param certType Apply for either host or user cert 
-     * @param keyStoreAliasToAuthHostApply If a host cert is requested, this is the alias of the 
-     * keyStore entry that will be used to authenticate the request. Can be null for 
-     * user cert requests. When requesting host cert, if this value 
-     * does not reference a valid user certificate in the keyStore, then a 
-     * {@link IllegalArgumentException} is thrown. 
-     * @throws IOException If an error occurs when contact the remote server. 
+     * Create a new Apply dialog.
+     *
+     * @param model CertWizard data model
+     * @param certType Apply for either host or user cert
+     * @param keyStoreAliasToAuthHostApply If a host cert is requested, this is
+     * the alias of the keyStore entry that will be used to authenticate the
+     * request. Can be null for user cert requests. When requesting host cert,
+     * if this value does not reference a valid user certificate in the
+     * keyStore, then a {@link IllegalArgumentException} is thrown.
+     * @throws IOException If an error occurs when contact the remote server.
      */
-    public Apply(ClientKeyStoreCaServiceWrapper model, CERT_TYPE certType, String keyStoreAliasToAuthHostApply) throws IOException, KeyStoreException, CertificateException {
+    public Apply(ClientKeyStoreCaServiceWrapper model, CERT_TYPE certType, String keyStoreAliasToAuthHostApply) 
+            throws IOException, KeyStoreException, CertificateException {
         this.certType = certType;
-        this.model = model;    
+        this.model = model;
         initComponents();
-            
-        if(CERT_TYPE.HOST_CERT.equals(this.certType)){
-            if(keyStoreAliasToAuthHostApply == null || keyStoreAliasToAuthHostApply.trim().equals("")){
-                throw new IllegalArgumentException("Invaild keyStore alias"); 
+
+        if (CERT_TYPE.HOST_CERT.equals(this.certType)) {
+            if (keyStoreAliasToAuthHostApply == null || keyStoreAliasToAuthHostApply.trim().equals("")) {
+                throw new IllegalArgumentException("Invaild keyStore alias");
             }
             this.authCert = model.getClientKeyStore().getX509Certificate(keyStoreAliasToAuthHostApply);
-            if(this.authCert == null){
-                throw new IllegalArgumentException("Invaild keyStore alias - given alias does not refer to X509Certificate");  
+            if (this.authCert == null) {
+                throw new IllegalArgumentException("Invaild keyStore alias - given alias does not refer to X509Certificate");
             }
-            this.authKey = model.getClientKeyStore().getPrivateKey(authCert.getPublicKey()); 
-            
+            this.authKey = model.getClientKeyStore().getPrivateKey(authCert.getPublicKey());
+
         } else {
-           this.authCert = null; 
-           this.authKey = null; 
+            this.authCert = null;
+            this.authKey = null;
         }
-       
+
 
         CAInfo caInfo = new CAInfo();
         RAs = caInfo.getRAs(); // concat of: "OU+" "+L"   
-        javax.swing.DefaultComboBoxModel m = new javax.swing.DefaultComboBoxModel(RAs);      
+        javax.swing.DefaultComboBoxModel m = new javax.swing.DefaultComboBoxModel(RAs);
         cmbSelectRA.setModel(m);
         cmbSelectRA.insertItemAt("Select your RA...", 0);
-        cmbSelectRA.setSelectedIndex(0); 
+        cmbSelectRA.setSelectedIndex(0);
 
         URL iconURL = Apply.class.getResource("/uk/ngs/ca/images/ngs-icon.png");
         if (iconURL != null) {
             this.setIconImage(Toolkit.getDefaultToolkit().getImage(iconURL));
         }
         this.getRootPane().setDefaultButton(btnApply);
-        setInformation(mainInfo);
+        jLabel5.setText(startInfo);
         jLabel6.setVisible(false); //hide 10 chars min label 
 
         if (CERT_TYPE.HOST_CERT.equals(this.certType)) {
             this.labEmail.setText("Host Admin Email");
             this.labCN.setText("Host (DNS) name");
-            this.setTitle("Host Certificate Application"); 
-            this.txtDN.setText(authCert.getSubjectX500Principal().getName()); 
+            this.setTitle("Host Certificate Application");
+            this.txtDN.setText(authCert.getSubjectX500Principal().getName());
         } else {
             this.labEmail.setText("User Email");
-            this.labCN.setText("Name (firstname lastname)");
-            this.setTitle("User Certificate Application"); 
-            this.txtDN.setText("N/A"); 
+            this.labCN.setText("Common Name");
+            this.setTitle("User Certificate Application");
+            this.txtDN.setText("N/A");
         }
     }
 
@@ -122,42 +123,15 @@ public class Apply extends javax.swing.JDialog {
      * Apply button pressed.
      */
     private void doApplyButton() {
+        if (!this.isInputReadyUpdateGUI()) {
+            return;
+        }
+
+        // Some extra checks that we don't want to do every time a key is pressed. 
         boolean complete = true;
         String text = "";
-       
-        if (this.txtName.getText().isEmpty()) {
-            complete = false;
-            if (CERT_TYPE.USER_CERT.equals(this.certType)) {
-                text = text + "\nEnter your given name and surname";
-            } else {
-                text = text + "\nEnter the host DNS name, e.g. 'myhost.ngs.ac.uk'";
-            }
-        }
 
-        if (CERT_TYPE.USER_CERT.equals(this.certType)) {
-            MyPattern pattern = new MyPattern();
-            if (pattern.isValidCN(this.txtName.getText())) {
-                this.txtName.setText(pattern.getCN());
-            } else {
-                complete = false;
-                text = text + "\nYour name input should be lowercase \"firstname lastname\", please try again.";
-            }
-        } else {
-            if (DomainValidator.getInstance().isValid(this.txtName.getText())) {
-                // TODO: have to cope with 'service/host.domain.ac.uk' 
-                // do nothing 
-            } else {
-                complete = false;
-                text = text + "\nInvalid host DNS name.";
-            }
-        }
-
-        if (this.aliasTextField.getText().isEmpty()) {
-            complete = false;
-            text = text + "\nEnter an alias (this is just a user friendly name)";
-        }
-
-        // test to see if alias is already present
+        // Check alias is already present
         try {
             if (model.getClientKeyStore().containsAlias(this.aliasTextField.getText())) {
                 complete = false;
@@ -168,50 +142,9 @@ public class Apply extends javax.swing.JDialog {
             return;
         }
 
-        //if (!isValidEmail(this.txtEmail.getText())) {
-        if (!EmailValidator.getInstance().isValid(this.txtEmail.getText())) {
-            complete = false;
-            if (CERT_TYPE.USER_CERT.equals(this.certType)) {
-                text = text + "\nInvalid contact email";
-            } else {
-                text = text + "\nInvalid contact email for the host admin";
-            }
-        }
-
-        if (this.txtPin.getPassword().length < 10) {
-            complete = false;
-            text = text + "\nEnter a PIN";
-        }
-        if (this.txtConfirm.getPassword().length < 10) {
-            complete = false;
-            text = text + "\nEnter the PIN again for confirmation";
-        }
-        if(!String.valueOf(this.txtPin.getPassword()).equals(String.valueOf(this.txtConfirm.getPassword())) ){
-            complete = false; 
-            text = text + "\nPIN numbers do not match"; 
-        }
-        
-        if (this.cmbSelectRA.getSelectedIndex() == -1 || this.cmbSelectRA.getSelectedIndex() == 0) {
-            complete = false;
-            text = text + "\nInvalid RA selection";
-            
-        } else {
-            String testRA = (String) this.cmbSelectRA.getSelectedItem();
-            if (testRA == null || testRA.trim().length() == 0) {
-                complete = false;
-                text = text + "\nInvalid RA selection";
-            } else {
-                String[] ou_l = testRA.trim().split("[,\\s]+");
-                if (ou_l.length != 2) {
-                    complete = false;
-                    text = text + "\nInvalid RA selection. Please contact support@grid-support.ac.uk and report this problem";
-                }
-            }
-        }
-        
         if (!complete) {
             jLabel5.setForeground(Color.RED);
-            setInformation(text);
+            jLabel5.setText(text);
 
         } else {
             if (!(PingService.getPingService().isPingService())) {
@@ -221,14 +154,13 @@ public class Apply extends javax.swing.JDialog {
                         + "the helpdesk at support@grid-support.ac.uk.", "Server Connection Fault", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            if(true)return; 
+
             
-  
-            setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));           
-            try { 
+            setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+            try {
                 /*progressMonitor = new ProgressMonitor(Apply.this,
-                                  "Please Wait", "", 0, 100);
-                progressMonitor.setProgress(0);*/
+                 "Please Wait", "", 0, 100);
+                 progressMonitor.setProgress(0);*/
                 if (CERT_TYPE.USER_CERT.equals(this.certType)) {
                     this.processCertApplication(model, CertificateRequestCreator.TYPE.USER);
                 } else {
@@ -239,62 +171,48 @@ public class Apply extends javax.swing.JDialog {
                 setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
                 DThrowable.showAndWait(this, "Problem Processing CSR Application", ex);
             } finally {
-                setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR)); 
+                setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
             }
         }
-    } 
-    
-    
-    /*private class Task extends SwingWorker<Void, Void>{
-        @Override
-        protected Void doInBackground() throws Exception {
-            Thread.sleep(3000); 
-            return null; 
-        }
-        @Override
-        public void done() {
-            System.out.println("done in AWT event dispatch thread");
-            progressMonitor.close();
-        }
-    }*/
-    
-    
-    
+    }
+
     /**
-     * Process a User or a Host CSR application. 
+     * Process a User or a Host CSR application.
      */
-    private void processCertApplication(ClientKeyStoreCaServiceWrapper model, 
+    private void processCertApplication(ClientKeyStoreCaServiceWrapper model,
             CertificateRequestCreator.TYPE type) throws KeyStoreException, IOException, CertificateException {
-        String newAlias = this.aliasTextField.getText(); 
+        String newAlias = this.aliasTextField.getText();
         // Note that same email is value is used to create PKCS#10 request and 
         // specify in the CSR email XML element. This is required otherwise the 
         // server will complain that emails don't match. 
         String email = this.txtEmail.getText();
-        String cn = this.txtName.getText().toLowerCase();
-        char[] pin = this.txtPin.getPassword(); 
-        String RA =  ((String)this.cmbSelectRA.getSelectedItem()); 
-        String[] ou_l = RA.trim().split("[,\\s]+");   
-        String ou = ou_l[0]; 
+        String cn = this.txtName.getText().toLowerCase(); 
+        cn = cn.replaceAll("\\s", " ");  // replace all interleaved whitespace with single whitespace
+        cn = cn.trim(); // replace leading and trailing whitespace 
+        char[] pin = this.txtPin.getPassword();
+        String RA = ((String) this.cmbSelectRA.getSelectedItem());
+        String[] ou_l = RA.trim().split("[,\\s]+");
+        String ou = ou_l[0];
         String l = ou_l[1];
         String c = uk.ngs.ca.tools.property.SysProperty.getValue("ngsca.cert.c").trim();
         String o = uk.ngs.ca.tools.property.SysProperty.getValue("ngsca.cert.o").trim();
         // validation. 
-      
+
         String attrDN = ("CN=" + cn + ", L=" + l + ", OU=" + ou + ", O=" + o + ", C=" + c);
-        
-         // Create a new key pair for new cert 
+
+        // Create a new key pair for new cert 
         KeyPair csrKeyPair = CAKeyPair.getNewKeyPair();
-        
+
         // Create a PKCS#10 CSR string from keys and DN info  
         // TODO - need to allow for CNs with the service/hostname format, e.g: 'host/davehost1.dl.ac.uk'
         //CertificateRequestCreator csrCreator = new CertificateRequestCreator(type, CN, OU, L, email, false);
         CertificateRequestCreator csrCreator = new CertificateRequestCreator(attrDN, email);
         String pkcs10 = csrCreator.createCertificateRequest(csrKeyPair.getPrivate(), csrKeyPair.getPublic());
         //if(true){  System.out.println(pkcs10); WaitDialog.hideDialog(); return;}
-         
+
         // send PKCS#10 to server
-        boolean success; 
-        String message;      
+        boolean success;
+        String message;
         if (CertificateRequestCreator.TYPE.USER.equals(type)) {
             OnlineUserCertRequest csrRequest = new OnlineUserCertRequest(
                     pkcs10, HashUtil.getHash(String.valueOf(pin)), email);
@@ -302,14 +220,14 @@ public class Apply extends javax.swing.JDialog {
             success = csrRequest.isCSRREquestSuccess();
         } else {
             // Send PKCS#10 CSR to server. Provide authCert/Key for PPPK . 
-            OnlineHostCertRequest onlineHostCertReq = new OnlineHostCertRequest(authCert, authKey, 
+            OnlineHostCertRequest onlineHostCertReq = new OnlineHostCertRequest(authCert, authKey,
                     pkcs10, HashUtil.getHash(String.valueOf(pin)), email);
             Pair<Boolean, String> result = onlineHostCertReq.doHostCSR();
             message = result.second;
             success = result.first;
         }
         //WaitDialog.hideDialog();
-        
+
         // If submitted ok, save a new self-signed cert in the keyStore and ReStore. 
         if (success) {
             X509Certificate cert = CAKeyPair.createSelfSignedCertificate(csrKeyPair, ou, l, cn);
@@ -329,13 +247,137 @@ public class Apply extends javax.swing.JDialog {
 
         } else {
             GeneralMessageDialog.showAndWait(this, "Server responded an error: " + message, "CSR Error", JOptionPane.ERROR_MESSAGE);
-        }    
+        }
+    }
+
+    /**
+     * Check that the given CN is valid for display. 
+     * Note, this is not the fully validated CN (just that the display DN is OK
+     * for further preparation such as making lowercase, trimming etc).  
+     * @param cn
+     * @return 
+     */
+    private boolean isDisplayCNValid(String cn){
+        if(cn == null) {
+            return false;
+        } 
+        if(!cnPattern.matcher(this.txtName.getText()).matches()){
+          return false; 
+        }
+        // don't do this here as whenever usr enters a dn, it is continuously 
+        // trimmed so that they can't enter a CN with two or more names ! 
+        // replace all interleaved whitespace with single whitespace
+        //cn = cn.replaceAll("\\s", " "); 
+        //cn = cn.trim(); // replace leading and trailing whitespace 
+        //cn = cn.toLowerCase(); 
+        
+        String[] names = cn.split("\\s");
+        // Must be at least TWO names 
+        if(names.length < 2){
+            return false; 
+        }
+        // At least TWO of these names must have length TWO OR MORE
+        int ii = 0; 
+        for(int i=0; i<names.length; i++){
+            if(names[i].length() >= 2){
+                ++ii; 
+            }
+        }
+        if(ii < 2){
+            return false; 
+        }
+        return true; 
     }
     
-    
+    private boolean isInputReadyUpdateGUI() {
+        boolean complete = true;
+        StringBuilder text = new StringBuilder();
+
+        // RA   
+        if (this.cmbSelectRA.getSelectedIndex() == -1 || this.cmbSelectRA.getSelectedIndex() == 0) {
+            this.raValidLabel.setIcon(this.errorIcon); 
+            complete = false;
+        } else {
+            String testRA = (String) this.cmbSelectRA.getSelectedItem();
+            if (testRA == null || testRA.trim().length() == 0) {
+                this.raValidLabel.setIcon(this.errorIcon);
+                complete = false;
+            } else {
+                String[] ou_l = testRA.trim().split("[,\\s]+");
+                if (ou_l.length != 2) {
+                    complete = false;
+                    text.append("ERROR - Invalid RA provided. Please contact support@grid-support.ac.uk and report this problem\n");
+                    this.raValidLabel.setIcon(this.errorIcon);
+                } else {
+                    this.raValidLabel.setIcon(this.acceptIcon);
+                }
+            }
+        }
+        
+        // Common Name 
+        if (CERT_TYPE.USER_CERT.equals(this.certType)) {
+            if(!this.isDisplayCNValid(this.txtName.getText())){
+                complete = false;
+                this.cnValidLabel.setIcon(this.errorIcon); 
+            } else {
+                this.txtName.setText(this.txtName.getText().toLowerCase());
+                this.cnValidLabel.setIcon(this.acceptIcon); 
+            }
+        } else {
+            // TODO: have to cope with 'service/host.domain.ac.uk'
+            if (!DomainValidator.getInstance().isValid(this.txtName.getText())) {
+                complete = false;
+                 this.cnValidLabel.setIcon(this.errorIcon); 
+            } else {
+                this.cnValidLabel.setIcon(this.acceptIcon); 
+            }
+        }
+        
+        // Email 
+        if (!EmailValidator.getInstance().isValid(this.txtEmail.getText())) {
+             this.emailValidLabel.setIcon(this.errorIcon);
+            complete = false;
+        } else {
+            this.emailValidLabel.setIcon(this.acceptIcon); 
+        }
+        
+        // Pin and confirmation 
+        String pin = new String(txtPin.getPassword());
+        String confirm = new String(txtConfirm.getPassword());
+        if (!pin.equals(confirm)) {
+            this.pinValidLabel.setIcon(this.errorIcon);
+            complete = false;
+        }
+        else if (this.txtPin.getPassword().length < 10) {
+           this.pinValidLabel.setIcon(this.errorIcon);
+            complete = false;
+        } else {
+            this.pinValidLabel.setIcon(this.acceptIcon);
+        }
+        
+        // Alias
+        if (this.aliasTextField.getText().isEmpty()) {
+            this.aliasValidPinLabel.setIcon(this.errorIcon);
+            complete = false;
+        } else {
+            this.aliasValidPinLabel.setIcon(this.acceptIcon);
+        }
+
+        // Finally enable/disable the Apply button accordingly 
+        this.btnApply.setEnabled(complete);
+        if (!complete) {
+            jLabel5.setForeground(Color.RED);
+            jLabel5.setText(text.toString());
+        } else {
+            jLabel5.setForeground(Color.BLACK); 
+            jLabel5.setText(readyInfo);
+        }
+        return complete;
+    }
+
     /**
-     * @return If the application was successful, return the alias of the CSR 
-     * that is newly stored in the keyStore, otherwise return null. 
+     * @return If the application was successful, return the alias of the CSR
+     * that is newly stored in the keyStore, otherwise return null.
      */
     public String getStoredAlias() {
         return this.storedAlias;
@@ -370,8 +412,13 @@ public class Apply extends javax.swing.JDialog {
         aliasTextField = new javax.swing.JTextField();
         labelRequestorId = new javax.swing.JLabel();
         txtDN = new javax.swing.JTextField();
+        raValidLabel = new javax.swing.JLabel();
+        cnValidLabel = new javax.swing.JLabel();
+        emailValidLabel = new javax.swing.JLabel();
+        aliasValidPinLabel = new javax.swing.JLabel();
+        pinValidLabel = new javax.swing.JLabel();
 
-        jDesktopPane1.setName("jDesktopPane1");
+        jDesktopPane1.setName("jDesktopPane1"); // NOI18N
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("Apply for certificate");
@@ -387,6 +434,11 @@ public class Apply extends javax.swing.JDialog {
                 cmbSelectRAMouseExited(evt);
             }
         });
+        cmbSelectRA.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cmbSelectRAActionPerformed(evt);
+            }
+        });
 
         labCN.setText("Common Name");
         labCN.setName("labCN"); // NOI18N
@@ -400,6 +452,11 @@ public class Apply extends javax.swing.JDialog {
                 txtNameMouseExited(evt);
             }
         });
+        txtName.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                txtNameKeyReleased(evt);
+            }
+        });
 
         labEmail.setText("Email Address");
         labEmail.setName("labEmail"); // NOI18N
@@ -411,6 +468,11 @@ public class Apply extends javax.swing.JDialog {
             }
             public void mouseExited(java.awt.event.MouseEvent evt) {
                 txtEmailMouseExited(evt);
+            }
+        });
+        txtEmail.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                txtEmailKeyReleased(evt);
             }
         });
 
@@ -446,17 +508,17 @@ public class Apply extends javax.swing.JDialog {
                 txtPinMouseExited(evt);
             }
         });
-        txtPin.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                txtPinActionPerformed(evt);
-            }
-        });
         txtPin.addFocusListener(new java.awt.event.FocusAdapter() {
             public void focusGained(java.awt.event.FocusEvent evt) {
                 txtPinFocusGained(evt);
             }
             public void focusLost(java.awt.event.FocusEvent evt) {
                 txtPinFocusLost(evt);
+            }
+        });
+        txtPin.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                txtPinKeyReleased(evt);
             }
         });
 
@@ -472,9 +534,6 @@ public class Apply extends javax.swing.JDialog {
         txtConfirm.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyReleased(java.awt.event.KeyEvent evt) {
                 txtConfirmKeyReleased(evt);
-            }
-            public void keyTyped(java.awt.event.KeyEvent evt) {
-                txtConfirmKeyTyped(evt);
             }
         });
 
@@ -496,21 +555,41 @@ public class Apply extends javax.swing.JDialog {
         jLabel7.setText("Registration Authority");
         jLabel7.setName("jLabel7"); // NOI18N
 
-        jLabel8.setText("Alias (user friendly name)");
+        jLabel8.setText("Alias (display name)");
         jLabel8.setName("jLabel8"); // NOI18N
 
         aliasTextField.setName("aliasTextField"); // NOI18N
-        aliasTextField.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                aliasTextFieldActionPerformed(evt);
+        aliasTextField.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                aliasTextFieldMouseEntered(evt);
+            }
+        });
+        aliasTextField.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                aliasTextFieldKeyReleased(evt);
             }
         });
 
         labelRequestorId.setText("Requestor Identitiy");
-        labelRequestorId.setName("labelRequestorId");
+        labelRequestorId.setName("labelRequestorId"); // NOI18N
 
         txtDN.setEditable(false);
-        txtDN.setName("txtDN");
+        txtDN.setName("txtDN"); // NOI18N
+
+        raValidLabel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/help_panel_html/images/error.png"))); // NOI18N
+        raValidLabel.setName("raValidLabel"); // NOI18N
+
+        cnValidLabel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/help_panel_html/images/error.png"))); // NOI18N
+        cnValidLabel.setName("cnValidLabel"); // NOI18N
+
+        emailValidLabel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/help_panel_html/images/error.png"))); // NOI18N
+        emailValidLabel.setName("emailValidLabel"); // NOI18N
+
+        aliasValidPinLabel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/help_panel_html/images/error.png"))); // NOI18N
+        aliasValidPinLabel.setName("aliasValidPinLabel"); // NOI18N
+
+        pinValidLabel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/help_panel_html/images/error.png"))); // NOI18N
+        pinValidLabel.setName("pinValidLabel"); // NOI18N
 
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -535,17 +614,31 @@ public class Apply extends javax.swing.JDialog {
                             .add(labelRequestorId))
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                            .add(layout.createSequentialGroup()
-                                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
-                                    .add(org.jdesktop.layout.GroupLayout.LEADING, txtPin, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 104, Short.MAX_VALUE)
-                                    .add(org.jdesktop.layout.GroupLayout.LEADING, txtConfirm)
-                                    .add(org.jdesktop.layout.GroupLayout.LEADING, aliasTextField))
-                                .add(18, 190, Short.MAX_VALUE)
-                                .add(jLabel6))
-                            .add(txtName, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 424, Short.MAX_VALUE)
-                            .add(txtEmail, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 424, Short.MAX_VALUE)
-                            .add(cmbSelectRA, 0, 424, Short.MAX_VALUE)
-                            .add(txtDN))))
+                            .add(txtDN)
+                            .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
+                                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                                    .add(org.jdesktop.layout.GroupLayout.LEADING, layout.createSequentialGroup()
+                                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
+                                            .add(org.jdesktop.layout.GroupLayout.LEADING, txtPin, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 104, Short.MAX_VALUE)
+                                            .add(org.jdesktop.layout.GroupLayout.LEADING, txtConfirm)
+                                            .add(org.jdesktop.layout.GroupLayout.LEADING, aliasTextField))
+                                        .add(18, 18, 18)
+                                        .add(jLabel6)
+                                        .add(0, 0, Short.MAX_VALUE))
+                                    .add(org.jdesktop.layout.GroupLayout.LEADING, txtEmail)
+                                    .add(org.jdesktop.layout.GroupLayout.LEADING, txtName)
+                                    .add(org.jdesktop.layout.GroupLayout.LEADING, cmbSelectRA, 0, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                                    .add(layout.createSequentialGroup()
+                                        .add(21, 21, 21)
+                                        .add(cnValidLabel))
+                                    .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
+                                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                                            .add(org.jdesktop.layout.GroupLayout.TRAILING, emailValidLabel)
+                                            .add(org.jdesktop.layout.GroupLayout.TRAILING, aliasValidPinLabel)
+                                            .add(org.jdesktop.layout.GroupLayout.TRAILING, raValidLabel)
+                                            .add(org.jdesktop.layout.GroupLayout.TRAILING, pinValidLabel))))))))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -558,20 +651,24 @@ public class Apply extends javax.swing.JDialog {
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(cmbSelectRA, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(jLabel7))
+                    .add(jLabel7)
+                    .add(raValidLabel))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(txtName, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(labCN))
+                    .add(labCN)
+                    .add(cnValidLabel))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(txtEmail, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(labEmail))
+                    .add(labEmail)
+                    .add(emailValidLabel))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(jLabel3)
                     .add(txtPin, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(jLabel6))
+                    .add(jLabel6)
+                    .add(pinValidLabel))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(jLabel4)
@@ -579,7 +676,8 @@ public class Apply extends javax.swing.JDialog {
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(aliasTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(jLabel8))
+                    .add(jLabel8)
+                    .add(aliasValidPinLabel))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jScrollPane1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
@@ -599,63 +697,10 @@ public class Apply extends javax.swing.JDialog {
         this.dispose();
     }//GEN-LAST:event_btnCancelActionPerformed
 
-    /*
-     * private boolean isPing(){ //PingService pingService = new PingService();
-     * //return pingService.isPingService(); return
-     * PingService.getPingService().isPingService();
-    }
-     */
     private void btnApplyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnApplyActionPerformed
         // 
         this.doApplyButton();
     }//GEN-LAST:event_btnApplyActionPerformed
-
-    /*
-     * private boolean isValidEmail(String email) { if(email == null ||
-     * email.trim().equals("")) return false; Matcher m =
-     * this.emailPattern.matcher(email); return m.matches();
-    }
-     */
-    private void txtConfirmKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtConfirmKeyTyped
-        // TODO add your handling code here:
-    }//GEN-LAST:event_txtConfirmKeyTyped
-
-    private void txtConfirmKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtConfirmKeyReleased
-        // TODO add your handling code here:
-        /*String pin = new String(txtPin.getPassword());
-        String confirm = new String(txtConfirm.getPassword());
-        if (pin.equals(confirm)) {
-            this.btnApply.setEnabled(true);
-            jLabel5.setForeground(Color.BLACK);
-            setInformation(mainInfo);
-        } else {
-            this.btnApply.setEnabled(false);
-            jLabel5.setForeground(Color.red);
-            setInformation("Your pin and confirmation must match");
-        }*/
-    }//GEN-LAST:event_txtConfirmKeyReleased
-
-    private boolean isInputReady() {
-        String pin = new String(txtPin.getPassword());
-        String confirm = new String(txtConfirm.getPassword());
-        if (!pin.equals(confirm)) {
-            return false;
-        }
-        if (this.txtPin.getPassword().length < 10) {
-            return false;
-        }       
-        if(!EmailValidator.getInstance().isValid(this.txtEmail.getText())){
-            return false; 
-        }
-        if (this.txtName.getText().isEmpty()) {
-            return false;
-        }
-        if(this.cmbSelectRA.getSelectedIndex() == -1 || this.cmbSelectRA.getSelectedIndex() == 0){
-            return false; 
-        }
-        this.btnApply.setEnabled(true);
-        return true;
-    }
 
     private void txtPinFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_txtPinFocusGained
         jLabel6.setVisible(true);
@@ -663,56 +708,41 @@ public class Apply extends javax.swing.JDialog {
 
     private void cmbSelectRAMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_cmbSelectRAMouseEntered
         jLabel5.setForeground(Color.black);
-        setInformation("Please select your local RA");
+        jLabel5.setText("Select your local RA operator");
     }//GEN-LAST:event_cmbSelectRAMouseEntered
 
     private void cmbSelectRAMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_cmbSelectRAMouseExited
-        if (isInputReady()) {
-            setInformation(this.readyInfo);
-        } else {
-            setInformation(mainInfo);
-        }
+       //this.isInputReadyUpdateGUI(); 
     }//GEN-LAST:event_cmbSelectRAMouseExited
 
     private void txtNameMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_txtNameMouseEntered
         jLabel5.setForeground(Color.black);
-        setInformation("Please enter your name.");
+        jLabel5.setText("Specify a Common Name value - lowercase \"firstname lastname\" (provide at least TWO given names with a minimum of TWO chars each)\n");
+              
     }//GEN-LAST:event_txtNameMouseEntered
 
     private void txtNameMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_txtNameMouseExited
-        if (isInputReady()) {
-            setInformation(this.readyInfo);
-        } else {
-            setInformation(mainInfo);
-        }
+        //this.isInputReadyUpdateGUI();
     }//GEN-LAST:event_txtNameMouseExited
 
     private void txtEmailMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_txtEmailMouseEntered
         jLabel5.setForeground(Color.black);
-        setInformation("Please enter a valid email address. This will be used to "
+        jLabel5.setText("Enter a valid email address. This will be used to "
                 + "send you information regarding your certificate.");
     }//GEN-LAST:event_txtEmailMouseEntered
 
     private void txtEmailMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_txtEmailMouseExited
-        if (isInputReady()) {
-            setInformation(this.readyInfo);
-        } else {
-            setInformation(mainInfo);
-        }
+        //this.isInputReadyUpdateGUI();
     }//GEN-LAST:event_txtEmailMouseExited
 
     private void txtPinMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_txtPinMouseEntered
         jLabel5.setForeground(Color.black);
-        setInformation("Please enter a 10 character pin to help identify "
+        jLabel5.setText("Enter and confirm a 10 character pin to help identify "
                 + "yourself to an RA Operator");
     }//GEN-LAST:event_txtPinMouseEntered
 
     private void txtPinMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_txtPinMouseExited
-        if (isInputReady()) {
-            setInformation(this.readyInfo);
-        } else {
-            setInformation(mainInfo);
-        }
+        //this.isInputReadyUpdateGUI();
     }//GEN-LAST:event_txtPinMouseExited
 
     private void txtPinFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_txtPinFocusLost
@@ -721,29 +751,57 @@ public class Apply extends javax.swing.JDialog {
 
     private void txtConfirmMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_txtConfirmMouseEntered
         jLabel5.setForeground(Color.black);
-        setInformation("Please enter your pin again for confirmation");
+        jLabel5.setText("Please enter your pin again for confirmation");
     }//GEN-LAST:event_txtConfirmMouseEntered
 
     private void txtConfirmMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_txtConfirmMouseExited
-        if (isInputReady()) {
-            setInformation(this.readyInfo);
-        } else {
-            setInformation(mainInfo);
-        }
+        //this.isInputReadyUpdateGUI();
     }//GEN-LAST:event_txtConfirmMouseExited
 
-    private void txtPinActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtPinActionPerformed
+    private void txtNameKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtNameKeyReleased
         // TODO add your handling code here:
-    }//GEN-LAST:event_txtPinActionPerformed
+        this.isInputReadyUpdateGUI(); 
+    }//GEN-LAST:event_txtNameKeyReleased
 
-    private void aliasTextFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_aliasTextFieldActionPerformed
+    private void txtEmailKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtEmailKeyReleased
         // TODO add your handling code here:
-    }//GEN-LAST:event_aliasTextFieldActionPerformed
+        this.isInputReadyUpdateGUI(); 
+    }//GEN-LAST:event_txtEmailKeyReleased
+
+    private void txtPinKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtPinKeyReleased
+        // TODO add your handling code here:
+        this.isInputReadyUpdateGUI(); 
+    }//GEN-LAST:event_txtPinKeyReleased
+
+    private void txtConfirmKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtConfirmKeyReleased
+        // TODO add your handling code here:
+        this.isInputReadyUpdateGUI(); 
+    }//GEN-LAST:event_txtConfirmKeyReleased
+
+    private void aliasTextFieldKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_aliasTextFieldKeyReleased
+        // TODO add your handling code here:
+        this.isInputReadyUpdateGUI(); 
+    }//GEN-LAST:event_aliasTextFieldKeyReleased
+
+    private void cmbSelectRAActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmbSelectRAActionPerformed
+        // TODO add your handling code here:
+        this.isInputReadyUpdateGUI();
+    }//GEN-LAST:event_cmbSelectRAActionPerformed
+
+    private void aliasTextFieldMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_aliasTextFieldMouseEntered
+        // TODO add your handling code here:
+        jLabel5.setForeground(Color.black);
+        jLabel5.setText("Enter an alias for this certificate (i.e. a simple display name such as \"myGridCert 1\")");
+    }//GEN-LAST:event_aliasTextFieldMouseEntered
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextField aliasTextField;
+    private javax.swing.JLabel aliasValidPinLabel;
     private javax.swing.JButton btnApply;
     private javax.swing.JButton btnCancel;
     private javax.swing.JComboBox cmbSelectRA;
+    private javax.swing.JLabel cnValidLabel;
+    private javax.swing.JLabel emailValidLabel;
     private javax.swing.JDesktopPane jDesktopPane1;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
@@ -755,6 +813,8 @@ public class Apply extends javax.swing.JDialog {
     private javax.swing.JLabel labCN;
     private javax.swing.JLabel labEmail;
     private javax.swing.JLabel labelRequestorId;
+    private javax.swing.JLabel pinValidLabel;
+    private javax.swing.JLabel raValidLabel;
     private javax.swing.JPasswordField txtConfirm;
     private javax.swing.JTextField txtDN;
     private javax.swing.JTextField txtEmail;
@@ -762,7 +822,4 @@ public class Apply extends javax.swing.JDialog {
     private javax.swing.JPasswordField txtPin;
     // End of variables declaration//GEN-END:variables
 
-    private void setInformation(String text) {
-        jLabel5.setText(text);
-    }
 }

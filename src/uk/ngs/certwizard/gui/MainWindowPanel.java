@@ -905,7 +905,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         }
     }
 
-    private boolean confirmBackgroundTaskRunning() {
+    public boolean confirmBackgroundTaskRunning() {
         if (this.onlineUpdateTask != null && !this.onlineUpdateTask.isDone()) {
             //if(this.onlineUpdateTaskRunning.get()){
             JOptionPane.showMessageDialog(this,
@@ -926,14 +926,20 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
      * Change the keyStore password.
      */
     private void doChangePasswdAction() {
-        if (this.confirmBackgroundTaskRunning()) {
+        KeyStorePropertiesJDialog dialog = new KeyStorePropertiesJDialog(null, true, this, caKeyStoreModel); 
+        dialog.setLocationRelativeTo(this); 
+        dialog.setVisible(true); 
+        if(dialog.getPassphase() != null){
+            this.PASSPHRASE = dialog.getPassphase(); 
+        }
+        /*if (this.confirmBackgroundTaskRunning()) {
             return;
         }
        KeyStoreChangePasswordGuiHelper pwChange = new KeyStoreChangePasswordGuiHelper(this, this.caKeyStoreModel); 
        char[] newPassword = pwChange.changeKeyStorePassword(); 
        if(newPassword != null){
            this.PASSPHRASE = newPassword; 
-       }
+       }*/
     }
 
     /**
@@ -1786,8 +1792,8 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
         jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder("Certificates in my Keystore"));
 
-        btnChangePasswd.setText("Change Password");
-        btnChangePasswd.setToolTipText("Your certificates are stored in a password protected keystore file.");
+        btnChangePasswd.setIcon(new javax.swing.ImageIcon(getClass().getResource("/help_panel_html/images/view_icon.gif"))); // NOI18N
+        btnChangePasswd.setToolTipText("View details of your password protected keystore file.");
         btnChangePasswd.setActionCommand("Change KeyStore Password");
         btnChangePasswd.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
@@ -1837,8 +1843,8 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(jPanel2Layout.createSequentialGroup()
                 .addContainerGap()
-                .add(btnChangePasswd)
-                .add(25, 25, 25)
+                .add(btnChangePasswd, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 33, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                 .add(jComboBox1, 0, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(btnRefreshAll, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 37, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
@@ -1852,7 +1858,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                     .add(jPanel2Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                         .add(jComboBox1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 28, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                         .add(btnChangePasswd)))
-                .addContainerGap(13, Short.MAX_VALUE))
+                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         btnCancelOnlineUpdate.setIcon(new javax.swing.ImageIcon(getClass().getResource("/uk/ngs/ca/images/stopRedCrossIcon.gif"))); // NOI18N
@@ -2045,8 +2051,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     }//GEN-LAST:event_btnChangePasswdActionPerformed
 
     private void btnChangePasswdMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnChangePasswdMouseEntered
-        setMOD("Change the Certificate Wizard global password used to protect all your certificates in Certificate Wizard");
-
+        setMOD("View your keyStore file details and change the password used to protect this keyStore");
     }//GEN-LAST:event_btnChangePasswdMouseEntered
 
     private void btnChangePasswdMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnChangePasswdMouseExited

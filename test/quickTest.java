@@ -15,7 +15,6 @@ import org.junit.*;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import uk.ngs.ca.common.GuiExecutor;
-import uk.ngs.ca.common.MyPattern;
 import uk.ngs.certwizard.gui.GeneralMessageDialog;
 
 /**
@@ -77,15 +76,7 @@ public class quickTest {
         assertTrue(alphaNumericSpaceOnly.matcher(okSeq).matches());
     }
     
-    @Test
-    public void testMyPattern(){
-        MyPattern mp = new MyPattern(); 
-        //String cn = mp._getCN("davídó garçoné"); 
-        //System.out.println(cn);
-        boolean validCN = mp.isValidCN("davídó garçoné");
-        //mp.getCN();
-        assertFalse(validCN); 
-    }
+
     
     
     
