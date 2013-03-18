@@ -148,7 +148,7 @@ public final class PingService {
     String message = SysProperty.setupTrustStore();
     if (message == null) {
     String trustStoreFile = SysProperty.getValue("ngsca.truststore.file");
-    String trustStorePath = System.getProperty("user.home");
+    String trustStorePath = SystemStatus.getInstance().getHomeDir(); 
     trustStorePath = trustStorePath + System.getProperty("file.separator") + ".ca";
     trustStorePath = trustStorePath + System.getProperty("file.separator") + trustStoreFile;
 

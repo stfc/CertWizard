@@ -15,6 +15,7 @@ import java.util.logging.Level;
 import org.bouncycastle.jce.provider.unlimited.PKCS12KeyStoreUnlimited;
 import uk.ngs.ca.common.CAKeyPair;
 import uk.ngs.ca.common.FileUtils;
+import uk.ngs.ca.common.SystemStatus;
 import uk.ngs.ca.tools.property.SysProperty;
 
 /**
@@ -83,7 +84,7 @@ public final class ClientKeyStore {
      * @throws IllegalStateException if the KeyStore cannot be initialized.
      */
     private ClientKeyStore(char[] passphrase) throws KeyStoreException, IOException, CertificateException{
-        String caDir = System.getProperty("user.home") + File.separator + ".ca";
+        String caDir = SystemStatus.getInstance().getHomeDir() + File.separator + ".ca";
         this.PASSPHRASE = passphrase;
         this.keyStoreFilePath = caDir + File.separator + SysProperty.getValue("ngsca.key.keystore.file");
         this.backupDir = caDir + File.separator + "backup"; 

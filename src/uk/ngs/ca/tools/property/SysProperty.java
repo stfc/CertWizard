@@ -46,6 +46,7 @@ import org.apache.log4j.Logger;
 
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
+import uk.ngs.ca.common.SystemStatus;
 
 /**
  * This class manages the attributes which recorded in the property file.
@@ -111,7 +112,7 @@ public class SysProperty {
             throw new IllegalStateException("[SysProperty] could not find out the value of " + key + " in your property file.");
         }
 
-        /*String homePath = System.getProperty("user.home");
+        /*String homePath = SystemStatus.getInstance().getHomeDir().getAbsolutePath(); 
         homePath = homePath + System.getProperty("file.separator") + FILEPATH;
         if (!new File(homePath).isDirectory()) {
             new File(homePath).mkdir();
@@ -138,7 +139,8 @@ public class SysProperty {
             }
         }*/
 
-        String absPath = System.getProperty("user.home") + File.separator + FILEPATH + File.separator + value;
+        String absPath = SystemStatus.getInstance().getHomeDir().getAbsolutePath() 
+                + File.separator + FILEPATH + File.separator + value;
         // check if the size of file is zero, if yes, then remove it and create a new template file.
         if ( !(new File(absPath).exists()) || (new File(absPath).length() == 0)) {
             SysProperty.createTemplateFile(absPath);
@@ -280,7 +282,7 @@ public class SysProperty {
         if (value == null) {
             throw new IllegalStateException("There is no trust store file name. Please check out config.properties.");
         }
-        String homePath = System.getProperty("user.home");
+        String homePath = SystemStatus.getInstance().getHomeDir().getAbsolutePath();
         homePath = homePath + System.getProperty("file.separator") + ".ca";
         homePath = homePath + System.getProperty("file.separator") + value;
 
@@ -359,7 +361,7 @@ public class SysProperty {
             message = "There is no trust store file name. Please check out config.properties.";
         }
 
-        String homePath = System.getProperty("user.home");
+        String homePath = SystemStatus.getInstance().getHomeDir().getAbsolutePath();
         homePath = homePath + System.getProperty("file.separator") + ".ca";
         homePath = homePath + System.getProperty("file.separator") + value;
 

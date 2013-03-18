@@ -4,6 +4,8 @@
  */
 package xmlparsing;
 
+import java.io.File;
+import java.io.FilePermission;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Element;
@@ -14,6 +16,10 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.StringReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.AccessController;
 import java.util.regex.Pattern;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.junit.After;
@@ -51,6 +57,8 @@ public class TestParseXMLErrorDoc {
     @After
     public void tearDown() {
     }
+
+
     
     @Test 
     public void quickTest() throws Exception{
@@ -62,6 +70,12 @@ public class TestParseXMLErrorDoc {
         assertEquals("three", vals[2]); 
         assertEquals("four", vals[3]); 
         assertEquals("five", vals[4]); 
+        
+
+        assertTrue(Files.isWritable(Paths.get(System.getProperty("user.home")))); 
+        //Path p = Files.createTempFile(Paths.get(System.getProperty("user.home")), "certwiz", ".tmp");
+        //File.createTempFile(sample, sample, null)
+        //AccessController.checkPermission(new FilePermission("C:/Users/pcinstall", "read,write"));
     }
 
 

@@ -84,10 +84,16 @@ TODOs:
 There are lots of to do items. Much of the code needs refactoring (many parts 
 are poorly written with 3rd party legacy). 
 
-- Show location of keyStore file (currently is just shown on password panel). 
+- Check old UK eSci 2007 CA certificate is removed from auto-deploy.  
+- Remove "Authority CLRC" from RA list and update the RA list in the DB. 
+  OpenCA gets the list of RAs from /usr/local/OpenCA/etc/**/*.conf 
+  (there is probably a ra.conf, a ca.conf, and a server.conf and something to that effect, which contains a line with a list of RAs in alphabetical order). 
+  For CertWizard, we should try to ensure that the deprecated RAs - like Authority CLRC and CLRC External - are not displayed.  One way of doing this is to have a "deprecated" flag in the database - I assume they're coming from raoplist? - and maybe even a view which hides the deprecated ones.
+ 
 - Export multiple certificates into a PKCS12 file (currently, can only export one at a time)  
 - When exporting certs, need to change the perms on *nix box much like 
   when installing the pem files (think this may be done - check).  
 - Edit/choose Colours 
 - Apply needs fixing for the regex pattern to prevent accented chars. 
-
+- Cater for following bug: System property "user.home" does not correspond to "USERPROFILE" (win)
+   http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4787931

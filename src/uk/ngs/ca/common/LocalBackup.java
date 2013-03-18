@@ -21,7 +21,7 @@ public class LocalBackup {
     public boolean isSuccess() {
         String _keyFile = SysProperty.getValue("ngsca.key.keystore.file");
         String _keyBackupFile = SysProperty.getValue("ngsca.key.keystore.backup.file");
-        String backupDir = System.getProperty("user.home");
+        String backupDir = SystemStatus.getInstance().getHomeDir().getAbsolutePath(); 
         backupDir = backupDir + System.getProperty("file.separator") + ".ca";
         String configDir = backupDir;
         backupDir = backupDir + System.getProperty("file.separator") + "backup";

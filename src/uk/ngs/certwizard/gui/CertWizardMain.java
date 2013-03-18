@@ -9,11 +9,17 @@ import java.awt.Toolkit;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import org.globus.common.CoGProperties;
+import uk.ngs.ca.common.SystemStatus;
 import uk.ngs.ca.tools.property.SysProperty;
 
 /**
@@ -26,6 +32,7 @@ public class CertWizardMain extends javax.swing.JFrame {
 
     private OnlineStatus onlineStatusPanel = new OnlineStatus();
     private JTabbedPane tabbedPane = new JTabbedPane();
+    
 
     /**
      * Creates new form CertWizardMainFrame
@@ -45,14 +52,18 @@ public class CertWizardMain extends javax.swing.JFrame {
 
         String title = SysProperty.getValue("ngsca.certwizard.version");
         this.setTitle(title);
-        //frame = new JFrame( title );
-        //frame.setResizable(true);
-        if (!checkGlobusDirectory()) {
-            System.exit(0);
+        GetBootstrapDir bootDia = new GetBootstrapDir(this, true, ".ca"); 
+        bootDia.setLocationRelativeTo(null); 
+        bootDia.setVisible(true); 
+        Path homeDir = bootDia.getBootDir(); 
+        if(homeDir == null){
+           System.exit(0); 
         }
-        if (!checkCADirectory()) {
-            System.exit(0);
+        if(homeDir.endsWith(".ca")){
+            homeDir = homeDir.getParent(); 
         }
+        SystemStatus.getInstance().setHomeDir(homeDir.toFile()); 
+        
 
         // TODO - determine how the Apache http/https connector (org.apache.httpclient.jar)
         // determines the proxy settings to use. 
@@ -62,7 +73,7 @@ public class CertWizardMain extends javax.swing.JFrame {
         try {
             SysProperty.setupTrustStore(); // throws IllegalStateException if prob
             String trustStoreFile = SysProperty.getValue("ngsca.truststore.file");
-            String trustStorePath = System.getProperty("user.home");
+            String trustStorePath = SystemStatus.getInstance().getHomeDir().getAbsolutePath();
             trustStorePath = trustStorePath + System.getProperty("file.separator") + ".ca";
             trustStorePath = trustStorePath + System.getProperty("file.separator") + trustStoreFile;
 
@@ -83,6 +94,12 @@ public class CertWizardMain extends javax.swing.JFrame {
 
         this.initTabbedPane();
 
+        // Here we start the ping task in the background so we need to: 
+        // 1) maybe read a file for the webproxy host/port/username/password
+        // 2) if file is not present, attempt to determine webproxy settings automatically (vole) 
+        // 3) Can always fallback to a dialox  
+        // 
+        // This needs the proxy settings to be set correctly . 
         //System.setProperty("http.proxyHost", "wwwnotexist.tr.ld");
         //System.setProperty("http.proxyHost", "wwwcache.dl.ac.uk");     
         // Run ping check in a new thread so we don't block while it tries to connect.
@@ -146,59 +163,6 @@ public class CertWizardMain extends javax.swing.JFrame {
         });
     }
 
-    /**
-     * Checks if the ~/.globus directory exists. If not, it creates one. Returns
-     * false if an error has occurred
-     */
-    private boolean checkGlobusDirectory() {
-        //if(true)return false;
-        File globusDir = new File(System.getProperty("user.home"), ".globus");
-        if (globusDir.exists() && globusDir.isDirectory()) {
-            return true;
-        } else {
-            // try to make the dir !
-            if (globusDir.mkdir()) {
-                return true;
-            } else {
-                JOptionPane.showMessageDialog(
-                        null,
-                        "[" + globusDir.getAbsolutePath() + "]  is not a directory.\n"
-                        + "A .globus directory is needed in your HOME directory.\n"
-                        + "However this directory could not be created: Either a file "
-                        + "with that name already exists or you do not have the required permissions."
-                        + "\nPlease either remove or rename the .globus file or ensure you have the necessary permissions, then restart this wizard.",
-                        "Error", JOptionPane.ERROR_MESSAGE);
-                return false;
-            }
-        }
-    }
-
-    /**
-     * Checks if the ~/.ca directory exists. If not, it creates one. Returns
-     * false if an error has occurred
-     */
-    private boolean checkCADirectory() {
-        //if(true)return false;
-        File caDir = new File(System.getProperty("user.home"), ".ca");
-        if (caDir.exists() && caDir.isDirectory()) {
-            return true;
-        } else {
-            // try to make the dir !
-            if (caDir.mkdir()) {
-                return true;
-            } else {
-                JOptionPane.showMessageDialog(
-                        null,
-                        "[" + caDir.getAbsolutePath() + "]  is not a directory.\n"
-                        + "A .ca directory is needed in your HOME directory.\n"
-                        + "However this directory could not be created: Either a file "
-                        + "with that name already exists or you do not have the required permissions."
-                        + "\nPlease either remove or rename the .ca file or ensure you have the necessary permissions, then restart this wizard.",
-                        "Error", JOptionPane.ERROR_MESSAGE);
-                return false;
-            }
-        }
-    }
 
     /**
      * See if pem files already exist in default location
@@ -288,7 +252,9 @@ public class CertWizardMain extends javax.swing.JFrame {
         java.awt.EventQueue.invokeLater(new Runnable() {
 
             public void run() {
-                new CertWizardMain().setVisible(true);
+                CertWizardMain cw = new CertWizardMain(); 
+                cw.setLocationRelativeTo(null); 
+                cw.setVisible(true);
             }
         });
     }

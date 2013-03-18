@@ -21,7 +21,17 @@ public class SystemStatus extends Observable {
     //public static AtomicBoolean ISINIT = new AtomicBoolean(false);;
     private String errorMessage = null;
 
+    private File homeDir = new File(System.getProperty("user.home")); 
+
     private boolean isOnline = false;
+
+    public synchronized File getHomeDir(){
+        return new File(this.homeDir.getAbsolutePath()); 
+    }
+
+    public synchronized void setHomeDir(File dir){
+        this.homeDir = dir; 
+    }
    
     public synchronized boolean getIsOnline(){
         return this.isOnline;
@@ -72,7 +82,7 @@ public class SystemStatus extends Observable {
         if (value == null) {
             System.out.println("[SystemStatus] could not find out the value of " + key + " in your property file.");
         }
-        String homePath = System.getProperty("user.home");
+        String homePath = SystemStatus.getInstance().getHomeDir().getAbsolutePath(); 
         homePath = homePath + System.getProperty("file.separator") + ".ca";
         homePath = homePath + System.getProperty("file.separator") + value;
         if (new File(homePath).exists()) {
