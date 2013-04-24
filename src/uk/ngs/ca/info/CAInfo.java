@@ -5,7 +5,9 @@
 package uk.ngs.ca.info;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.*;
 import org.restlet.Client;
@@ -100,8 +102,7 @@ public class CAInfo {
             XPath xpath = XPathFactory.newInstance().newXPath();
             XPathExpression expr = xpath.compile("/CA/RAlist/ra");
             NodeList raLists = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
-            String[] RAs = new String[raLists.getLength()];
-
+            List<String> RAs = new ArrayList(); 
             for (int i = 0; i < raLists.getLength(); i++) {
                 Element raElement = (Element) raLists.item(i);
                 NodeList ouLists = raElement.getElementsByTagName("ou");
@@ -111,12 +112,14 @@ public class CAInfo {
                 NodeList lLists = raElement.getElementsByTagName("l");
                 Element lElement = (Element) lLists.item(0);
                 String l = lElement.getFirstChild().getNodeValue();
-
-                String RA = ou + " " + l;
-                RAs[i] = RA;
+                
+                if(ou != null && l != null){
+                    String RA = ou.trim() + " " + l.trim();
+                    RAs.add(RA);
+                }
             }
-            Arrays.sort(RAs);
-            return RAs; 
+            //Arrays.sort(RAs); // do not sort, we need to preserve the order returned from server 
+            return RAs.toArray(new String[0]);  
         } catch(XPathExpressionException ex){
             throw new IllegalStateException("Problem parsing RAList", ex); // coding error
         }

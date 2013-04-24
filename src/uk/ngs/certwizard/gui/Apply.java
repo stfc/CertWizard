@@ -42,7 +42,7 @@ public class Apply extends javax.swing.JDialog {
     private final X509Certificate authCert;
     private final PrivateKey authKey;
     private final ClientKeyStoreCaServiceWrapper model;
-    private final Pattern cnPattern = Pattern.compile("[-()a-zA-Z0-9\\s]+");
+    private final Pattern userCN_Pattern = Pattern.compile("[-()a-zA-Z0-9\\s]+");
     private final javax.swing.ImageIcon errorIcon = new javax.swing.ImageIcon(getClass().getResource("/help_panel_html/images/error.png"));
     private final javax.swing.ImageIcon acceptIcon = new javax.swing.ImageIcon(getClass().getResource("/help_panel_html/images/accept.png"));
 
@@ -251,17 +251,17 @@ public class Apply extends javax.swing.JDialog {
     }
 
     /**
-     * Check that the given CN is valid for display. 
+     * Check that the given user CN is valid for display. 
      * Note, this is not the fully validated CN (just that the display DN is OK
      * for further preparation such as making lowercase, trimming etc).  
      * @param cn
      * @return 
      */
-    private boolean isDisplayCNValid(String cn){
+    private boolean isDisplayUserCNValid(String cn){
         if(cn == null) {
             return false;
         } 
-        if(!cnPattern.matcher(this.txtName.getText()).matches()){
+        if(!userCN_Pattern.matcher(this.txtName.getText()).matches()){
           return false; 
         }
         // don't do this here as whenever usr enters a dn, it is continuously 
@@ -316,7 +316,7 @@ public class Apply extends javax.swing.JDialog {
         
         // Common Name 
         if (CERT_TYPE.USER_CERT.equals(this.certType)) {
-            if(!this.isDisplayCNValid(this.txtName.getText())){
+            if(!this.isDisplayUserCNValid(this.txtName.getText())){
                 complete = false;
                 this.cnValidLabel.setIcon(this.errorIcon); 
             } else {
@@ -326,9 +326,10 @@ public class Apply extends javax.swing.JDialog {
         } else {
             // TODO: have to cope with 'service/host.domain.ac.uk'
             if (!DomainValidator.getInstance().isValid(this.txtName.getText())) {
-                complete = false;
+                 complete = false;
                  this.cnValidLabel.setIcon(this.errorIcon); 
             } else {
+                this.txtName.setText(this.txtName.getText().toLowerCase());
                 this.cnValidLabel.setIcon(this.acceptIcon); 
             }
         }
@@ -649,20 +650,22 @@ public class Apply extends javax.swing.JDialog {
                     .add(org.jdesktop.layout.GroupLayout.TRAILING, labelRequestorId)
                     .add(org.jdesktop.layout.GroupLayout.TRAILING, txtDN, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(cmbSelectRA, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(jLabel7)
-                    .add(raValidLabel))
+                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                    .add(org.jdesktop.layout.GroupLayout.TRAILING, raValidLabel)
+                    .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                        .add(cmbSelectRA, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                        .add(jLabel7)))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(txtName, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                     .add(labCN)
                     .add(cnValidLabel))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(txtEmail, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(labEmail)
-                    .add(emailValidLabel))
+                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                    .add(emailValidLabel)
+                    .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                        .add(txtEmail, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                        .add(labEmail)))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(jLabel3)
