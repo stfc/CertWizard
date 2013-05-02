@@ -22,6 +22,33 @@ import uk.ngs.ca.tools.property.SysProperty;
  */
 public class ResourcesPublicKey {
 
+    /* 
+     * Returned Document has the form:
+     <resources>
+       <resource>
+        <publickey>+z8uM1DvrAKc3VRSFmY7M/Whr9OTbuqv0AInjw4s6aVm/QG1EPU3pFwIDAQAB...elided...</publickey>
+        <CSRs>
+        </CSRs>
+            <certificates>
+              <certificate>
+                <id>3510</id>
+                <X509Certificate>-----BEGIN CERTIFICATE-----...elided...-----END CERTIFICATE-----</X509Certificate>
+                <status>VALID</status>
+                <useremail>some.body@stfc.ac.uk</useremail>
+                <role>RA Operator</role>
+                <RA><OU>CLRC</OU><L>DL</L></RA>
+                <owner>CN=some body,L=DL,OU=CLRC,O=eScienceDev,C=UK</owner>
+                <startdate>23/04/2013</startdate>
+                <enddate>20/10/2013</enddate>
+                <lifedays>171</lifedays>
+                <renew>20/10/2013</renew>
+              </certificate>
+            </certificates>
+        <CCRs/>
+        <CRRs>...</CRRs>
+        </resource>
+     </resources>
+     */
     private Document document = null;
     private String encodedPublicKey = null;
 
@@ -38,6 +65,7 @@ public class ResourcesPublicKey {
             // url = /resources/resource/publickey/<base64encodedpubkey>
             String resourceURL = SysProperty.getValue("uk.ngs.ca.request.resource.publickey");
             resourceURL = resourceURL + "/" + this.encodedPublicKey;
+            //System.out.println("publickeyresourceurl: "+resourceURL);
             Client c = new Client(Protocol.HTTPS);
             c.setConnectTimeout(SysProperty.getTimeoutMilliSecs());  // in milliseconds (8 secs). TODO: should be editable and stored in .properties file 
 
