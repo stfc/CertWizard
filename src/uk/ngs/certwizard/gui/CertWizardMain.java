@@ -26,7 +26,7 @@ import uk.ngs.ca.tools.property.SysProperty;
  * The main frame class. 
  * 
  * @author Xiao Wang
- * @author David Meredith
+ * @author David Meredith (modifications) 
  */
 public class CertWizardMain extends javax.swing.JFrame {
 
@@ -76,6 +76,7 @@ public class CertWizardMain extends javax.swing.JFrame {
             String trustStorePath = SystemStatus.getInstance().getHomeDir().getAbsolutePath();
             trustStorePath = trustStorePath + System.getProperty("file.separator") + ".ca";
             trustStorePath = trustStorePath + System.getProperty("file.separator") + trustStoreFile;
+            System.out.println("trustStore file path ["+trustStorePath+"]");
 
             String password = SysProperty.getValue("ngsca.cert.truststore.password");
             System.setProperty("javax.net.ssl.trustStore", trustStorePath);
