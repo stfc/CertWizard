@@ -11,10 +11,7 @@ import java.awt.event.ComponentEvent;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
@@ -52,10 +49,59 @@ public class CertWizardMain extends javax.swing.JFrame {
 
         String title = SysProperty.getValue("ngsca.certwizard.version");
         this.setTitle(title);
+
+        // ********************* USE this for Java 1.6 (DONT forget to comment out the java.nio import above) 
+        /*File homeDir = new File(System.getProperty("user.home"));
+        SystemStatus.getInstance().setHomeDir(homeDir);
+        File caDir = new File(homeDir, System.getProperty("file.separator") + ".ca");
+        if (!caDir.exists()) {
+            if (!caDir.mkdir()) {
+                JOptionPane.showMessageDialog(null,
+                        "Can't create '$HOME/.ca' dir. Please edit this directories permissions \n[" + caDir.getAbsolutePath() + "]",
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                System.exit(0);
+            }
+        }
+        // Check that caDir is a directory 
+        if (!caDir.isDirectory()) {
+            JOptionPane.showMessageDialog(null,
+                    "'HOME/.ca' is not a directory. CWiz needs to store its configuration in the following dir: \n[" + caDir.getAbsolutePath() + "]",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            System.exit(0);
+        }
+        
+        // See if the HOME/.ca directory is writable 
+        boolean writable = true; 
+        if(!caDir.canWrite()){
+            writable = false; 
+        }
+        // Also need to create a tmp file to see if this dir is writable (can't just rely on 
+        // caDir.canWrite() as this is not reliable due to java bug: 
+        // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4787931 
+        File tmp = null; 
+        try{
+            tmp = File.createTempFile("cwiztouchtmp", ".tmp", caDir); 
+            writable = true; 
+        } catch(IOException ex){
+            writable = false; 
+        } finally {
+            try{ if(tmp!=null){tmp.delete(); }}catch(Exception ex){}
+        }
+        if (!writable) {
+            JOptionPane.showMessageDialog(null,
+                    "Can't write to 'HOME/.ca' directory. CWiz needs to store its configuration in the following dir: \n[" + caDir.getAbsolutePath() + "]",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            System.exit(0);
+        }*/
+        
+        
+        
+        // ********************* USE this for Java 1.7 
         GetBootstrapDir bootDia = new GetBootstrapDir(this, true, ".ca"); 
         bootDia.setLocationRelativeTo(null); 
         bootDia.setVisible(true); 
         Path homeDir = bootDia.getBootDir(); 
+         
         if(homeDir == null){
            System.exit(0); 
         }
@@ -63,6 +109,8 @@ public class CertWizardMain extends javax.swing.JFrame {
             homeDir = homeDir.getParent(); 
         }
         SystemStatus.getInstance().setHomeDir(homeDir.toFile()); 
+        //*********************************/
+
         
 
         // TODO - determine how the Apache http/https connector (org.apache.httpclient.jar)
