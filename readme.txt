@@ -84,16 +84,30 @@ TODOs:
 There are lots of to do items. Much of the code needs refactoring (many parts 
 are poorly written with 3rd party legacy). 
 
-- Check old UK eSci 2007 CA certificate is removed from auto-deploy.  
-- Remove "Authority CLRC" from RA list and update the RA list in the DB. 
-  OpenCA gets the list of RAs from /usr/local/OpenCA/etc/**/*.conf 
-  (there is probably a ra.conf, a ca.conf, and a server.conf and something to that effect, which contains a line with a list of RAs in alphabetical order). 
-  For CertWizard, we should try to ensure that the deprecated RAs - like Authority CLRC and CLRC External - are not displayed.  One way of doing this is to have a "deprecated" flag in the database - I assume they're coming from raoplist? - and maybe even a view which hides the deprecated ones.
- 
+- Update to a new BC provider that contains the 'Permissions: all-permissions' in the 
+   BC jar manifest. Problem is that we can't just add this new attribute to the 
+   jar's manifest (using jar ufm bc.jar mymanifestupdate.txt) as it would 
+   invalidate the BC signature. 
+   We also can't unpack this jar, remove the BC signatures, update jar's 
+   manifest and re-sign with our own code-sign cert because the JRE don't 
+   trust the provider without the BC signature ! 
+   See: 
+   http://bouncy-castle.1462172.n4.nabble.com/Deploying-BC-in-JWS-and-new-manifest-attributes-in-JDK7u25-td4656420.html  
+   http://docs.oracle.com/javase/7/docs/technotes/guides/jweb/no_redeploy.html#permissions
+
+- Address following bug: System property "user.home" does not correspond to "USERPROFILE" (win)
+   http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4787931
+
 - Export multiple certificates into a PKCS12 file (currently, can only export one at a time)  
 - When exporting certs, need to change the perms on *nix box much like 
   when installing the pem files (think this may be done - check).  
 - Edit/choose Colours 
 - Apply needs fixing for the regex pattern to prevent accented chars. 
-- Cater for following bug: System property "user.home" does not correspond to "USERPROFILE" (win)
-   http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4787931
+
+
+Deprecated todos:
+=================
+- Remove "Authority CLRC" from RA list and update the RA list in the DB. 
+  OpenCA gets the list of RAs from /usr/local/OpenCA/etc/**/*.conf 
+  (there is probably a ra.conf, a ca.conf, and a server.conf and something to that effect, which contains a line with a list of RAs in alphabetical order). 
+  For CertWizard, we should try to ensure that the deprecated RAs - like Authority CLRC and CLRC External - are not displayed.  One way of doing this is to have a "deprecated" flag in the database - I assume they're coming from raoplist? - and maybe even a view which hides the deprecated ones.

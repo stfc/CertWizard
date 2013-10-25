@@ -165,7 +165,7 @@ public class CertWizardMain extends javax.swing.JFrame {
             homeDir = homeDir.getParent(); 
         }
         SystemStatus.getInstance().setHomeDir(homeDir.toFile()); 
-        //*********************************/
+        //*********************************
     }
     
     private void createGlobusDirIfNotExistsShowWarnings(){
@@ -204,7 +204,7 @@ public class CertWizardMain extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(null,
                     "Can't write to 'HOME/.globus' directory. "
                             + "Globus needs to store configuration in the following dir: \n[" + globusDir.getAbsolutePath() + "]\n"
-                            + "You will not be able to use MyProxy or grid-proxy-init. Please add this directory manually and provide write permissions",
+                            + "You will not be able to use MyProxy or grid-proxy-init. Please add this directory manually, provide write permissions and restart.",
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
