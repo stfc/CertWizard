@@ -50,9 +50,13 @@ Configuration:
     If you want to access different CA server, just overwrite configure.properties by
     using the above template files.
 
-3) For new CA servers, add the public host cert (in pem format) of the CA-Server you need to interact with
- to the 'uk/ngs/ca/tool/property/hostcert.pem' XML file (this file already includes certs 
- for cwiz-live and cwiz.ca). 
+3) For new CA servers, either add the host cert pem of the CA-Server host you 
+need to interact with OR the CA cert chain that signed the CA-Server's hosts cert to 
+'uk/ngs/ca/tool/property/hostcert.pem' XML file (certs need to be in pem format).   
+
+This file is configured with the UK eSci CA chain (CA cert and root) so it can
+be used against cwiz-live and cwiz.ca without modification.
+ 
 This file is actually an XML file (not a pem encoded cert) and can store 
 multiple public certs for convenience. Note, when
 adding the base64 encoded pem file, do not have any spaces after <hostcert>
@@ -71,12 +75,23 @@ don't actually need netbeans to build/compile the project)
 
 Running:
 ===========
-
 cd into the dist dir and run: 
 java -jar Certwizard.jar
 
 cd into the build dir and run:
 java uk.ngs.certwizard.gui.CertWizardMain
+
+
+Crytpo BC notes
+=================
+CWiz requires an unlimited strength jce security provider to allow big password 
+access to a PKCS12 keystore without policy restrictions on pw length. This is provided 
+with the following custom class that is provided as part of the 'MyProxyUploader2.jar' 
+dependency (a sub-project): 'org.bouncycastle.jce.provider.unlimited.PKCS12KeyStoreUnlimited;' 
+
+To remove the dependency on MyProxyUploader2.jar, this class would need to be 
+copied into the src tree of this project under the same package. This class 
+also requires a particular build of the BC crypto provider (jdk15-145). 
 
 
 TODOs:
