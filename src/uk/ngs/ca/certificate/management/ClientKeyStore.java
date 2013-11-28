@@ -5,7 +5,6 @@
 package uk.ngs.ca.certificate.management;
 
 import java.io.*;
-import java.nio.channels.FileChannel;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -13,7 +12,6 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.logging.Level;
 import org.bouncycastle.jce.provider.unlimited.PKCS12KeyStoreUnlimited;
-import uk.ngs.ca.common.CAKeyPair;
 import uk.ngs.ca.common.FileUtils;
 import uk.ngs.ca.common.SystemStatus;
 import uk.ngs.ca.tools.property.SysProperty;

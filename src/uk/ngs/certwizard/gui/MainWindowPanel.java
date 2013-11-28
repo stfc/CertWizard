@@ -68,7 +68,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private final CAMotd motd = new CAMotd();
     private char[] PASSPHRASE;
     private ClientKeyStoreCaServiceWrapper caKeyStoreModel = null;
-    private String stringMotDOffline = "You are working offline.\n\nYou will not be able to apply-for, renew or revoke "
+    private final String stringMotDOffline = "You are working offline.\n\nYou will not be able to apply-for, renew or revoke "
             + "your certificates until a connection has been established. "
             + "Hit the Refresh button to try and reconnect.\n\nTo configure CertWizard's connection see:\nhttp://ngs.ac.uk/tools/certwizard";
     /**
@@ -84,10 +84,11 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     //private final ScheduledExecutorService schedBackgroundExec = Executors.newSingleThreadScheduledExecutor();
     //private BackgroundTask<Void> runningOnlineUpdateTask;  // confined to AWT event thread. 
     private OnlineUpdateKeyStoreEntriesSwingWorker onlineUpdateTask = new OnlineUpdateKeyStoreEntriesSwingWorker(null, null, null);
-    private ScheduledExecutorService messageOfDayExecutor = Executors.newSingleThreadScheduledExecutor();
+    private final ScheduledExecutorService messageOfDayExecutor = Executors.newSingleThreadScheduledExecutor();
     
     /**
      * Creates new form MainWindowPanel
+     * @param passphrase
      */
     public MainWindowPanel(char[] passphrase) {
         super();
@@ -155,10 +156,12 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private class VersionUpdateTask implements Runnable {
         private String latestVersion;
 
+        @Override
         public void run() {
             latestVersion = motd.getLatestVersion();
             // MUST update the gui in the AWT event dispatch thread. 
             GuiExecutor.instance().execute(new Runnable() {
+                @Override
                 public void run() {
                     String certWizardVersion = SysProperty.getValue("ngsca.certwizard.versionNumber");
                     if (latestVersion != null && (!certWizardVersion.equals(latestVersion))) {
@@ -178,12 +181,14 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private class MessageOfDayTask implements Runnable {
         private String motdtext;
             
+        @Override
         public void run() {
             // Try to download motd and latest version only if online. 
             if(SystemStatus.getInstance().getIsOnline()){
                motdtext = motd.getText();                       
                 // MUST update the gui in the AWT event dispatch thread. 
                 GuiExecutor.instance().execute(new Runnable() {
+                    @Override
                     public void run() {
                         if(motdtext != null){
                             stringMotD = motdtext;
@@ -198,8 +203,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     /**
      * Handle onlineUpdateTask property changes (runs in AWT Event thread)
      */
-    private PropertyChangeListener onlineUpdateTaskPropertyListener = new PropertyChangeListener() {
+    private final PropertyChangeListener onlineUpdateTaskPropertyListener = new PropertyChangeListener() {
 
+        @Override
         public void propertyChange(PropertyChangeEvent e) {
             String propertyName = e.getPropertyName();
             if ("progress".equals(propertyName)) {
@@ -259,6 +265,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
      * @param obj an argument passed to the
      * <code>notifyObservers</code> method.
      */
+    @Override
     public void update(Observable observable, Object obj) {
         /*
          * if (observable != null && observable instanceof
@@ -317,6 +324,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     public final void updateKeyStoreGuiFromModel() {
         GuiExecutor.instance().execute(new Runnable() {
 
+            @Override
             public void run() {
                 reloadComboFromModel();
                 updateGUIPanel();
@@ -483,29 +491,10 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 this.vFromTo.setText("N/A");
             }
 
-//            if (selectedKeyStoreEntry.getNotAfter() != null) {
-//                this.vTo.setText(formatter.format(selectedKeyStoreEntry.getNotAfter()));
-//            } else {
-//                this.vTo.setText("N/A");
-//            }
-
-//            if (selectedKeyStoreEntry.getNotBefore() != null) {
-//                this.vFrom.setText(selectedKeyStoreEntry.getNotBefore().toString());
-//            } else {
-//                this.vFrom.setText("N/A");
-//            }
-//
-//            if (selectedKeyStoreEntry.getNotAfter() != null) {
-//                this.vTo.setText(selectedKeyStoreEntry.getNotAfter().toString());
-//            } else {
-//                this.vTo.setText("N/A");
-//            }
-
 
             // First, get the date info from the keystore entry 
-            Date endDate = selectedKeyStoreEntry.getNotAfter();
+            Date certNotAfter = selectedKeyStoreEntry.getNotAfter();
             Calendar todaysDate = Calendar.getInstance();
-
 
             // If the CertificateCSRInfo member object of the selected
             // keyStoreEntryWrapper is null, then we did not retrieve
@@ -514,28 +503,38 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             if (selectedKeyStoreEntry.getServerCertificateCSRInfo() != null) {
                 String state = selectedKeyStoreEntry.getServerCertificateCSRInfo().getStatus();
                 this.caCertStatusTextField.setText(state + " " + this.getExtraLabelTextFromState(state));
-                this.caCertStatusTextField.setForeground(this.getColorFromState(state, endDate));
+                this.caCertStatusTextField.setForeground(this.getColorFromState(state, certNotAfter));
                 this.certEmailTextField.setText(selectedKeyStoreEntry.getServerCertificateCSRInfo().getUserEmail());
             }
 
-            //Remaining time
-            if (endDate.after(todaysDate.getTime())) {
+            //Remaining time / tolerance time modifications 
+            if (certNotAfter.after(todaysDate.getTime())) {
+                // Not expired 
                 // endDate is after today (hence we have time left) 
-                long diffDays = (endDate.getTime() - todaysDate.getTimeInMillis()) / (24 * 60 * 60 * 1000);
+                long diffDays = (certNotAfter.getTime() - todaysDate.getTimeInMillis()) / (24 * 60 * 60 * 1000);
                 this.dRemaining.setText(String.valueOf(diffDays));
             } else {
-                // we are expired  
-                this.dRemaining.setText("0");
-                // this is required because the CA server returned state will be 
-                // valid even if the state is Expired (i.e. it is up to the 
-                // client to check the time remaining and set set state accordingly). 
-                this.caCertStatusTextField.setText("Expired" + " " + this.getExtraLabelTextFromState("Expired"));
+                // Expired  
+                // test to see if we expired within 30 days ago 
+                Calendar dateThirtyDaysAgo = Calendar.getInstance(TimeZone.getTimeZone("UTC")); 
+                dateThirtyDaysAgo.add(Calendar.DAY_OF_MONTH, -30);
+                if(certNotAfter.after(dateThirtyDaysAgo.getTime())){
+                    // we are within 30 day rewew tolerance ! 
+                    this.dRemaining.setText("0"); 
+                    this.caCertStatusTextField.setText("Expired but you can still renew (within 30 day tolerance period)"); 
+                } else {
+                    this.dRemaining.setText("0");
+                    // this is required because the CA server returned state will be 
+                    // valid even if the state is Expired (i.e. it is up to the 
+                    // client to check the time remaining and set set state accordingly). 
+                    this.caCertStatusTextField.setText("Expired" + " " + this.getExtraLabelTextFromState("Expired"));
+                }
             }
 
 
             //Renewal Due
             Calendar renewalDue = Calendar.getInstance();
-            renewalDue.setTime(endDate);
+            renewalDue.setTime(certNotAfter);
             renewalDue.add(Calendar.MONTH, -1);
             this.rDue.setText(formatter.format(renewalDue.getTime()));
             if (todaysDate.after(renewalDue)) {
@@ -559,6 +558,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             //setVerticalAlignment(CENTER);
         }
 
+        @Override
         public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
             //Get the selected index. (The index param isn't always valid, so just use the value.)
             //int selectedIndex = ((Integer)value).intValue();

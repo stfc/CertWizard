@@ -613,38 +613,37 @@ public class ClientKeyStoreCaServiceWrapper {
 
     /**
      * Download and update the {@link CertificateCSRInfo} for the given KeyStoreEntryWrapper 
-     * and update <code>this.clientKeyStore</code> with a newly downloaded certificate if 
+     * and optionally update <code>this.clientKeyStore</code> with a newly downloaded certificate if 
      * an update is available. Important note: the keyStore is NOT reStored to disk. 
      * <p>
      * The update details are as follows: 
      * <p>
+     * a) Update the <code>CertificateCSRInfo</code> object. 
      * If keyStoreEntryWrapper has KEY_PAIR_ENTRY type, get the PublicKey and use it
      * to query our CA to see if it has a record of that PubKey. If known, 
      * create a new <code>CertificateCSRInfo</code> from the server response(XML) 
-     * and add set the <code>keyStoreEntryWrapper.CertificateCSRInfo</code> object.
+     * and add update the <code>keyStoreEntryWrapper.CertificateCSRInfo</code> object.
      * <p>
-     * If a certificate is available, check the following pre-conditions before 
-     * updating the certificate: 
+     * b) Optionally update the corresponding KeyStore certificate if the following pre-conditions are met:   
      * <ul>
-     *  <li>KeyStoreEntryWrapper is of type {@link KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE#KEY_PAIR_ENTRY}</li>
-     *  <li>It has a member {@link CertificateCSRInfo} object with a status of 'VALID'</li>
-     *  <li>The {@link CertificateCSRInfo} member object has a serial ID for this certificate.</li>
+     *   <li>KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE has value of KEY_PAIR_ENTRY representing a local cert or CSR</li>
+     *   <li>Updated KeyStoreEntryWrapper's {@link CertificateCSRInfo} object has a status of 'VALID'</li>
+     *   <li>Updated KeyStoreEntryWrapper's {@link CertificateCSRInfo} object has a serial ID value.</li>
+     *   <li>Updated KeyStoreEntryWrapper X509Certificate is DIFFERENT from the downloaded X509Certificate 
+     *   (If the two certificates are identical, we do not need to update/replace the cert in our keyStore so return false)</li>
+     *   <li>KeyStoreEntryWrapper X059Certificate.publicKey is the SAME as the downloaded X509Cert.publicKey
+     *   (they must be the same for the local private key to match)</li>
      * </ul>
-     * If these pre-conditions are true, then compare the freshly downloaded cert 
-     * with the cert in the managed keyStore. If the two certificates are identical, we 
-     * do not need to update/replace the cert in our keyStore so return false. 
      * <p>
-     * If the two certificates are different, then either;  
+     * If the two certificates are DIFFERENT but have the SAME public keys, then either;  
      * <ul>
-     *   <li>The certificate for this entry has changed on the server 
+     *   <li>The certificate for this entry has changed on the server without changing the serial_id
      *   (maybe some new attributes have been added)</li>
+     *   <li>The certificate has been re-issued with the same public key which 
+     *   changes the certificate serial_id (for whatever reason)</li>
      *   <li>The certificate in our keyStore was a self-signed CSR cert which 
-     *   has just been signed on the server.</li> 
+     *   has just been signed on the server and made available for download.</li> 
      * </ul>
-     * Therefore, proceed to compare the PublicKey of the downloaded cert with the 
-     * PubKey of keyStore cert to ensure they correspond. If the keys are identical, 
-     * then replace the keyStore cert entry with the newly downloaded cert under 
-     * the same alias and return true (the private key already resides in keyStore). 
      * 
      * @param keyStoreEntryWrapper  
      * @return True if and only if the keyStore was updated with a new certificate. 
@@ -743,7 +742,7 @@ public class ClientKeyStoreCaServiceWrapper {
         // =============================================
         boolean certUpdatedInKeyStore = false; 
         if (certNodes.getLength() != 0) {
-            String downloadedX509CertString = null; 
+            String lastDownloadedX509CertString = null; 
             
             // Iterate all the <certificate> XML nodes      
             // If there are multiple returned nodes, 
@@ -761,7 +760,7 @@ public class ClientKeyStoreCaServiceWrapper {
                     NodeList _x509List = _certElement.getElementsByTagName("X509Certificate"); 
                     if(_x509List != null){
                       Element _x509Element = (Element) _x509List.item(0); 
-                      downloadedX509CertString = _x509Element.getChildNodes().item(0).getTextContent(); 
+                      lastDownloadedX509CertString = _x509Element.getChildNodes().item(0).getTextContent(); 
                     }
 
                     NodeList _statusList = _certElement.getElementsByTagName("status");
@@ -803,11 +802,11 @@ public class ClientKeyStoreCaServiceWrapper {
                     Element _renewElement = (Element) _renewList.item(0);
                     String _renew = _renewElement.getChildNodes().item(0).getTextContent();
 
-                    //***Add a new Certificate CertificateCSRInfo to keyStoreEntryWrapper***
+                    //***Update KeyStoreWrapper with a new CertificateCSRInfo object***
                     CertificateCSRInfo certServerInfo = new CertificateCSRInfo();
                     certServerInfo.setIsCSR(false); // note !
                     certServerInfo.setOwner(_owner);
-                    certServerInfo.setStatus(_status); // could be VALID or another cert status
+                    certServerInfo.setStatus(_status); // could be VALID or another cert status like REVOKED
                     certServerInfo.setRole(_role);
                     certServerInfo.setUserEmail(_useremail);
                     certServerInfo.setId(_id); // 
@@ -820,10 +819,10 @@ public class ClientKeyStoreCaServiceWrapper {
                     keyStoreEntryWrapper.setServerCertificateCSRInfo(certServerInfo);
                 }
             }
-            if (downloadedX509CertString != null) {
+            if (lastDownloadedX509CertString != null) {
                 InputStream inputStream = null;
                 try {
-                    inputStream = new ByteArrayInputStream(downloadedX509CertString.getBytes());
+                    inputStream = new ByteArrayInputStream(lastDownloadedX509CertString.getBytes());
                     CertificateFactory cf = CertificateFactory.getInstance("X.509");
                     X509Certificate downloadedCert = (X509Certificate) cf.generateCertificate(inputStream);
                     // update our certificate in our keyStore with the downloadedCert (or not) 
@@ -870,19 +869,14 @@ public class ClientKeyStoreCaServiceWrapper {
                     String _useremail = _useremailElement.getChildNodes().item(0).getTextContent();
 
                     String description = "Your certificate has an unrecognized status";
-                    switch (_status) {
-                        case "DELETED":
-                            description = "Your certificate has been deleted from our CA.";
-                            break;
-                        case "NEW":
-                            description = "Your certificate has been submitted and is awaiting approval.";
-                            break;
-                        case "RENEW":
-                            description = "Your renewal certificate has been submitted and is awaiting approval.";
-                            break;
-                        case "APPROVED":
-                            description = "Your certificate has been approved and is awaiting CA operator signing.";
-                            break;
+                    if ("DELETED".equals(_status)) {
+                        description = "Your certificate has been deleted from our CA.";
+                    } else if ("NEW".equals(_status)) {
+                        description = "Your certificate has been submitted and is awaiting approval.";
+                    } else if ("RENEW".equals(_status)) {
+                        description = "Your renewal certificate has been submitted and is awaiting approval.";
+                    } else if ("APPROVED".equals(_status)) {
+                        description = "Your certificate has been approved and is awaiting CA operator signing.";
                     }
 
                     //***Add a new CSR CertificateCSRInfo to keyStoreEntryWrapper***
@@ -904,8 +898,25 @@ public class ClientKeyStoreCaServiceWrapper {
     }
 
 
+    /**
+     * Update keyStoreEntryWrapper with the downloadedCert and return true if the 
+     * following pre-conditions are met. 
+     * <ul>
+     *   <li>KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE has value of KEY_PAIR_ENTRY</li>
+     *   <li>KeyStoreEntryWrapper's {@link CertificateCSRInfo} object has a status of 'VALID'</li>
+     *   <li>KeyStoreEntryWrapper's {@link CertificateCSRInfo} object has a serial ID for this certificate.</li>
+     *   <li>KeyStoreEntryWrapper represents a local X509Certificate (i.e. cert or CSR)</li>
+     *   <li>KeyStoreEntryWrapper X059Certificate is DIFFERENT from the downloaded X509Certificate</li>
+     *   <li>KeyStoreEntryWrapper X059Certificate.publicKey is the SAME as the downloaded X509Cert.publicKey</li>
+     * </ul>
+     * 
+     * @param keyStoreEntryWrapper
+     * @param downloadedX509
+     * @return
+     * @throws KeyStoreException 
+     */
     private boolean updateKeyStoreEntryWithCert(
-            KeyStoreEntryWrapper keyStoreEntryWrapper, X509Certificate downloadedCert)
+            KeyStoreEntryWrapper keyStoreEntryWrapper, X509Certificate downloadedX509)
             throws KeyStoreException {
         
         if (keyStoreEntryWrapper.getEntryType().equals(KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY)
@@ -914,7 +925,7 @@ public class ClientKeyStoreCaServiceWrapper {
                 && keyStoreEntryWrapper.getServerCertificateCSRInfo().getId() != null) {
 
             try {
-                PublicKey downloadedPublicKey = downloadedCert.getPublicKey();
+                PublicKey downloadedPublicKey = downloadedX509.getPublicKey();
                 if (downloadedPublicKey == null) {
                     return false;
                 }
@@ -929,11 +940,11 @@ public class ClientKeyStoreCaServiceWrapper {
                 // We only want to update the clientKeyStore cert IF there 
                 // were changes to the cert on the server. We do not want to 
                 // replace each/every cert if it is identical to what we already have. 
-                X509Certificate x509 = this.clientKeyStore.getX509Certificate(keyStoreEntryWrapper.getAlias());
-                if (x509 == null) {
+                X509Certificate localKeyStoreX509 = this.clientKeyStore.getX509Certificate(keyStoreEntryWrapper.getAlias());
+                if (localKeyStoreX509 == null) {
                     return false;
                 }
-                if (x509.equals(downloadedCert)) {
+                if (localKeyStoreX509.equals(downloadedX509)) { // VALUE equality, not instance equality 
                     return false;
                 }
 
@@ -944,15 +955,15 @@ public class ClientKeyStoreCaServiceWrapper {
                 // (they must be identical for the private key to match) 
                 if (downloadedPublicKey.equals(keystorePublicKey)) {
                     // Replace the certificate chain
-                    PrivateKey privateKey =
+                    PrivateKey keyStorePrivateKey =
                             (PrivateKey) this.clientKeyStore.getKey(keyStoreEntryWrapper.getAlias(), mKeystorePASSPHRASE);
 
                     // Maybe the key was removed in an external process? 
                     // (keyStore is a normal pkcs12 that can be accessed from command line) 
-                    if (privateKey == null) {
+                    if (keyStorePrivateKey == null) {
                         return false;
                     }
-                    X509Certificate[] chain = {downloadedCert};
+                    X509Certificate[] chain = {downloadedX509};
                     // Replace keystore entry with the new downloaded cert and its corresponding key.
                     // (i.e. replaces the self-signed cert that was used to do the CSR).
                     // TODO: need to check if the newly issued cert contains only the
@@ -966,7 +977,7 @@ public class ClientKeyStoreCaServiceWrapper {
                     // out to nested synchronized methods locked by the same lock. 
                     synchronized (this.clientKeyStore) {
                         this.clientKeyStore.deleteEntry(keyStoreEntryWrapper.getAlias());
-                        this.clientKeyStore.setKeyEntry(keyStoreEntryWrapper.getAlias(), privateKey, mKeystorePASSPHRASE, chain);
+                        this.clientKeyStore.setKeyEntry(keyStoreEntryWrapper.getAlias(), keyStorePrivateKey, mKeystorePASSPHRASE, chain);
                     }
                     // ok, we have have replaced this cert, so we need to
                     // update the ketStoreEntryWrapper for this entry.

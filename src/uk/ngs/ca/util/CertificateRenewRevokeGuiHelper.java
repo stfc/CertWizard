@@ -12,6 +12,7 @@ import java.text.MessageFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.ResourceBundle;
+import java.util.TimeZone;
 import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
 import net.sf.portecle.DGetAlias;
@@ -160,50 +161,51 @@ public class CertificateRenewRevokeGuiHelper {
         if (selectedKSEW == null
                 || !KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY.equals(selectedKSEW.getEntryType())
                 || selectedKSEW.getServerCertificateCSRInfo() == null
-                || !"VALID".equals(selectedKSEW.getServerCertificateCSRInfo().getStatus())
+                || !("VALID".equals(selectedKSEW.getServerCertificateCSRInfo().getStatus()) 
+                      ||"Expired".equals(selectedKSEW.getServerCertificateCSRInfo().getStatus()))
                 || this.caKeyStoreModel.getClientKeyStore().getX509Certificate(selectedKSEW.getAlias()) == null ) {
             // Can only renew key_pairs types issued by our CA    
-            JOptionPane.showMessageDialog(parentComponent, "Only VALID certificates known by the UK CA can be renewed",
+            JOptionPane.showMessageDialog(parentComponent, "Only VALID or recently Expired certificates known by the UK CA can be renewed",
                     "Suitable certificate not selected", JOptionPane.WARNING_MESSAGE);
             return null; 
         }
 
-        // TODO - need to remove this once host certs are suppored. 
-//        if (selectedKSEW.getX500PrincipalName().contains(".")) {
-//            JOptionPane.showMessageDialog(parentComponent, "Host cert renewals not yet supported. Coming very soon !",
-//                    "Host cert renewals not yet supported", JOptionPane.WARNING_MESSAGE);
-//            return null;
-//        }
-
         
-        // Check we are renewing a cert with time left and ask user to confirm. 
+        // Check we are renewing a cert that is valid or within the 30 day 
+        // tolerance period 
         Calendar todaysDate = Calendar.getInstance();
-        Date endDate = selectedKSEW.getNotAfter();
-        if (endDate.after(todaysDate.getTime())) {
-            // endDate is after today (hence we have time left) 
-            long diffDays = (endDate.getTime() - todaysDate.getTimeInMillis()) / (24 * 60 * 60 * 1000);
+        Date certExpireDate = selectedKSEW.getNotAfter();
+        if (!certExpireDate.after(todaysDate.getTime())) {
+            // Expired 
+            // Prevent if cert has been expired for more than 30 days. 
+            Calendar dateThirtyDaysAgo = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+            dateThirtyDaysAgo.add(Calendar.DAY_OF_MONTH, -30);
+            if (!certExpireDate.after(dateThirtyDaysAgo.getTime())) {
+                JOptionPane.showMessageDialog(parentComponent, "Invalid Renewal",
+                        "Can't renew expired certificate", JOptionPane.ERROR_MESSAGE);
+                return null;
+            }
+        }
+        // Status = VALID or Expired 
+        // Cert is Not-Expired or within 30 day tolerance 
+        long diffDays = (certExpireDate.getTime() - todaysDate.getTimeInMillis()) / (24 * 60 * 60 * 1000);
 
-            int messageType;
-            String renewMessagePrefix;
-            if (diffDays > 56) {
-                messageType = JOptionPane.WARNING_MESSAGE;
-                renewMessagePrefix = "There is more than 8 weeks validity left. Are you sure you want to renew?\n";
-            } else {
-                messageType = JOptionPane.INFORMATION_MESSAGE;
-                renewMessagePrefix = "Are you sure you want to renew this certificate?\n";
-            }
-            if (JOptionPane.showConfirmDialog(parentComponent,
-                    renewMessagePrefix + "Alias: [" + selectedKSEW.getAlias() + "]\n"
-                    + "DN: [" + selectedKSEW.getX500PrincipalName() + "]\n"
-                    + "Email: [" + selectedKSEW.getServerCertificateCSRInfo().getUserEmail() + "]",
-                    "Renew Certificate", JOptionPane.YES_NO_OPTION, messageType)
-                    != JOptionPane.YES_OPTION) {
-                return null; // user pressed no. 
-            }
+        int messageType;
+        String renewMessagePrefix;
+        if (diffDays > 56) {
+            messageType = JOptionPane.WARNING_MESSAGE;
+            renewMessagePrefix = "There is more than 8 weeks validity left. Are you sure you want to renew?\n";
         } else {
-            JOptionPane.showMessageDialog(parentComponent, "Invalid Renewal",
-                    "Can't renew expired certificate", JOptionPane.ERROR_MESSAGE);
-            return null;
+            messageType = JOptionPane.INFORMATION_MESSAGE;
+            renewMessagePrefix = "Are you sure you want to renew this certificate?\n";
+        }
+        if (JOptionPane.showConfirmDialog(parentComponent,
+                renewMessagePrefix + "Alias: [" + selectedKSEW.getAlias() + "]\n"
+                + "DN: [" + selectedKSEW.getX500PrincipalName() + "]\n"
+                + "Email: [" + selectedKSEW.getServerCertificateCSRInfo().getUserEmail() + "]",
+                "Renew Certificate", JOptionPane.YES_NO_OPTION, messageType)
+                != JOptionPane.YES_OPTION) {
+            return null; // user pressed no. 
         }
         
         // Get and assert valid email. 
@@ -231,20 +233,29 @@ public class CertificateRenewRevokeGuiHelper {
         if(email == null){
             return null; // user hit cancel 
         }
-
         //if(true) return null; 
+
+        
         try {
             parentComponent.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+            
             // Get the cert to be renewed (and its private key) and validate
             X509Certificate toRenewCert = this.caKeyStoreModel.getClientKeyStore().getX509Certificate(selectedKSEW.getAlias());
             PrivateKey toRenewPrivateKey = this.caKeyStoreModel.getClientKeyStore().getPrivateKey(toRenewCert.getPublicKey());
             try {
-                // check validity now to prevent TOCTOU issues 
+                // MUST check validity now after all blocking user dialogs have been processed
+                // to prevent TOCTOU issues (its possible the user left a modal 
+                // dialog open for extended period of time and now the cert is 
+                // newly expired or fallen out of the tolerance threshold) 
                 toRenewCert.checkValidity();
             } catch (CertificateExpiredException ex) {
-                parentComponent.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-                JOptionPane.showMessageDialog(parentComponent, "Renewal Certificate has expired", "Invalid Certificate", JOptionPane.ERROR_MESSAGE);
-                return null;
+                Calendar dateThirtyDaysAgo = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+                dateThirtyDaysAgo.add(Calendar.DAY_OF_MONTH, -30);
+                if (!certExpireDate.after(dateThirtyDaysAgo.getTime())) { 
+                    parentComponent.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                    JOptionPane.showMessageDialog(parentComponent, "Renewal Certificate has expired", "Invalid Certificate", JOptionPane.ERROR_MESSAGE);
+                    return null;
+                }
             } catch (CertificateNotYetValidException ex) {
                 parentComponent.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
                 JOptionPane.showMessageDialog(parentComponent, "Renewal Certificate is not yet valid", "Invalid Certificate", JOptionPane.ERROR_MESSAGE);

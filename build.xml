@@ -82,7 +82,7 @@
 Sign all the JAR files in dist/**/*.jar in-situ.
 Lazy signing is used, so the files will only be signed if they are not already signed.
 -->
-    <target name="JarAndSignDistJars" depends="jar"><!--depends="jar" -->
+    <target name="SignDistJars" ><!--depends="jar" -->
 
         <echo message="checking for ${env.properties.file} which contain keystore signing information." />
         <available file="${env.properties.file}" property="has.env.properties" />

@@ -7,13 +7,22 @@
 import java.awt.BorderLayout;
 import java.awt.Cursor;
 import java.awt.Dimension;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.text.Normalizer;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.TimeZone;
 import java.util.regex.Pattern;
 import javax.swing.*;
 import net.sf.portecle.gui.error.DThrowable;
 import org.junit.*;
 import static org.junit.Assert.*;
 import org.junit.Test;
+import resources.TestUtil;
+import uk.ngs.ca.common.EncryptUtil;
 import uk.ngs.ca.common.GuiExecutor;
 import uk.ngs.certwizard.gui.GeneralMessageDialog;
 
@@ -44,6 +53,35 @@ public class quickTest {
     // TODO add test methods here.
     // The methods must be annotated with annotation @Test. For example:
     //
+    
+
+    @Test
+    public void testDave() throws Exception{
+        String path = quickTest.class.getResource("/resources/sample.pem").toURI().getPath();
+        String pemString = TestUtil.readFileAsString(path); 
+        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        InputStream is = new ByteArrayInputStream(pemString.getBytes("UTF-8"));
+        X509Certificate certificate = (X509Certificate) cf.generateCertificate(is);
+        String pk64 = EncryptUtil.getEncodedPublicKey(certificate.getPublicKey()); 
+        System.out.println(pk64);
+        //  url = /resources/resource/publickey/<base64encodedpubkey>
+        // https://cwiz-live.ca.ngs.ac.uk/resources/resource/publickey/MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAh8cdAzrBmB9M+bDk5jdWeD8rNNcPaTrjX855DEMXeHv1oCE/pReaEOy6qlgSrJaREPftbu4VxUvnl/o7oZBgZj5PqmxVXQqTg/76JBF6CtQEefzA6W8LCmSn2saEUygmcxDrUp8u7EGD5g2fbZdek643zUxxr2GyqWDyGiI5ESgrMz8YGcCZwm6xfRrKLKsK4uHL5OyUtKqv7nZm8ANMevh7P0khw38F5SQG4NYpqmey2O8XC8GHRAiZP+hwHOQbmJE3jvUglg3xG4Q0UUEA0Uo01ywKk7rENk21Hg+pOMvq6ZVQOEOB3lYLFhreaVxjkOB7u09gJa8k4PgkkRJwTwIDAQAB
+    }
+
+    @Test 
+    public void testTolerance(){
+         Calendar dateThirtyDaysAgo = Calendar.getInstance(TimeZone.getTimeZone("UTC")); 
+         dateThirtyDaysAgo.add(Calendar.DAY_OF_MONTH, -30);
+         Date d = new Date(); 
+         Calendar now = Calendar.getInstance(TimeZone.getTimeZone("UTC")); 
+         now.setTime(d);
+         
+         if(dateThirtyDaysAgo.before(now)){
+             System.out.println("yp");
+         } else {
+             System.out.println("np");
+         }
+    }
     
     @Test
     public void testNormalizier(){
