@@ -101,10 +101,16 @@ and is also copied into the 'resources/pkcs12KeyStoreUnlimited' dir for archive.
 Code Signing for deployment via Java WebStart as a RIA (Rich Internet App)
 ===========================================================================
 To deploy Cwiz via Java WebStart, you need to sign all the dist/**/*.jar files. To do this, 
-you can use the 'SignDistJars' ant target in the build.xml file. This target requires 
+you can use either:
+a) the 'SignDistJars' ant target in the build.xml file. This target requires 
 the 'env.properties' file (use the provided 'sample.env.properties' as a template).  
 In this file, specify your code-signing certificate and the corresponding details, 
 you can then run this ant target to sign all the dist/**/*.jar files. 
+
+b) use jarsigner directly on the command line: 
+e.g.  
+for i in dist/**/*.jar; do jarsigner.exe -keystore ./mykeystore.p12 -storepass somepassword -storetype pkcs12 $i "cert_alias" ; done
+
 
 Signing Notes: 
 ---------------
