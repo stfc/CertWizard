@@ -81,6 +81,9 @@
 <!--
 Sign all the JAR files in dist/**/*.jar in-situ.
 Lazy signing is used, so the files will only be signed if they are not already signed.
+
+jarsigner.exe -keystore ./JCAsignfullchain.p12 -storepass <pass> -storetype pkcs12 bcprov-jdk15-145.jar "STFC Code-sign"
+jarsigner.exe -keystore /cygdrive/c/Users/djm76/Documents/keysCertsBackup/code-sign/code-signCertKeyExp_02_June_2014.p12 -storetype pkcs12 bcprov-jdk15-145.jar
 -->
     <target name="SignDistJars" ><!--depends="jar" -->
 
@@ -91,18 +94,27 @@ Lazy signing is used, so the files will only be signed if they are not already s
         <echo message="Now signing all jars in 'dist' "/>
         <!-- lazy = flag to control whether the presence of a signature file
         means a JAR is signed. This is only used when the target JAR
-        matches the source JAR-->
+        matches the source JAR  lazy="true" -->
+        <!-- We specify SHA1 as the digestalg because the bcprovider.jar file 
+        is signed by BC using SHA1 and so we also have to sign using SHA1 
+        (all the signatures need to be the same, either SHA1 or SHA256). 
+        Alternatively, you could remove the BC signature via zip tool, 
+        re-sign jar as a valid JCA provider using a different Oracle recongised 
+        JCA/JCE certificate (this is not the same as generic code-signing for RIA deployment) 
+        and then call this signjar target without the SHA1 digestalg parameter 
+        (in order to use the platform default: jdk1.6 uses SHA1, jdk1.7 uses SHA256) -->
         <signjar
         alias="${alias}"
         keystore="${keystore}"
         storetype="${storetype}"
         storepass="${storepass}"
-        lazy="true" >
+        digestalg="SHA1"
+        >
             <path>
                 <fileset dir="dist" casesensitive="yes">
                     <include name="**/*.jar"/>
                     <!--<exclude name="**/*jce*"/>-->
-                    <exclude name="**/bcprov*"/>
+                    <!--<exclude name="**/bcprov*"/>-->
                 </fileset>
             </path>
         </signjar>
@@ -114,7 +126,7 @@ Lazy signing is used, so the files will only be signed if they are not already s
     <target name="-post-jar">
           <echo message="copying myproxy.jnlp and bcprov.jnlp into dist"/>
           <copy file="resources/myproxy.jnlp" todir="dist"/>
-          <copy file="resources/bcprov.jnlp" todir="dist"/>
+          <!--<copy file="resources/bcprov.jnlp" todir="dist"/>-->
           <copy file="resources/ngs_smallicon.jpg" todir="dist"/>   
           <copy file="resources/readme_run.txt" todir="dist"/>   
     </target>

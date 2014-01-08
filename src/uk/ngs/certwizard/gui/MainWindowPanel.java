@@ -51,7 +51,6 @@ import uk.ngs.ca.tools.property.SysProperty;
 import uk.ngs.ca.util.CertificateExportGuiHelper;
 import uk.ngs.ca.util.CertificateImportGuiHelper;
 import uk.ngs.ca.util.CertificateRenewRevokeGuiHelper;
-import uk.ngs.ca.util.KeyStoreChangePasswordGuiHelper;
 
 /**
  * GUI for displaying the keyStore entries in the user's

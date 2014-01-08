@@ -26,16 +26,17 @@ interacting with myproxy servers and VOMS.
 
     <update check="timeout" policy="always"/>
 
-
-
     <resources>
-        <j2se version="1.6+" href="http://java.sun.com/products/autodl/j2se"/>
+        <j2se version="1.7+" href="http://java.sun.com/products/autodl/j2se"/>
         <jar href="Certwizard.jar" main="true" download="eager"/>
         <jar href="lib/AbsoluteLayout.jar"/>
-        <!--<jar href="lib/bcprov-jdk15-145.jar"/>-->
+        <!-- bcprov will have two signatures, the first signed by an Oracle trusted 
+        JCA signing cert, the second required for Java WebStart/RIA deployment --> 
+        <jar href="lib/bcprov-jdk15-145.jar"/>
         <jar href="lib/cog-jglobus-1.8.0.jar"/>
         <jar href="lib/cog-util-0.91.jar"/>
         <jar href="lib/commons-discovery.jar"/>
+        <jar href="lib/commons-validator-1.4.0.jar"/>
         <jar href="lib/cryptix32.jar"/>
         <jar href="lib/cryptix-asn1.jar"/>
         <jar href="lib/cryptix.jar"/>
@@ -57,7 +58,9 @@ interacting with myproxy servers and VOMS.
         <jar href="lib/swing-layout-1.0.4.jar"/>
         <jar href="lib/vomsjapi_1.9.19-3.jar"/>
         <jar href="lib/vomsProxyInitGUI.jar"/>
-        <extension name="none" href="bcprov.jnlp"/>
+        <!-- You would need to load the bcprovider jar file using an extension 
+        if this jar has a different code-sign cert to the other jars.  -->
+        <!--<extension name="none" href="bcprov.jnlp"/>-->
     </resources>
     <application-desc main-class="uk.ngs.certwizard.gui.CertWizardMain">
     </application-desc>

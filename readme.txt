@@ -1,4 +1,7 @@
 README
+David Meredith 
+Disclaimer - Much of the code needs refactoring (many parts are poorly written 
+with 3rd party legacy). 
 
 Requirements
 ===============
@@ -38,12 +41,10 @@ Configuration:
 1) Copy 'uk/ngs/ca/tool/property/template.configure.properties' 
          to:
         'uk/ngs/ca/tool/property/configure.properties' (and modify as required) 
-    OR 
-   Copy one of the provided configure files, located at: 
+    
+   (for ukca, use one of the provided configure files): 
        'uk/ngs/ca/tool/property/configure.cwiz-live.ca.ngs.ac.uk.properties, (production CA)
        'uk/ngs/ca/tool/property/configure.cwiz.ca.ngs.ac.uk.properties, (development CA)
-        to: 
-       'uk/ngs/ca/tool/property/configure.properties'
 
 
 2) Modify the copied properties file as required.  
@@ -78,12 +79,12 @@ Running:
 cd into the dist dir and run: 
 java -jar Certwizard.jar
 
-cd into the build dir and run:
+note, although not common, you can also cd into the build dir and run:
 java uk.ngs.certwizard.gui.CertWizardMain
 
 
-Crytpo BC notes
-=================
+Crytpo BC/JCE unlimited strength provider notes
+================================================
 CWiz requires an unlimited strength jce security provider to allow big password 
 access to a PKCS12 keystore without policy restrictions on pw length. This is provided 
 with the following custom class that is provided as part of the 'MyProxyUploader2.jar' 
@@ -91,28 +92,83 @@ dependency (a sub-project): 'org.bouncycastle.jce.provider.unlimited.PKCS12KeySt
 
 To remove the dependency on MyProxyUploader2.jar, this class would need to be 
 copied into the src tree of this project under the same package. This class 
-also requires a particular build of the BC crypto provider (jdk15-145). 
+also requires a particular build of the BC crypto provider (bcprov-jdk15-145.jar). 
+
+This class is provided by NIKHEF, see: http://wiki.nikhef.nl/grid/PKCS12KeyStoreUnlimited 
+and is also copied into the 'resources/pkcs12KeyStoreUnlimited' dir for archive. 
+
+ 
+Code Signing for deployment via Java WebStart as a RIA (Rich Internet App)
+===========================================================================
+To deploy Cwiz via Java WebStart, you need to sign all the dist/**/*.jar files. To do this, 
+you can use the 'SignDistJars' ant target in the build.xml file. This target requires 
+the 'env.properties' file (use the provided 'sample.env.properties' as a template).  
+In this file, specify your code-signing certificate and the corresponding details, 
+you can then run this ant target to sign all the dist/**/*.jar files. 
+
+Signing Notes: 
+---------------
++) Permissions attribute in jar manifest: 
+We need to deploy via WebStart using a single .jnlp file (see myproxy.jnlp) rather 
+than using multiple jnlp files linked using jnlp <extensions/>. In doing this, 
+all the jars must be signed using the same code-sign signature. 
+In addition, deploying using a single .jnlp file means the 'Permissions' manifest 
+file attribute defined in the *main* jar file will also apply to all the other jars. 
+The Permissions mf attribute is now mandatory as of JDK 1.7u51 (January 2014).  
+If another jar is loaded as a jnlp <extension/>, it appears that the Permissions 
+attribute needs to be added to the jar using:  
+  'jar ufm manifestUpdates.txt some.jar' 
+(where manifestUpdates.txt file defines the manifest updates, e.g. adding the 
+Permissions mf attribute followed by a newline) e.g: 
+Permissions: permissions-all 
+
+See: http://docs.oracle.com/javase/tutorial/deployment/jar/modman.html
+
+Updating digitally signed jars is problematic - you must first remove the jar's 
+existing signature (can remove jar signatures using a zip utility), update the jar's mf 
+file as described above, and then re-sign the jar.  
+
++) It is important that all the jars in a jnlp are signed using the same signature 
+algorithm. If you do not, you may encounter the following error:
+ 'java.io.IOException: invalid SHA1 signature file digest for org/bouncycastle/asn1/ocsp/ResponderID.class' 
+
+This exception occurred because the BC jar was signed using SHA1, whilst all the other jars 
+were signed using SHA256 (the JDK1.7 default is to sign using SHA256, whilst JDK1.6 uses SHA1). 
+You have been warned - see: http://www.captaincasademo.com/forum/posts/list/1831.page 
+
+
+JCE/JCA code signing for cryptography extensions
+=================================================
+This application deploys Java crytpo libraries - the 'bcprov-jdk15-145.jar' from 
+Bouncy Castle. This library needs to be signed by a special JCA/JCE certificate that
+can be requested free from Oracle (you can't use your normal code-sign cert, it has
+to be a special JCE code-sign cert as described at the link below). Note, this jar  
+has already been signed by BC's JCE code-sign cert but you can replace the 
+BC JCE signature with your own signature (remove the BC signature using a zip util and 
+re-sign as normal using jarsigner and your JCE code-sign cert).   
+ 
+Getting a JCE code sign cert: 
+http://www.oracle.com/technetwork/java/javase/tech/getcodesigningcertificate-361306.html
+
+Note, If you are deploying via webstart, this lib must therefore be signed twice:  
+  a) the BC JCE signature (or another signature from a JCA signing cert) 
+     verifying this jar is a valid JCA provider  
+  b) the normal code-sign signature for Webstart/RIA deployment. 
+
+  (code signing for Webstart deployment and signing a jar as a valid JCE/JCA provider are two 
+  separate things !)   
+
+   http://www.oracle.com/technetwork/java/javase/tech/getcodesigningcertificate-361306.html
+   http://docs.oracle.com/javase/7/docs/technotes/guides/jweb/no_redeploy.html#permissions
 
 
 TODOs:
 ======
 There are lots of to do items. Much of the code needs refactoring (many parts 
-are poorly written with 3rd party legacy). 
-
-- Update to a new BC provider that contains the 'Permissions: all-permissions' in the 
-   BC jar manifest. Problem is that we can't just add this new attribute to the 
-   jar's manifest (using jar ufm bc.jar mymanifestupdate.txt) as it would 
-   invalidate the BC signature. 
-   We also can't unpack this jar, remove the BC signatures, update jar's 
-   manifest and re-sign with our own code-sign cert because the JRE don't 
-   trust the provider without the BC signature ! 
-   See: 
-   http://bouncy-castle.1462172.n4.nabble.com/Deploying-BC-in-JWS-and-new-manifest-attributes-in-JDK7u25-td4656420.html  
-   http://docs.oracle.com/javase/7/docs/technotes/guides/jweb/no_redeploy.html#permissions
+are poorly written with 3rd party legacy): 
 
 - Address following bug: System property "user.home" does not correspond to "USERPROFILE" (win)
    http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4787931
-
 - Export multiple certificates into a PKCS12 file (currently, can only export one at a time)  
 - When exporting certs, need to change the perms on *nix box much like 
   when installing the pem files (think this may be done - check).  

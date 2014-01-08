@@ -161,14 +161,15 @@ public class CertificateRenewRevokeGuiHelper {
         if (selectedKSEW == null
                 || !KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY.equals(selectedKSEW.getEntryType())
                 || selectedKSEW.getServerCertificateCSRInfo() == null
-                || !("VALID".equals(selectedKSEW.getServerCertificateCSRInfo().getStatus()) 
-                      ||"Expired".equals(selectedKSEW.getServerCertificateCSRInfo().getStatus()))
+                || !("VALID".equals(selectedKSEW.getServerCertificateCSRInfo().getStatus()) )
+                      //||"Expired".equals(selectedKSEW.getServerCertificateCSRInfo().getStatus()))
                 || this.caKeyStoreModel.getClientKeyStore().getX509Certificate(selectedKSEW.getAlias()) == null ) {
             // Can only renew key_pairs types issued by our CA    
             JOptionPane.showMessageDialog(parentComponent, "Only VALID or recently Expired certificates known by the UK CA can be renewed",
                     "Suitable certificate not selected", JOptionPane.WARNING_MESSAGE);
             return null; 
         }
+        System.out.println("DEBUG: "+selectedKSEW.getServerCertificateCSRInfo().getStatus());
 
         
         // Check we are renewing a cert that is valid or within the 30 day 
