@@ -168,6 +168,19 @@ Note, If you are deploying via webstart, this lib must therefore be signed twice
    http://docs.oracle.com/javase/7/docs/technotes/guides/jweb/no_redeploy.html#permissions
 
 
+Signing stuff: 
+https://blogs.oracle.com/java-platform-group/entry/new_security_requirements_for_rias 
+http://www.oracle.com/technetwork/java/javase/overview/ria-checklist-2055184.html 
+http://stackoverflow.com/questions/20218467/what-is-jce-code-signing-ca 
+http://docs.oracle.com/javase/tutorial/deployment/jar/intro.html 
+http://docs.oracle.com/javase/7/docs/technotes/guides/jweb/manifest.html 
+http://docs.oracle.com/javase/tutorial/deployment/jar/modman.html 
+http://www.oracle.com/technetwork/java/javase/tech/getcodesigningcertificate-361306.html 
+http://stackoverflow.com/questions/8176166/invalid-sha1-signature-file-digest 
+http://stackoverflow.com/questions/11673707/java-web-start-jar-signing-issue 
+http://www.captaincasademo.com/forum/posts/list/1831.page 
+
+
 TODOs:
 ======
 There are lots of to do items. Much of the code needs refactoring (many parts 
