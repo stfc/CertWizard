@@ -108,9 +108,13 @@ In this file, specify your code-signing certificate and the corresponding detail
 you can then run this ant target to sign all the dist/**/*.jar files. 
 
 b) use jarsigner directly on the command line: 
-e.g.  
+   e.g.  
+jarsigner.exe -keystore ./Comodo-CodeSign.p12 -storetype pkcs12 <jarfiletosign.jar> cert_alias
+  or, for many jars in dir: 
 for i in dist/**/*.jar; do jarsigner.exe -keystore ./mykeystore.p12 -storepass somepassword -storetype pkcs12 $i "cert_alias" ; done
 
+To verify the jar after signing, you can use (where [cert_alias] is optional):
+jarsigner.exe -verify -keystore ./Comodo-CodeSign.p12 -storetype pkcs12 -storepass STFC-a32 weakssl.jar [cert_alias]
 
 Signing Notes: 
 ---------------
@@ -123,14 +127,14 @@ file attribute defined in the *main* jar file will also apply to all the other j
 The Permissions mf attribute is now mandatory as of JDK 1.7u51 (January 2014).  
 If another jar is loaded as a jnlp <extension/>, it appears that the Permissions 
 attribute needs to be added to the jar using:  
-  'jar ufm manifestUpdates.txt some.jar' 
+  'jar ufm some.jar manifestUpdates.txt' 
 (where manifestUpdates.txt file defines the manifest updates, e.g. adding the 
 Permissions mf attribute followed by a newline) e.g: 
-Permissions: permissions-all 
+Permissions: all-permissions 
 
 See: http://docs.oracle.com/javase/tutorial/deployment/jar/modman.html
 
-Updating digitally signed jars is problematic - you must first remove the jar's 
+Updating digitally signed jars is problematic - you may first need to remove the jar's 
 existing signature (can remove jar signatures using a zip utility), update the jar's mf 
 file as described above, and then re-sign the jar.  
 
@@ -141,6 +145,12 @@ algorithm. If you do not, you may encounter the following error:
 This exception occurred because the BC jar was signed using SHA1, whilst all the other jars 
 were signed using SHA256 (the JDK1.7 default is to sign using SHA256, whilst JDK1.6 uses SHA1). 
 You have been warned - see: http://www.captaincasademo.com/forum/posts/list/1831.page 
+
+Note, to get around this, you can either sign the jar file using the same alg 
+(e.g. if jar is already signed using SHA1 you may need to specify digestalg="SHA1" sigalg="SHA1"), or 
+Use a zip tool like winrar and delete the existing signatures in META-INF, e.g. SOME_SIG_NAME.SF and SOME_SIG_NAME.RSA
+then resign with your code-sign cert. 
+
 
 
 JCE/JCA code signing for cryptography extensions

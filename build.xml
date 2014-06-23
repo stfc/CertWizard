@@ -84,6 +84,8 @@ Lazy signing is used, so the files will only be signed if they are not already s
 
 jarsigner.exe -keystore ./JCAsignfullchain.p12 -storepass <pass> -storetype pkcs12 bcprov-jdk15-145.jar "STFC Code-sign"
 jarsigner.exe -keystore /cygdrive/c/Users/djm76/Documents/keysCertsBackup/code-sign/code-signCertKeyExp_02_June_2014.p12 -storetype pkcs12 bcprov-jdk15-145.jar
+
+jarsigner.exe -keystore ./Comodo-CodeSign.p12 -storetype pkcs12 batchupload_pcc.jar le-da7e6868-dd6e-4201-b346-99d108688f24
 -->
     <target name="SignDistJars" ><!--depends="jar" -->
 
