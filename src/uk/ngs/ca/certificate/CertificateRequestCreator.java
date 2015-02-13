@@ -103,7 +103,16 @@ public class CertificateRequestCreator {
                 // X500Principal: The distinguished name must be specified using the 
                 // grammar defined in RFC 1779 or RFC 2253 (either format is ok). e.g. 
                 // "CN=Duke, OU=JavaSoft, O=Sun Microsystems, C=US"
-                // Note, we can't specify the email address in the DN (not RFC 1779 or 2253). 
+                // 
+                // When we run the following openssl command on the request.toString(), 
+                // notice that the DN is in REVERSE (starts with C). 
+                // This is needed to be consistent with OpenCA
+                // which seems to prefer PKCS#10 requests to have that DN style, e.g. 
+                //   $openssl req -in certwizCsr.pem -noout -subject
+                //   subject=/C=UK/O=eScienceDev/OU=CLRC/L=DL/CN=david meredith test 
+                // 
+                // Think it must be the PKCS10CertificationRequest that reverses 
+                // the DN to start with C. 
                 request = new PKCS10CertificationRequest(sig_alg, new X500Principal(attrDN), 
                        pubkey, new DERSet(attribute), privkey);    
             } else {
@@ -117,8 +126,10 @@ public class CertificateRequestCreator {
                 //  false:   Subject: emailAddress=david.meredith@stfc.ac.uk, CN=host.dl.ac.uk, L=RAL, OU=CLRC, O=eScienceDev, C=UK
                 //  true:    Subject: C=UK, O=eScienceDev, OU=CLRC, L=RAL, CN=host.dl.ac.uk/emailAddress=david.meredith@stfc.ac.uk
                 
-                // We specify true for a reverse DN (starts with C) to be consistent with OpenCA
-                // which seems to prefer PKCS#10 requests to have that DN style. 
+                // We specify true for a REVERSE DN (starts with C) to be consistent with OpenCA
+                // which seems to prefer PKCS#10 requests to have that DN style, e.g. 
+                //  $openssl req -in certwizCsr.pem -noout -subject
+                //  subject=/C=UK/O=eScienceDev/OU=CLRC/L=DL/CN=some.valid.host
                 request = new PKCS10CertificationRequest(sig_alg, new X509Name(true, attrDN), 
                        pubkey, new DERSet(attribute), privkey); 
             }
@@ -133,6 +144,10 @@ public class CertificateRequestCreator {
             //ASN1Set set = request.getCertificationRequestInfo().getAttributes();
 
             myLogger.debug("[CertificateCreator] createCertificateRequest: successful");
+//            if(true){
+//            System.out.println(writer.toString());
+//            throw new RuntimeException("forced die dave"); 
+//            }
             return writer.toString();
         } catch(NoSuchAlgorithmException ex){
             // These exceptions are considered coding errors; because we control the 
