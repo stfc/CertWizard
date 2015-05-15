@@ -114,7 +114,7 @@ jarsigner.exe -keystore ./Comodo-CodeSign.p12 -storetype pkcs12 <jarfiletosign.j
 for i in dist/**/*.jar; do jarsigner.exe -keystore ./mykeystore.p12 -storepass somepassword -storetype pkcs12 $i "cert_alias" ; done
 
 To verify the jar after signing, you can use (where [cert_alias] is optional):
-jarsigner.exe -verify -keystore ./Comodo-CodeSign.p12 -storetype pkcs12 -storepass STFC-a32 weakssl.jar [cert_alias]
+jarsigner.exe -verify -keystore ./Comodo-CodeSign.p12 -storetype pkcs12 -storepass somepassword weakssl.jar [cert_alias]
 
 Signing Notes: 
 ---------------
