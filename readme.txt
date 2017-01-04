@@ -37,23 +37,24 @@ CertWizard supports the following functions:
 
 Configuration:
 ===============
-
-1) Copy 'uk/ngs/ca/tool/property/template.configure.properties' 
+// JK changed to "tools" rather than "tool"
+1) Copy 'uk/ngs/ca/tools/property/template.configure.properties' 
          to:
-        'uk/ngs/ca/tool/property/configure.properties' (and modify as required) 
+        'uk/ngs/ca/tools/property/configure.properties' (and modify as required) 
     
    (for ukca, use one of the provided configure files): 
-       'uk/ngs/ca/tool/property/configure.cwiz-live.ca.ngs.ac.uk.properties, (production CA)
-       'uk/ngs/ca/tool/property/configure.cwiz.ca.ngs.ac.uk.properties, (development CA)
+// JK changed to "tools" rather than "tool", also should it be cwiz-dev not cwiz?
+       'uk/ngs/ca/tools/property/configure.cwiz-live.ca.ngs.ac.uk.properties, (production CA)
+       'uk/ngs/ca/tools/property/configure.cwiz.ca.ngs.ac.uk.properties, (development CA)
 
 
 2) Modify the copied properties file as required.  
-    If you want to access different CA server, just overwrite configure.properties by
+    If you want to access a different CA server, just overwrite configure.properties by
     using the above template files.
 
 3) For new CA servers, either add the host cert pem of the CA-Server host you 
 need to interact with OR the CA cert chain that signed the CA-Server's hosts cert to 
-'uk/ngs/ca/tool/property/hostcert.pem' XML file (certs need to be in pem format).   
+'uk/ngs/ca/tools/property/hostcert.pem' XML file (certs need to be in pem format).   
 
 This file is configured with the UK eSci CA chain (CA cert and root) so it can
 be used against cwiz-live and cwiz.ca without modification.

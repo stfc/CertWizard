@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<jnlp codebase="http://tools.ngs.ac.uk/ngstools/certwizard" href="myproxy.jnlp" spec="1.0+">
+<jnlp codebase="https://tools.ngs.ac.uk/ngstools/certwizard" href="myproxy.jnlp" spec="1.0+">
     <information>
         <title>Certificate Wizard</title>
         <vendor>Science and Technology Facilities Council [code-sign.ngs.dl.ac.uk]</vendor>
-        <homepage href="http://ngs.ac.uk/tools/certwizard"/>
+        <homepage href="https://ngs.ac.uk/tools/certwizard"/>
         <description>A credential management tool for requesting certificates, setting up your local grid
 environment, installing user and CA certificates,
 interacting with myproxy servers and VOMS.
@@ -56,8 +56,8 @@ interacting with myproxy servers and VOMS.
         <jar href="lib/org.restlet.jar"/>
         <jar href="lib/puretls.jar"/>
         <jar href="lib/swing-layout-1.0.4.jar"/>
-        <jar href="lib/vomsjapi_1.9.19-3.jar"/>
-        <jar href="lib/vomsProxyInitGUI.jar"/>
+        <!-- <jar href="lib/vomsjapi_1.9.19-3.jar"/> -->
+        <!-- <jar href="lib/vomsProxyInitGUI.jar"/> -->
         <!-- You would need to load the bcprovider jar file using an extension 
         if this jar has a different code-sign cert to the other jars.  -->
         <!--<extension name="none" href="bcprov.jnlp"/>-->

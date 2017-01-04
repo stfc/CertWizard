@@ -213,29 +213,32 @@ public class CertWizardMain extends javax.swing.JFrame {
     
     private void initTabbedPane() {
         JPanel tabPanelManageCerts = new JPanel();
-        JPanel tabPanelSetup = new JPanel();
-        JPanel tabPanelUseCert = new JPanel();
+        // JPanel tabPanelSetup = new JPanel();
+        // JPanel tabPanelUseCert = new JPanel();
         tabbedPane.addTab("Apply For/Manage Your Certificate", tabPanelManageCerts);
-        tabbedPane.addTab("Use Your Installed Certificate", tabPanelUseCert);
-        tabbedPane.addTab("Setup", tabPanelSetup);
+        // JK comment out next 2 lines once other references to these things have gone
+        // tabbedPane.addTab("Use Your Installed Certificate", tabPanelUseCert);
+        // tabbedPane.addTab("Setup", tabPanelSetup);
 
+        // Tidy up ComponentSettingsPanel and DoActionsPanel since no longer needed
         // First, create the settings/setup panel and the doActions panel.
-        final ComponentSettingsPanel setupPanel = new ComponentSettingsPanel(tabPanelSetup);
-        final DoActionsPanel doActions = new DoActionsPanel(tabPanelUseCert);
+        // final ComponentSettingsPanel setupPanel = new ComponentSettingsPanel(tabPanelSetup);
+        // final DoActionsPanel doActions = new DoActionsPanel(tabPanelUseCert);
         final PasswordPanel pp = new PasswordPanel(tabPanelManageCerts);
 
-        tabPanelSetup.add(setupPanel);
-        tabPanelUseCert.add(doActions);
+        // tabPanelSetup.add(setupPanel);
+        // tabPanelUseCert.add(doActions);
         tabPanelManageCerts.add(pp);
 
         // if the user's pem files already exist in the default location, then 
         // set the focus on the Use Certifiate panel 
-        if (doPemFilesExist()) {
-            tabbedPane.setSelectedComponent(tabPanelUseCert);
-        }
+        // if (doPemFilesExist()) {
+            // tabbedPane.setSelectedComponent(tabPanelUseCert);
+        // }
 
         // Second, add componentListeners so that the panel's can be refreshed
         // when the appropriate tab is shown.
+        /*
         tabPanelSetup.addComponentListener(new ComponentAdapter() {
 
             @Override
@@ -246,6 +249,8 @@ public class CertWizardMain extends javax.swing.JFrame {
                 setupPanel.updateCertificateComponent();
             }
         });
+        */
+        /*
         tabPanelUseCert.addComponentListener(new ComponentAdapter() {
 
             @Override
@@ -256,33 +261,34 @@ public class CertWizardMain extends javax.swing.JFrame {
                 doActions.update();
             }
         });
+        */
     }
 
 
     /**
      * See if pem files already exist in default location
      */
-    private boolean doPemFilesExist() {
-        CoGProperties props = CoGProperties.getDefault();
-        String certPemFile = props.getUserCertFile();
-        String keyPemFile = props.getUserKeyFile();
-        File fCertFile = new File(certPemFile);
-        File fKeyFile = new File(keyPemFile);
-
-        boolean fKeyExist = false;
-        boolean fCertExist = false;
-        if (fKeyFile.exists()) {
-            fKeyExist = true;
-        }
-        if (fCertFile.exists()) {
-            fCertExist = true;
-        }
-        if (fKeyExist && fCertExist) {
-            return true;
-        } else {
-            return false;
-        }
-    }
+//    private boolean doPemFilesExist() {
+//        CoGProperties props = CoGProperties.getDefault();
+//        String certPemFile = props.getUserCertFile();
+//        String keyPemFile = props.getUserKeyFile();
+//        File fCertFile = new File(certPemFile);
+//        File fKeyFile = new File(keyPemFile);
+//
+//        boolean fKeyExist = false;
+//        boolean fCertExist = false;
+//        if (fKeyFile.exists()) {
+//            fKeyExist = true;
+//        }
+//        if (fCertFile.exists()) {
+//            fCertExist = true;
+//        }
+//        if (fKeyExist && fCertExist) {
+//            return true;
+//        } else {
+//            return false;
+//        }
+//    }
 
     /**
      * This method is called from within the constructor to initialize the form.

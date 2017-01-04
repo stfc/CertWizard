@@ -110,8 +110,13 @@ jarsigner.exe -keystore ./Comodo-CodeSign.p12 -storetype pkcs12 batchupload_pcc.
         keystore="${keystore}"
         storetype="${storetype}"
         storepass="${storepass}"
-        digestalg="SHA1"
+        tsaurl="http://timestamp.comodoca.com"
+        tsaproxyhost="wwwcache.dl.ac.uk"
+        tsaproxyport="8080"
+        verbose="false"
+        strict="true"
         >
+        <!-- digestalg="SHA1" -->
             <path>
                 <fileset dir="dist" casesensitive="yes">
                     <include name="**/*.jar"/>
@@ -126,7 +131,7 @@ jarsigner.exe -keystore ./Comodo-CodeSign.p12 -storetype pkcs12 batchupload_pcc.
     
     
     <target name="-post-jar">
-          <echo message="copying myproxy.jnlp and bcprov.jnlp into dist"/>
+          <echo message="copying misc files (including myproxy.jnlp) into dist"/>
           <copy file="resources/myproxy.jnlp" todir="dist"/>
           <!--<copy file="resources/bcprov.jnlp" todir="dist"/>-->
           <copy file="resources/ngs_smallicon.jpg" todir="dist"/>   

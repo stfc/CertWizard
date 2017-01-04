@@ -179,6 +179,8 @@ public class CertificateRenewRevokeGuiHelper {
         if (!certExpireDate.after(todaysDate.getTime())) {
             // Expired 
             // Prevent if cert has been expired for more than 30 days. 
+            // JK: best not to use a magic number - maybe we can even have a config value here for occasional use
+            // We'd then need to change the words to refer to "grace period" rather than 30 days
             Calendar dateThirtyDaysAgo = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
             dateThirtyDaysAgo.add(Calendar.DAY_OF_MONTH, -30);
             if (!certExpireDate.after(dateThirtyDaysAgo.getTime())) {
@@ -229,7 +231,8 @@ public class CertificateRenewRevokeGuiHelper {
         } else {
             // TODO In future - The email currently recorded against this certificate is ... 
             // Do you want to update the email? (will need to remove email equality check below) 
-            //email = this.getNewEmailHelper(email); 
+            // JK uncommented it to give it a go ... and it seems to work OK ... at least with a correct email address for a personal cert
+            email = this.getNewEmailHelper(email); 
         }
         if(email == null){
             return null; // user hit cancel 
