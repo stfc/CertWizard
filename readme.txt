@@ -7,46 +7,36 @@ Requirements
 ===============
 Java JDK 1.6 +
 Apache Ant 1.8+
-netbeans 7.1+ (you don't need netbeans to build/compile this project
+netbeans 8.2+ (you don't need netbeans to build/compile this project
   since netbeans uses 100% apache ant to build netbeans projects, but it is 
   very useful for building the GUI).
 
-
 CertWizard is a java client tool to access and manage user/host certificates. 
-The voms enabled MyProxyUploader is a sub-project that is included in Certwizard. 
-Therefore, all the dependencies of the MyProxyUploader are also required in this 
-project. 
-
-
-It is developed based on Restlet APIs. This is the client tool for the corresponding
-CA-Server. See: http://www.restlet.org/ 
-
+It is developed based on Restlet APIs (see http://www.restlet.org/) and is the
+client gui for the corresponding CA-Server.  
 
 CertWizard supports the following functions:
 
-1. MyProxy Uploader functions.
-2. Working under online and offline.
-3. Apply user certificate.
-4. Import user certificate from pkcs12 file.
-5. Export user certificate to pkcs12 file.
-6. Renew user certificate.
-7. Revoke user certificate.
-8. Remove user certificate from CertWizard.
-9. Create user cer/key pem files.
+1. Working either online or offline.
+2. Apply for / Request a new user (host or personal) certificate.
+3. Import user certificate from pkcs12 file.
+4. Export user certificate to pkcs12 file.
+5. Renew user certificate.
+6. Revoke user certificate.
+7. Remove user certificate from CertWizard.
+8. Create user cert/key pem files (known as Install in the tool).
 
 
 Configuration:
 ===============
-// JK changed to "tools" rather than "tool"
 1) Copy 'uk/ngs/ca/tools/property/template.configure.properties' 
          to:
         'uk/ngs/ca/tools/property/configure.properties' (and modify as required) 
     
    (for ukca, use one of the provided configure files): 
-// JK changed to "tools" rather than "tool", also should it be cwiz-dev not cwiz?
+// JK: should the 2nd not be cwiz-dev rather than cwiz?
        'uk/ngs/ca/tools/property/configure.cwiz-live.ca.ngs.ac.uk.properties, (production CA)
        'uk/ngs/ca/tools/property/configure.cwiz.ca.ngs.ac.uk.properties, (development CA)
-
 
 2) Modify the copied properties file as required.  
     If you want to access a different CA server, just overwrite configure.properties by
@@ -56,7 +46,7 @@ Configuration:
 need to interact with OR the CA cert chain that signed the CA-Server's hosts cert to 
 'uk/ngs/ca/tools/property/hostcert.pem' XML file (certs need to be in pem format).   
 
-This file is configured with the UK eSci CA chain (CA cert and root) so it can
+This file is configured with the UK eScience CA chain (CA cert and root) so it can
 be used against cwiz-live and cwiz.ca without modification.
  
 This file is actually an XML file (not a pem encoded cert) and can store 
@@ -65,7 +55,6 @@ adding the base64 encoded pem file, do not have any spaces after <hostcert>
 and before </hostcert> 
 To export a pem from a p12 use openssl with (-clcerts = only out client certs, -nokeys don't export key): 
 openssl pkcs12 -clcerts -nokeys -in somepkcs12file.p12 -out hostcert.pem
-
 
 Build / Compile
 ====================

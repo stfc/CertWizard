@@ -105,6 +105,9 @@ jarsigner.exe -keystore ./Comodo-CodeSign.p12 -storetype pkcs12 batchupload_pcc.
         JCA/JCE certificate (this is not the same as generic code-signing for RIA deployment) 
         and then call this signjar target without the SHA1 digestalg parameter 
         (in order to use the platform default: jdk1.6 uses SHA1, jdk1.7 uses SHA256) -->
+        <!-- Note that 8.2+ NetBeans is required for the tsaproxy* attributes below - 
+         they aren't available in the version of ant in 8.1 -->
+        <!-- ADD STUFF HERE ABOUT timestamping -->
         <signjar
         alias="${alias}"
         keystore="${keystore}"

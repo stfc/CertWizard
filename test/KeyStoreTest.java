@@ -3,34 +3,11 @@
  * and open the template in the editor.
  */
 
-import java.io.FileNotFoundException;
-
-import java.io.FileOutputStream;
-import java.io.PrintStream;
 import java.math.BigInteger;
-import java.security.KeyPair;
-import java.security.Key;
-import java.security.KeyPairGenerator;
-import java.security.PrivateKey;
-import java.security.Provider;
-import java.security.PublicKey;
-import java.security.Security;
-import java.security.cert.X509Certificate;
-import java.util.Date;
-import java.util.Vector;
-import java.io.File;
-
-import javax.crypto.spec.PBEParameterSpec;
-import java.security.AlgorithmParameters;
-import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.Cipher;
-import javax.crypto.EncryptedPrivateKeyInfo;
 
 import javax.security.auth.x500.X500Principal;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.asn1.x509.X509Extensions;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
 import org.bouncycastle.x509.X509V1CertificateGenerator;
 import org.bouncycastle.x509.extension.SubjectKeyIdentifierStructure;
@@ -38,35 +15,9 @@ import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
 
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
-import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
-import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
-import org.bouncycastle.asn1.x509.Attribute;
-import org.bouncycastle.asn1.x509.X509Extension;
-import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.DEREncodable;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.ASN1Sequence;
-
-import org.bouncycastle.jce.PKCS10CertificationRequest;
-import org.bouncycastle.util.encoders.Base64;
-//import org.globus.util.PEMUtil;
-
-
-import java.io.ByteArrayOutputStream;
-import java.io.OutputStream;
-import org.bouncycastle.asn1.DERSet;
-
-import java.security.spec.PKCS8EncodedKeySpec;
 
 
 import java.security.KeyStore;
-import java.security.cert.X509Certificate;
-import java.security.PrivateKey;
-import java.security.Key;
-
-import java.io.File;
-import java.io.InputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 
@@ -75,11 +26,7 @@ import java.security.Key;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.Provider;
-import java.security.PublicKey;
-import java.security.Security;
 import java.security.cert.X509Certificate;
-import java.util.Date;
-import java.util.Vector;
 import java.io.File;
 
 import java.security.interfaces.RSAPrivateKey;
@@ -91,13 +38,7 @@ import java.util.Date;
 
 import java.util.Enumeration;
 
-import uk.ngs.ca.certificate.management.ClientKeyStore;
-//import uk.ngs.ca.common.ClientCertKeyStore;
-
-
-import java.util.Properties;
 import org.bouncycastle.jce.provider.unlimited.PKCS12KeyStoreUnlimited;
-import uk.ngs.ca.tools.property.SysProperty;
 
 /**
  *
@@ -346,7 +287,7 @@ X509Name _x509name = new X509Name("CN=xiao wang");
 //        certGen.setSignatureAlgorithm("MD5withRSA");
         certGen.setSignatureAlgorithm("MD5withRSA");
         try {
-            X509Certificate cert = certGen.generateX509Certificate(key.getPrivate(), "BC");
+            X509Certificate cert = certGen.generate(key.getPrivate(), "BC");
 /*
             System.out.println("certificate has been created successfully!!!");
             System.out.println("serial numer = " + cert.getSerialNumber().toString());
@@ -438,7 +379,7 @@ X509Name _x509name = new X509Name("CN=xiao wang");
 
             /* end of test of subject alternative name  */
 
-            X509Certificate cert = certGen.generateX509Certificate(caKey, "BC");
+            X509Certificate cert = certGen.generate(caKey, "BC");
 clientCert = cert;
 clientKey = key.getPrivate();
 /*

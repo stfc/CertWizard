@@ -6,7 +6,6 @@ package uk.ngs.ca.info;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.*;

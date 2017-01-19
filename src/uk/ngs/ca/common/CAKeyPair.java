@@ -5,6 +5,7 @@ package uk.ngs.ca.common;
 
 import java.math.BigInteger;
 import java.security.*;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.Calendar;
 import java.util.Date;
@@ -437,25 +438,16 @@ public class CAKeyPair {
         v3certGen.setSignatureAlgorithm(SIG_ALG);
         try {
             //rootCert = v1certGen.generateX509Certificate(_rootKeyPair.getPrivate(), "BC");
-            return v3certGen.generateX509Certificate(keyPair.getPrivate(), "BC");
+            return v3certGen.generate(keyPair.getPrivate(), "BC");
             
             // For now lets throw an IllegalStateException; the application is 
             // in control of generating the cert and so if an exception is thrown
             // here it is not due to bad input and is not something we can control. 
-        } catch (NoSuchProviderException ex) {
-            java.util.logging.Logger.getLogger(CAKeyPair.class.getName()).log(Level.SEVERE, null, ex);
-            throw new IllegalStateException(ex); 
-        } catch (SecurityException ex) {
-            java.util.logging.Logger.getLogger(CAKeyPair.class.getName()).log(Level.SEVERE, null, ex);
-            throw new IllegalStateException(ex); 
-        } catch (SignatureException ex) {
-            java.util.logging.Logger.getLogger(CAKeyPair.class.getName()).log(Level.SEVERE, null, ex);
-            throw new IllegalStateException(ex); 
-        } catch (InvalidKeyException ex) {
+  
+        } catch (NoSuchProviderException | SecurityException | SignatureException | InvalidKeyException |
+                 CertificateEncodingException | IllegalStateException | NoSuchAlgorithmException ex) {
             java.util.logging.Logger.getLogger(CAKeyPair.class.getName()).log(Level.SEVERE, null, ex);
             throw new IllegalStateException(ex); 
         }
-        //return null; 
     }
-
 }
