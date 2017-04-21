@@ -5,7 +5,7 @@ with 3rd party legacy).
 
 Requirements
 ===============
-Java JDK 1.6 +
+Java JDK 1.7 +
 Apache Ant 1.8+
 netbeans 8.2+ (you don't need netbeans to build/compile this project
   since netbeans uses 100% apache ant to build netbeans projects, but it is 
