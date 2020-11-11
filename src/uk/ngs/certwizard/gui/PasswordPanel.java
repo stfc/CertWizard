@@ -10,7 +10,7 @@
  */
 package uk.ngs.certwizard.gui;
 
-import help_panel_html.LoadHtmlResource;
+//import help_panel_html.LoadHtmlResource;
 import java.awt.Dimension;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
@@ -127,11 +127,10 @@ public class PasswordPanel extends javax.swing.JPanel  {
         jScrollPane1.setViewportView(jTextPane1);
         try {
             java.net.URL url;
-            LoadHtmlResource lhtml = new LoadHtmlResource();
             if ( this.isExistKeyStore ) {
-                url = lhtml.getHtmlFile("/help_panel_html/passwordPanel.html");
+                url = this.getClass().getResource("/help_panel_html/passwordPanel.html");
             } else {
-                url = lhtml.getHtmlFile("/help_panel_html/passwordPanelNew.html");
+                url = this.getClass().getResource("/help_panel_html/passwordPanelNew.html");
             }
 
             jTextPane1.setPage(url);
