@@ -1,0 +1,5 @@
+<CSR>
+    <Request>-----BEGIN CERTIFICATE REQUEST-----\n...\n-----END CERTIFICATE REQUEST-----\n</Request>
+    <PIN>happydancingwombats</PIN>
+    <Email>joe.bloggs@stfc.ac.uk</Email>
+</CSR>
