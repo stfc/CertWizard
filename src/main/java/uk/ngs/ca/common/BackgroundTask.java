@@ -8,29 +8,31 @@ import java.util.Observable;
 import java.util.concurrent.*;
 
 /**
- * Generic class for running background tasks that provide task completion 
- * and progress call backs. Subclasses need only implement <tt>compute()</tt>
- * which is called in the background thread. You MAY optionally override 
- * <tt>onCompletion()</tt> and <tt>onProgress()</tt> which are invoked in the 
- * AWT Event Dispatch Thread. 
- * In a subclass, you can call <tt>setProgress</tt> method from <tt>compute</tt>
- * method to indicate progress numerically. 
+ * Generic class for running background tasks that provide task completion and
+ * progress call backs. Subclasses need only implement <tt>compute()</tt>
+ * which is called in the background thread. You MAY optionally override
+ * <tt>onCompletion()</tt> and <tt>onProgress()</tt> which are invoked in the
+ * AWT Event Dispatch Thread. In a subclass, you can call <tt>setProgress</tt>
+ * method from <tt>compute</tt>
+ * method to indicate progress numerically.
  * <p>
  * Modified from JAVA Concurrency in Practice by Brian Goetz. This class
- * provides very similar functionality to <tt>SwingWorker</tt> introduced in 
- * JKD1.6. 
- * 
+ * provides very similar functionality to <tt>SwingWorker</tt> introduced in
+ * JKD1.6.
+ *
  * @author David Meredith
  */
 public abstract class BackgroundTask<V> extends Observable implements Runnable, Future<V> {
-    
+
     // manage our own instance of Computation FutureTask 
-    private final FutureTask<V> computation = new Computation(); 
-    
-     /**
+    private final FutureTask<V> computation = new Computation();
+
+    /**
      * current state.
      */
-    protected volatile StateValue state = StateValue.PENDING;;
+    protected volatile StateValue state = StateValue.PENDING;
+
+    ;
 
     
     /**
@@ -47,26 +49,24 @@ public abstract class BackgroundTask<V> extends Observable implements Runnable, 
          */
         STARTED,
         /**
-         * is {@code DONE} after {@code doInBackground}
-         * method is finished.
+         * is {@code DONE} after {@code doInBackground} method is finished.
          */
         DONE
     }
-    
-    
+
     /**
-     * Since Computation extends FutureTask, we can override <tt>done</tt> and run  
-     * our <tt>onCompletion</tt> and <tt>onProgress</tt> methods in the 
-     * Event Dispatch (GUI) thread. 
+     * Since Computation extends FutureTask, we can override <tt>done</tt> and
+     * run our <tt>onCompletion</tt> and <tt>onProgress</tt> methods in the
+     * Event Dispatch (GUI) thread.
      */
     private class Computation extends FutureTask<V> {
-        
+
         public Computation() {
             // Computation is a <tt>FutureTask</tt> that will, 
             // upon running, execute the given <tt>Callable</tt> instance.
             super(new Callable<V>() {
                 public V call() throws Exception {
-                    state = StateValue.STARTED; 
+                    state = StateValue.STARTED;
                     return BackgroundTask.this.doInBackground();
                 }
             });
@@ -106,7 +106,7 @@ public abstract class BackgroundTask<V> extends Observable implements Runnable, 
             });
         }
     } // end of Computation class 
-    
+
     /**
      * Returns the {@code SwingWorker} state bound property.
      *
@@ -115,57 +115,57 @@ public abstract class BackgroundTask<V> extends Observable implements Runnable, 
     public final StateValue getState() {
         return this.state;
     }
-    
+
     /**
-     * Call this method from within your overridden <tt>compute</tt> method
-     * to indicate progress numerically. 
-     * 
+     * Call this method from within your overridden <tt>compute</tt> method to
+     * indicate progress numerically.
+     *
      * @param current
-     * @param max 
+     * @param max
      */
-    protected void setProgress(final int current, final int max){
+    protected void setProgress(final int current, final int max) {
         // call onCompletion() in the GUI Event Dispatch Thread
-        GuiExecutor.instance().execute( new Runnable(){
-            public void run() { onProgress(current, max); }
+        GuiExecutor.instance().execute(new Runnable() {
+            public void run() {
+                onProgress(current, max);
+            }
         });
     }
-    
+
     /**
-     * Override this method to implement your long running task. 
-     * This method is called in the background thread. 
-     * 
+     * Override this method to implement your long running task. This method is
+     * called in the background thread.
+     *
      * @return The result type returned by this FutureTask's <tt>get</tt> method
-     * @throws Exception 
+     * @throws Exception
      */
-    protected abstract V doInBackground() throws Exception; 
-    
-    
+    protected abstract V doInBackground() throws Exception;
+
     /**
-     * Optional callback method that is called in the GUI event dispatch thread  
-     * after the compute task finishes. 
-     * Override this method to handle the on completion event. 
-     * 
+     * Optional callback method that is called in the GUI event dispatch thread
+     * after the compute task finishes. Override this method to handle the on
+     * completion event.
+     *
      * @param result
      * @param exception
-     * @param cancelled 
+     * @param cancelled
      */
-    protected void onCompletion(V result, Throwable exception, boolean cancelled) {}
-    
-    /**
-     * Optional callback method that is called called in the GUI event dispatch 
-     * thread. 
-     * Override this method to handle the progress callbacks (note, for this 
-     * overridden method to be called, the overridden compute task MUST invoke
-     * {@link #setProgress(int, int)}). 
-     * 
-     * @param current
-     * @param max 
-     */
-    protected void onProgress(int current, int max){}
-    
-    
-    // Other Future methods forwarded to computation 
+    protected void onCompletion(V result, Throwable exception, boolean cancelled) {
+    }
 
+    /**
+     * Optional callback method that is called called in the GUI event dispatch
+     * thread. Override this method to handle the progress callbacks (note, for
+     * this overridden method to be called, the overridden compute task MUST
+     * invoke {@link #setProgress(int, int)}).
+     *
+     * @param current
+     * @param max
+     */
+    protected void onProgress(int current, int max) {
+    }
+
+    // Other Future methods forwarded to computation 
     public void run() {
         computation.run();
     }
@@ -189,6 +189,5 @@ public abstract class BackgroundTask<V> extends Observable implements Runnable, 
     public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         return computation.get(timeout, unit);
     }
-    
-    
+
 } // end of BackgroundTask 

@@ -1,5 +1,5 @@
 <CA>
-  <Policy>
-     <MaxPrivateKeyLifeTime>395</MaxPrivateKeyLifeTime>
-  </Policy>
+    <Policy>
+        <MaxPrivateKeyLifeTime>395</MaxPrivateKeyLifeTime>
+    </Policy>
 </CA>

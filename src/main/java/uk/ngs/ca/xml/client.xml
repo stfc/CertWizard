@@ -4,23 +4,23 @@
         <Certificate>
             <DN>C=UK, O=eScience, OU=CLRC, L=DL, CN=xiao wang</DN>
             <Status>OFFLINE</Status>
-<!--
-            <CertFile>/home/xiw/.globus/201003092234cert.pem</CertFile>
-            <KeyFile>/home/xiw/.globus/201003092234key.pem</KeyFile>
--->
+            <!--
+                        <CertFile>/home/xiw/.globus/201003092234cert.pem</CertFile>
+                        <KeyFile>/home/xiw/.globus/201003092234key.pem</KeyFile>
+            -->
             <ReqID>3456</ReqID>
             <PrivateKey>ree</PrivateKey>
             <PublicKey>ere</PublicKey>
         </Certificate>
-<!--
-        <Proxy>
-            <StartDate>28/10/2009</StartDate>
-            <EndDate>27/11/2010</EndDate>
-            <StartTime>9.00</StartTime>
-            <EndTime>17.00</EndTime>
-            <Status>ere</Status>
-            <File>/tmp/x509up_13237</File>
-        </Proxy>
--->
+        <!--
+                <Proxy>
+                    <StartDate>28/10/2009</StartDate>
+                    <EndDate>27/11/2010</EndDate>
+                    <StartTime>9.00</StartTime>
+                    <EndTime>17.00</EndTime>
+                    <Status>ere</Status>
+                    <File>/tmp/x509up_13237</File>
+                </Proxy>
+        -->
     </Item>
 </Certificates>

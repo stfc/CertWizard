@@ -2,12 +2,12 @@
 <CA>
     <certificates>
         <certificate>-----BEGIN CERTIFICATE-----
-root here
-                 -----END CERTIFICATE-----
+            root here
+            -----END CERTIFICATE-----
         </certificate>
         <certificate>-----BEGIN CERTIFICATE-----
-CA here
-                 -----END CERTIFICATE-----
+            CA here
+            -----END CERTIFICATE-----
         </certificate>
     </certificates>
     <RAlist>
@@ -48,7 +48,7 @@ CA here
             <l>AThirdRA</l>
             <operator></operator>
         </ra> <!-- no active operators -->
-    <!-- etc -->
+        <!-- etc -->
     </RAlist>
     <PreferredRA>
         <ra>

@@ -3,15 +3,18 @@ package uk.ngs.ca.certificate.management;
 import java.util.Date;
 
 /**
- * Data transfer object that represents an entry in a PKCS12 or JKS KeyStore.
- * A single instance can be shared by multiple threads and its state is mutable, 
- * therefore access to all member variables is synchronized. 
- * 
+ * Data transfer object that represents an entry in a PKCS12 or JKS KeyStore. A
+ * single instance can be shared by multiple threads and its state is mutable,
+ * therefore access to all member variables is synchronized.
+ *
  * @author David Meredth
  */
 public class KeyStoreEntryWrapper {
+
     /* The choices for a valid keystore entry type */
-    public static enum KEYSTORE_ENTRY_TYPE {KEY_PAIR_ENTRY, TRUST_CERT_ENTRY, KEY_ENTRY};
+    public static enum KEYSTORE_ENTRY_TYPE {
+        KEY_PAIR_ENTRY, TRUST_CERT_ENTRY, KEY_ENTRY
+    };
 
     /* Required fields - not nullable */
     private String alias;
@@ -23,28 +26,28 @@ public class KeyStoreEntryWrapper {
     private String x500PrincipalName = null, issuerName = null;
     private Date notBefore = null, notAfter = null;
 
-
     /**
      * Constructor
+     *
      * @param sAlias KeyStore entry alias
      * @param eEntryType entry type
      * @param dCreationDate the creation date
      * @throws IllegalArgumentException if any of the given params are null.
      */
-    public KeyStoreEntryWrapper(String sAlias, KEYSTORE_ENTRY_TYPE eEntryType, 
-            Date dCreationDate){
-        if(sAlias == null || dCreationDate == null){
+    public KeyStoreEntryWrapper(String sAlias, KEYSTORE_ENTRY_TYPE eEntryType,
+            Date dCreationDate) {
+        if (sAlias == null || dCreationDate == null) {
             throw new IllegalArgumentException("alias or creation date is null");
         }
-        this.alias  = sAlias;
+        this.alias = sAlias;
         this.entrytype = eEntryType;
         this.creationDate = dCreationDate;
     }
 
-
     /**
-     * The CertificateCSRInfo object is a holder for the information
-     * known about this certificate by the CA server. 
+     * The CertificateCSRInfo object is a holder for the information known about
+     * this certificate by the CA server.
+     *
      * @return the mCertificateCSRInfo or null if it does not exist.
      */
     public synchronized CertificateCSRInfo getServerCertificateCSRInfo() {
@@ -58,12 +61,9 @@ public class KeyStoreEntryWrapper {
         this.serverCertificateCSRInfo = mCertificateCSRInfo;
     }
 
-
-    
-    public synchronized void setAlias(String alias){
+    public synchronized void setAlias(String alias) {
         this.alias = alias;
     }
-
 
     /**
      * @return the mAlias
@@ -141,9 +141,10 @@ public class KeyStoreEntryWrapper {
     public synchronized void setNotAfter(Date notAfter) {
         this.notAfter = notAfter;
     }
-    
+
     /**
-     * @return True if this is certificate signing request certificate, otherwise false. 
+     * @return True if this is certificate signing request certificate,
+     * otherwise false.
      */
     public synchronized boolean isCSR() {
         if (x500PrincipalName != null && issuerName != null

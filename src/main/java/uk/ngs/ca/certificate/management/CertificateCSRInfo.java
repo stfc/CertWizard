@@ -12,7 +12,7 @@ public class CertificateCSRInfo {
 
     private volatile String owner = null;
     private volatile String role = null;
-    
+
     // The status returned by the server. TODO: 
     private volatile String status = null;
     private volatile String useremail = null;
@@ -32,7 +32,6 @@ public class CertificateCSRInfo {
     //public void setPublickey(String publickey) {
     //    this.publickey = publickey;
     //}
-
     public void setIsCSR(boolean isCSR) {
         this.isCSR = isCSR;
     }
@@ -41,7 +40,7 @@ public class CertificateCSRInfo {
         this.owner = owner;
     }
 
-    public void setRole( String role ){
+    public void setRole(String role) {
         this.role = role;
     }
 
@@ -80,7 +79,6 @@ public class CertificateCSRInfo {
     //public String getPublickey() {
     //    return this.publickey;
     //}
-
     public boolean getIsCSR() {
         return this.isCSR;
     }
@@ -89,7 +87,7 @@ public class CertificateCSRInfo {
         return this.owner;
     }
 
-    public String getRole(){
+    public String getRole() {
         return this.role;
     }
 

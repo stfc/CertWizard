@@ -19,9 +19,9 @@ public class OnlineStatus extends javax.swing.JPanel /*implements Observer*/ {
 
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     // Records whether the last ping check completed ok 
-    private AtomicBoolean pingedOK = new AtomicBoolean(false); 
+    private AtomicBoolean pingedOK = new AtomicBoolean(false);
     //private Runnable sleepTask; 
-    
+
     /**
      * Creates new form OnlineStatus
      */
@@ -29,12 +29,12 @@ public class OnlineStatus extends javax.swing.JPanel /*implements Observer*/ {
         initComponents();
         this.timeoutTextField.setVisible(false);
         this.jLabel2.setVisible(false);
-     }
-    
+    }
+
     /**
-     * Starts the periodic Ping task in a background thread. 
+     * Starts the periodic Ping task in a background thread.
      */
-    public void startScheduledPingCheckTask() {    
+    public void startScheduledPingCheckTask() {
         // DM: I wanted to use a SwingWorker and a property change listener on the
         // SwingWorker 'state' property as this gives more control, however
         // this top 25 bug (SwingWorker deadlocks due to 
@@ -144,7 +144,7 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
 }//GEN-LAST:event_timeoutTextFieldFocusLost
 
     private void cancelPingButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelPingButtonActionPerformed
-        this.updateGUI(false); 
+        this.updateGUI(false);
     }//GEN-LAST:event_cancelPingButtonActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -160,7 +160,6 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
         JOptionPane.showMessageDialog(this, "todo",
                     "Configure Network Connection", JOptionPane.INFORMATION_MESSAGE);
     }*/
-
     /**
      * change the timeout value
      */
@@ -178,24 +177,24 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
             this.timeoutTextField.setText(String.valueOf(SysProperty.getTimeoutMilliSecs() / 1000));
         }
     }*/
-
     /**
-     * Attempt a ping check and update our global state. 
+     * Attempt a ping check and update our global state.
      */
     private void doPingCheckActionPerformed() {
         // Clicking to start this task should not clash with another ping task 
         // because the button that calls this method is disabled when a task
         // executes. 
         //sleepTask = null; 
-        Runnable sleepTask = new PingCheckTask(); 
-        Thread t = new Thread(sleepTask); 
+        Runnable sleepTask = new PingCheckTask();
+        Thread t = new Thread(sleepTask);
         t.setDaemon(true);
         t.start();
     }
 
     /**
-     * Update this panels online status GUI components in the AWT event dispatch 
-     * thread. Online status is based on the <code>SystemStatus.ISONLINE</code> property. 
+     * Update this panels online status GUI components in the AWT event dispatch
+     * thread. Online status is based on the <code>SystemStatus.ISONLINE</code>
+     * property.
      */
     /*public void update(Observable o, Object arg) {
         SwingUtilities.invokeLater(new Runnable() {
@@ -206,13 +205,14 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
             }
         });
     }*/
-    
     /**
-     * Updates the GUI. Guarantees to run the GUI updates in the AWT event dispatch thread. 
-     * @param running 
+     * Updates the GUI. Guarantees to run the GUI updates in the AWT event
+     * dispatch thread.
+     *
+     * @param running
      */
     private void updateGUI(final boolean running) {
-        GuiExecutor.instance().execute( new Runnable() {
+        GuiExecutor.instance().execute(new Runnable() {
             public void run() {
                 if (running) {
                     onlineLabel.setText("Pinging Server...");
@@ -221,7 +221,7 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
                     cancelPingButton.setEnabled(true);
                 } else {
                     Date lastOnline = new Date();
-                    if(pingedOK.get()){
+                    if (pingedOK.get()) {
                         onlineLabel.setText("Last online check at:  " + lastOnline.toString());
                         onlineLabel.setForeground(new Color(0, 153, 0));
                     } else {
@@ -234,22 +234,21 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
             }
         });
     }
-    
-    
 
     private class PingCheckTask implements Runnable {
+
         @Override
         public void run() {
             try {
                 updateGUI(true);
                 // call the ping in new thread
-                pingedOK.set(PingService.getPingService().isPingService());   
+                pingedOK.set(PingService.getPingService().isPingService());
             } finally {
                 updateGUI(false);
             }
         }
     }
-    
+
     /*private class SleepTask implements Runnable {
         @Override
         public void run() {
@@ -261,12 +260,10 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
             }
         }
     }*/
-        
-    
     /**
-     * Handle onlineUpdateTask property changes (runs in AWT Event thread) 
-     */    
-   /* private PropertyChangeListener pingTaskPropertyListener = new PropertyChangeListener() {
+     * Handle onlineUpdateTask property changes (runs in AWT Event thread)
+     */
+    /* private PropertyChangeListener pingTaskPropertyListener = new PropertyChangeListener() {
 
         public void propertyChange(PropertyChangeEvent e) {
             String propertyName = e.getPropertyName();
@@ -287,7 +284,6 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
             }
         }
     };*/
-    
     // I wanted to use a SwingWorker with a listener but beware of this 
     // top 25 bug: http://bugs.sun.com/view_bug.do;jsessionid=e13cfc6ea10a4ffffffffce8c9244b60e54d?bug_id=6880336 
     /*private class PingTask extends SwingWorker<Void, Object[]>{
@@ -302,5 +298,4 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
             //updateGUI(false);
         }
     }*/
-  
 }

@@ -12,10 +12,11 @@ import uk.ngs.ca.tools.property.SysProperty;
 
 /**
  * Generate a new Restlet Client with some configuration already applied
+ *
  * @author fou43474
  */
 public class RestletClient {
-    
+
     public static Client getClient() {
         Context context = new Context();
         context.getParameters().add("socketConnectTimeoutMs", String.valueOf(SysProperty.getTimeoutMilliSecs()));

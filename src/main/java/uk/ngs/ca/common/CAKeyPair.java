@@ -86,9 +86,8 @@ public class CAKeyPair {
      * @throws IllegalStateException if an issue occurs when creating the cert.
      */
     public static X509Certificate createSelfSignedCertificate(KeyPair keyPair, String ou, String l, String cn) {
-        
+
         // See https://www.misterpki.com/how-to-generate-a-self-signed-certificate-with-java-and-bouncycastle/ for more info on how to do this
-        
         Calendar now = Calendar.getInstance();
         Date startDate = now.getTime();
         now.add(Calendar.YEAR, 1);

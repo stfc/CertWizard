@@ -38,8 +38,8 @@ public class CertificateRenewRevokeGuiHelper {
 
     private ClientKeyStoreCaServiceWrapper caKeyStoreModel;
     private Component parentComponent;
-    private final Pattern alphaNumericPattern = Pattern.compile("[0-9A-Za-z\\s_\\.,]+"); 
-    
+    private final Pattern alphaNumericPattern = Pattern.compile("[0-9A-Za-z\\s_\\.,]+");
+
     /**
      * Portecle Resource bundle base name
      */
@@ -64,44 +64,44 @@ public class CertificateRenewRevokeGuiHelper {
         // to guard against TOCTAU attacks and stale data (when was the online status last fetched). 
         try {
             parentComponent.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-            if (caKeyStoreModel.onlineUpdateKeyStoreEntry(selectedKSEW)){ 
+            if (caKeyStoreModel.onlineUpdateKeyStoreEntry(selectedKSEW)) {
                 caKeyStoreModel.getClientKeyStore().reStore();
             }
         } finally {
             parentComponent.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         }
-        
+
         if (selectedKSEW == null
                 || !KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY.equals(selectedKSEW.getEntryType())
                 || selectedKSEW.getServerCertificateCSRInfo() == null
                 || !"VALID".equals(selectedKSEW.getServerCertificateCSRInfo().getStatus())) {
-            
+
             JOptionPane.showMessageDialog(parentComponent, "Only VALID certificates known by the UK CA can be revoked",
                     "Suitable certificate not selected", JOptionPane.WARNING_MESSAGE);
-            return false; 
-            
-        } 
-        
+            return false;
+
+        }
+
         // TODO - need to remove this once host certs are suppored. 
 //        if (selectedKSEW.getX500PrincipalName().contains(".")) {
 //            JOptionPane.showMessageDialog(parentComponent, "Host cert revocations not yet supported. Coming very soon !",
 //                    "Host cert revocations not yet supported", JOptionPane.WARNING_MESSAGE);
 //            return false;
 //        }
-  
-        if (JOptionPane.showConfirmDialog(parentComponent, 
+        if (JOptionPane.showConfirmDialog(parentComponent,
                 "Are you sure you want to revoke the selected certificate?\n\n"
-                    + "Alias: ["+ selectedKSEW.getAlias()+"]\n"
-                    + "DN: ["+ selectedKSEW.getX500PrincipalName()+"]\n"
-                    + "Email: ["+selectedKSEW.getServerCertificateCSRInfo().getUserEmail()+"]", 
-                "Renew Certificate", JOptionPane.YES_NO_OPTION) 
+                + "Alias: [" + selectedKSEW.getAlias() + "]\n"
+                + "DN: [" + selectedKSEW.getX500PrincipalName() + "]\n"
+                + "Email: [" + selectedKSEW.getServerCertificateCSRInfo().getUserEmail() + "]",
+                "Renew Certificate", JOptionPane.YES_NO_OPTION)
                 != JOptionPane.YES_OPTION) {
-            return false; 
+            return false;
         }
-        
-        
-        String reason = this.getNewRevocationReasonHelper(""); 
-        if(reason == null){ return false; } 
+
+        String reason = this.getNewRevocationReasonHelper("");
+        if (reason == null) {
+            return false;
+        }
         //if(true) return false; 
         try {
             parentComponent.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
@@ -129,10 +129,8 @@ public class CertificateRenewRevokeGuiHelper {
             }
         } finally {
             parentComponent.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-        }              
+        }
     }
-    
-    
 
     /**
      * Lead the user through the renewal process for the given keyStore entry.
@@ -144,34 +142,33 @@ public class CertificateRenewRevokeGuiHelper {
      * @return the keyStore alias of the newly added renewal CSR or null if
      * cancelled or not added for whatever reason.
      */
-    public String doRenew(KeyStoreEntryWrapper selectedKSEW) 
+    public String doRenew(KeyStoreEntryWrapper selectedKSEW)
             throws KeyStoreException, IOException, CertificateException, NoSuchProviderException, SecurityException, SignatureException, InvalidKeyException {
         // First MUST refresh the online status of the selected keyStoreEntryWrapper
         // to guard against TOCTAU attacks and stale data (when was the online status last fetched). 
         try {
             parentComponent.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-            if (caKeyStoreModel.onlineUpdateKeyStoreEntry(selectedKSEW)){ 
+            if (caKeyStoreModel.onlineUpdateKeyStoreEntry(selectedKSEW)) {
                 caKeyStoreModel.getClientKeyStore().reStore();
             }
         } finally {
             parentComponent.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         }
-        
+
         // Now test that the selected keyStoreEntryWrapper is eligible for renewal. 
         if (selectedKSEW == null
                 || !KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY.equals(selectedKSEW.getEntryType())
                 || selectedKSEW.getServerCertificateCSRInfo() == null
-                || !("VALID".equals(selectedKSEW.getServerCertificateCSRInfo().getStatus()) )
-                      //||"Expired".equals(selectedKSEW.getServerCertificateCSRInfo().getStatus()))
-                || this.caKeyStoreModel.getClientKeyStore().getX509Certificate(selectedKSEW.getAlias()) == null ) {
+                || !("VALID".equals(selectedKSEW.getServerCertificateCSRInfo().getStatus()))
+                //||"Expired".equals(selectedKSEW.getServerCertificateCSRInfo().getStatus()))
+                || this.caKeyStoreModel.getClientKeyStore().getX509Certificate(selectedKSEW.getAlias()) == null) {
             // Can only renew key_pairs types issued by our CA    
             JOptionPane.showMessageDialog(parentComponent, "Only VALID or recently Expired certificates known by the UK CA can be renewed",
                     "Suitable certificate not selected", JOptionPane.WARNING_MESSAGE);
-            return null; 
+            return null;
         }
-        System.out.println("DEBUG: "+selectedKSEW.getServerCertificateCSRInfo().getStatus());
+        System.out.println("DEBUG: " + selectedKSEW.getServerCertificateCSRInfo().getStatus());
 
-        
         // Check we are renewing a cert that is valid or within the 30 day 
         // tolerance period 
         Calendar todaysDate = Calendar.getInstance();
@@ -210,39 +207,38 @@ public class CertificateRenewRevokeGuiHelper {
                 != JOptionPane.YES_OPTION) {
             return null; // user pressed no. 
         }
-        
+
         // Get and assert valid email. 
         // There are instances where we have no email address recorded against 
         // a host certificate in the CA db (this is due to unrelated CA issues). 
         // Must code defensively to ensure that an email is always provided. 
         String email = selectedKSEW.getServerCertificateCSRInfo().getUserEmail();
-        if (email == null || !EmailValidator.getInstance().isValid(email)) { 
+        if (email == null || !EmailValidator.getInstance().isValid(email)) {
             // In the future, we will want to provide the opportunity to change the 
             // email on renew, but for now we have to barf and ask for it to be reported. 
             //email = this.getNewEmailHelper(email);
             String message = "Unable to renew. The email associated with this certificate is invalid.\n"
                     + "This is due to a known issue on our CA server.\n"
                     + "Please report this to the helpdesk (support@grid-support.ac.uk) and copy the following:\n"
-                    + "DN: ["+ selectedKSEW.getX500PrincipalName()+"]\n"
-                    + "CertId: ["+selectedKSEW.getServerCertificateCSRInfo().getId()+"]\n"
-                    + "Email: ["+selectedKSEW.getServerCertificateCSRInfo().getUserEmail()+"]\n"; 
+                    + "DN: [" + selectedKSEW.getX500PrincipalName() + "]\n"
+                    + "CertId: [" + selectedKSEW.getServerCertificateCSRInfo().getId() + "]\n"
+                    + "Email: [" + selectedKSEW.getServerCertificateCSRInfo().getUserEmail() + "]\n";
             GeneralMessageDialog.showAndWait(parentComponent, message, "Renew Error", JOptionPane.ERROR_MESSAGE);
-            return null; 
+            return null;
         } else {
             // TODO In future - The email currently recorded against this certificate is ... 
             // Do you want to update the email? (will need to remove email equality check below) 
             // JK uncommented it to give it a go ... and it seems to work OK ... at least with a correct email address for a personal cert
-            email = this.getNewEmailHelper(email); 
+            email = this.getNewEmailHelper(email);
         }
-        if(email == null){
+        if (email == null) {
             return null; // user hit cancel 
         }
         //if(true) return null; 
 
-        
         try {
             parentComponent.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-            
+
             // Get the cert to be renewed (and its private key) and validate
             X509Certificate toRenewCert = this.caKeyStoreModel.getClientKeyStore().getX509Certificate(selectedKSEW.getAlias());
             PrivateKey toRenewPrivateKey = this.caKeyStoreModel.getClientKeyStore().getPrivateKey(toRenewCert.getPublicKey());
@@ -255,7 +251,7 @@ public class CertificateRenewRevokeGuiHelper {
             } catch (CertificateExpiredException ex) {
                 Calendar dateThirtyDaysAgo = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
                 dateThirtyDaysAgo.add(Calendar.DAY_OF_MONTH, -30);
-                if (!certExpireDate.after(dateThirtyDaysAgo.getTime())) { 
+                if (!certExpireDate.after(dateThirtyDaysAgo.getTime())) {
                     parentComponent.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
                     JOptionPane.showMessageDialog(parentComponent, "Renewal Certificate has expired", "Invalid Certificate", JOptionPane.ERROR_MESSAGE);
                     return null;
@@ -264,8 +260,8 @@ public class CertificateRenewRevokeGuiHelper {
                 parentComponent.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
                 JOptionPane.showMessageDialog(parentComponent, "Renewal Certificate is not yet valid", "Invalid Certificate", JOptionPane.ERROR_MESSAGE);
                 return null;
-            }   
-            
+            }
+
             // If the cert has EMAILADDRESS encoded in the DN, then it SHOULD match the 
             // email value known to the server, otherwise there is a problem. 
             // Use authCert.getSubjectX500Principal().toString() to ensure EMAILADDRESS is listed in DN string 
@@ -275,19 +271,19 @@ public class CertificateRenewRevokeGuiHelper {
             String certEmailValue = CertUtil.extractDnAttribute(dn, CertUtil.DNAttributeType.EMAILADDRESS);
             if (certEmailValue != null && !certEmailValue.equals("")) {
                 if (!certEmailValue.equals(email)) {
-                     parentComponent.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-                     String message = "Unable to renew. The email encoded in the certificate DN is different from the email recorded in the CA database.\n"
-                    + "This is due to a known issue on our CA server.\n"
-                    + "Please report this to the helpdesk (support@grid-support.ac.uk) and copy the following:\n"
-                    + "DN: ["+ selectedKSEW.getX500PrincipalName()+"]\n"
-                    + "CertId: ["+selectedKSEW.getServerCertificateCSRInfo().getId()+"]\n"
-                    + "Email known to server: ["+selectedKSEW.getServerCertificateCSRInfo().getUserEmail()+"]\n"
-                    + "Email in certficate DN: ["+certEmailValue+"]\n"; 
-                     JOptionPane.showMessageDialog(parentComponent, message, "CA Issue", JOptionPane.ERROR_MESSAGE);
-                     return null;
+                    parentComponent.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                    String message = "Unable to renew. The email encoded in the certificate DN is different from the email recorded in the CA database.\n"
+                            + "This is due to a known issue on our CA server.\n"
+                            + "Please report this to the helpdesk (support@grid-support.ac.uk) and copy the following:\n"
+                            + "DN: [" + selectedKSEW.getX500PrincipalName() + "]\n"
+                            + "CertId: [" + selectedKSEW.getServerCertificateCSRInfo().getId() + "]\n"
+                            + "Email known to server: [" + selectedKSEW.getServerCertificateCSRInfo().getUserEmail() + "]\n"
+                            + "Email in certficate DN: [" + certEmailValue + "]\n";
+                    JOptionPane.showMessageDialog(parentComponent, message, "CA Issue", JOptionPane.ERROR_MESSAGE);
+                    return null;
                 }
             }
-            
+
             // Ask user for a new alias for the renewal (provide suitable suggestion)
             JOptionPane.showMessageDialog(parentComponent, "You will now be prompted to enter a new unique alias.\n"
                     + "This is simply a memorable display name/tag for your new certificate.", "Certificate Renewal", JOptionPane.INFORMATION_MESSAGE);
@@ -296,7 +292,7 @@ public class CertificateRenewRevokeGuiHelper {
             if (newCsrRenewalAlias == null) {
                 return null; //user hit cancel
             }
-               
+
             // Create a new key pair for the PKCS#10 renewal request and for the 
             // new self signed cert that is stored in the keyStore. 
             KeyPair csrKeyPair = CAKeyPair.getNewKeyPair();
@@ -306,18 +302,18 @@ public class CertificateRenewRevokeGuiHelper {
 
             // If submitted ok, save a new self-signed cert in the keyStore 
             // created with the PKCS#10 key pair and ReStore. 
-            if (result.first) {             
+            if (result.first) {
                 X509Certificate cert = CAKeyPair.createSelfSignedCertificate(csrKeyPair, renewal.getOU(), renewal.getL(), renewal.getCN());
                 X509Certificate[] certs = {cert};
 
                 // reStore the keystore 
                 caKeyStoreModel.getClientKeyStore().setKeyEntry(newCsrRenewalAlias, csrKeyPair.getPrivate(), caKeyStoreModel.getPassword(), certs);
                 caKeyStoreModel.getClientKeyStore().reStore();
-                
+
                 // Add the new entry to the model map
                 KeyStoreEntryWrapper newCsrEntry = caKeyStoreModel.createKSEntryWrapperInstanceFromEntry(newCsrRenewalAlias);
                 caKeyStoreModel.getKeyStoreEntryMap().put(newCsrRenewalAlias, newCsrEntry);
-                
+
                 // Inform user of successful submission 
                 parentComponent.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
                 JOptionPane.showMessageDialog(parentComponent, "The renewal request has been submitted", "Renewal request successful", JOptionPane.INFORMATION_MESSAGE);
@@ -333,7 +329,7 @@ public class CertificateRenewRevokeGuiHelper {
     }
 
     /**
-     * Gets a new entry alias from user, handling overwrite/unique alias issues. 
+     * Gets a new entry alias from user, handling overwrite/unique alias issues.
      * Based on Portecle.
      *
      * @see FPortecle#getNewEntryAlias(java.security.KeyStore, java.lang.String,
@@ -348,8 +344,8 @@ public class CertificateRenewRevokeGuiHelper {
             boolean selectAlias) throws KeyStoreException {
 
         // Get the alias for the new entry
-        DGetAlias dGetAlias =
-                new DGetAlias(null, RB.getString(dialogTitleKey), sAlias.toLowerCase(), selectAlias);
+        DGetAlias dGetAlias
+                = new DGetAlias(null, RB.getString(dialogTitleKey), sAlias.toLowerCase(), selectAlias);
         dGetAlias.setLocationRelativeTo(parentComponent);
         SwingHelper.showAndWait(dGetAlias);
 
@@ -362,7 +358,7 @@ public class CertificateRenewRevokeGuiHelper {
             JOptionPane.showMessageDialog(
                     parentComponent,
                     MessageFormat.format("The keystore already contains an entry with the alias " + sAlias + "\n"
-                    + "Please enter a unique alias", sAlias),
+                            + "Please enter a unique alias", sAlias),
                     RB.getString("FPortecle.RenameEntry.Title"), JOptionPane.ERROR_MESSAGE);
             // recurse  
             return getNewEntryAliasHelper(sAlias, dialogTitleKey, selectAlias);
@@ -370,16 +366,21 @@ public class CertificateRenewRevokeGuiHelper {
             return sAlias;
         }
     }
-    
+
     /**
-     * Gets a new valid email address or null if user cancels. 
+     * Gets a new valid email address or null if user cancels.
+     *
      * @param sEmail
-     * @return valid email or null if canceled. 
+     * @return valid email or null if canceled.
      */
     private String getNewEmailHelper(String sEmail) {
-        if (sEmail == null){ sEmail = ""; }
+        if (sEmail == null) {
+            sEmail = "";
+        }
         sEmail = JOptionPane.showInputDialog(parentComponent, "Enter Email:", sEmail);
-        if (sEmail == null) { return null; }
+        if (sEmail == null) {
+            return null;
+        }
 
         if (!EmailValidator.getInstance().isValid(sEmail)) {
             JOptionPane.showMessageDialog(parentComponent,
@@ -391,17 +392,22 @@ public class CertificateRenewRevokeGuiHelper {
             return sEmail;
         }
     }
-    
+
     /**
-     * Gets a new reason for revocation or null if user cancels. 
+     * Gets a new reason for revocation or null if user cancels.
+     *
      * @param sReason
-     * @return reason or null if cancelled. 
+     * @return reason or null if cancelled.
      */
     private String getNewRevocationReasonHelper(String sReason) {
-        if (sReason == null){ sReason = "";}
+        if (sReason == null) {
+            sReason = "";
+        }
         sReason = JOptionPane.showInputDialog(parentComponent, "Reason to Revoke:", sReason);
-        if (sReason == null) {return null; }
-     
+        if (sReason == null) {
+            return null;
+        }
+
         if (sReason.trim().length() < 5 || !alphaNumericPattern.matcher(sReason).matches()) {
             JOptionPane.showMessageDialog(parentComponent,
                     "Invalid Revocation Reason - Please enter a reason for revocation (min 5 chars, alphanumerics only)",

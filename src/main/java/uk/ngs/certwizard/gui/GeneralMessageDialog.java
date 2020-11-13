@@ -23,7 +23,7 @@ public class GeneralMessageDialog {
         jt.setLineWrap(true);
         jt.setEditable(false);
         jt.setWrapStyleWord(true);
-        jt.setCaretPosition(0); 
+        jt.setCaretPosition(0);
         JScrollPane scroller = new JScrollPane(jt);
         scroller.setPreferredSize(new Dimension(600, 100));
         JOptionPane.showMessageDialog(parent, scroller, title, JOptionPaneMessageType);

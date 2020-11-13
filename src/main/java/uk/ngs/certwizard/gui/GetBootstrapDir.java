@@ -9,35 +9,36 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 
 /**
- * Dialog to select or create a writable keyStore directory with the specified name. 
- * This usually defaults to '$HOME/dirName' but specific location can vary according to OS.
+ * Dialog to select or create a writable keyStore directory with the specified
+ * name. This usually defaults to '$HOME/dirName' but specific location can vary
+ * according to OS.
  *
  * @author David Meredith
  */
 public class GetBootstrapDir extends javax.swing.JDialog {
 
-    private String dirName = ".ca"; 
+    private String dirName = ".ca";
     private String SELECTED_CA_DIR = "<html>Open this keyStore folder&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;OR<br/>"
             + "Browse for another keyStore folder</html>";
-    private String SELECTED_PAR_DIR ="<html>Create a new '"+dirName+"' keyStore folder in selected folder&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;OR<br/>"
-            + "Browse for your keyStore folder</html>" ; 
+    private String SELECTED_PAR_DIR = "<html>Create a new '" + dirName + "' keyStore folder in selected folder&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;OR<br/>"
+            + "Browse for your keyStore folder</html>";
     private Path bootDir;
-   
 
     /**
-     * Create a new dialog instance.  
+     * Create a new dialog instance.
+     *
      * @param parent
      * @param modal
-     * @param dirName Search for a folder with this name in the default OS 
-     *  HOME locations (varies according to OS). 
+     * @param dirName Search for a folder with this name in the default OS HOME
+     * locations (varies according to OS).
      */
     public GetBootstrapDir(java.awt.Frame parent, boolean modal, String dirName) {
         super(parent, modal);
         initComponents();
-        if(dirName == null){
-            throw new RuntimeException("Invalid dirName, must have a value"); 
+        if (dirName == null) {
+            throw new RuntimeException("Invalid dirName, must have a value");
         }
-        this.dirName = dirName; 
+        this.dirName = dirName;
         initMyComponents();
     }
 
@@ -45,25 +46,25 @@ public class GetBootstrapDir extends javax.swing.JDialog {
         Path dir = this.getDefaultBootDir();
         this.bootDir = dir;
         this.jTextField1.setText(dir.toString());
-        this.setLabelText(); 
+        this.setLabelText();
         this.setTitle("Select CertWizard keyStore folder");
     }
-    
-    private void setLabelText(){
-        if(this.bootDir != null){
-        if (this.bootDir.endsWith(this.dirName)) {
-            this.jLabel1.setText(SELECTED_CA_DIR);
+
+    private void setLabelText() {
+        if (this.bootDir != null) {
+            if (this.bootDir.endsWith(this.dirName)) {
+                this.jLabel1.setText(SELECTED_CA_DIR);
+            } else {
+                this.jLabel1.setText(SELECTED_PAR_DIR);
+            }
         } else {
-            this.jLabel1.setText(SELECTED_PAR_DIR);
-        }
-        } else {
-            this.jLabel1.setText("Browse for your keyStore folder"); 
+            this.jLabel1.setText("Browse for your keyStore folder");
         }
     }
 
     /**
-     * Get the default installation directory. This may be a '.ca' dir 
-     * or another dir in which the '.ca' dir could be created.
+     * Get the default installation directory. This may be a '.ca' dir or
+     * another dir in which the '.ca' dir could be created.
      *
      * @return
      */
@@ -97,9 +98,10 @@ public class GetBootstrapDir extends javax.swing.JDialog {
     }
 
     /**
-     * Get the current writable directory value. This could be a folder with the 
-     * specified dirName but this is not guaranteed.  
-     * @return 
+     * Get the current writable directory value. This could be a folder with the
+     * specified dirName but this is not guaranteed.
+     *
+     * @return
      */
     public Path getBootDir() {
         return this.bootDir;
@@ -125,29 +127,28 @@ public class GetBootstrapDir extends javax.swing.JDialog {
                 int retval = JOptionPane.showConfirmDialog(this, "Open the following keyStore folder?\n"
                         + dir.toString(), "Confirm", JOptionPane.INFORMATION_MESSAGE);
                 if (retval == JOptionPane.OK_OPTION) {
-                    this.bootDir = dir; 
+                    this.bootDir = dir;
                     return true;
                 }
             } else if (!Files.exists(dir)) {
                 // Confirm creation of the .ca dir and return true if confirmed/created    
-                int retval = JOptionPane.showConfirmDialog(this, "Create '"+this.dirName+"' keyStore folder in this directory?",
+                int retval = JOptionPane.showConfirmDialog(this, "Create '" + this.dirName + "' keyStore folder in this directory?",
                         "Confirm", JOptionPane.INFORMATION_MESSAGE);
                 if (retval == JOptionPane.OK_OPTION) {
                     try {
                         this.bootDir = Files.createDirectory(dir);
-                        return true; 
+                        return true;
                     } catch (IOException ex) {
-                        JOptionPane.showMessageDialog(this, "Could not create '"+this.dirName+"' keyStore folder: " + ex.getMessage(),
+                        JOptionPane.showMessageDialog(this, "Could not create '" + this.dirName + "' keyStore folder: " + ex.getMessage(),
                                 "Folder Creation Error", JOptionPane.ERROR_MESSAGE);
                     }
                 }
             }
-        }
-        // We have a writable .ca dir 
+        } // We have a writable .ca dir 
         else {
-            return true; 
+            return true;
         }
-        return false; 
+        return false;
     }
 
     /**
@@ -235,22 +236,22 @@ public class GetBootstrapDir extends javax.swing.JDialog {
     private void browseButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_browseButtonActionPerformed
         JFileChooser jf = new JFileChooser(); // does not necessarily use 'user.home'
         jf.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        jf.setFileHidingEnabled(false); 
+        jf.setFileHidingEnabled(false);
         jf.setDialogTitle("Select folder");
         int returnVal = jf.showOpenDialog(null);
         if (returnVal == JFileChooser.APPROVE_OPTION) {
             Path dir = jf.getSelectedFile().toPath();
-            this.bootDir = dir; 
+            this.bootDir = dir;
             this.setLabelText();
-            this.jTextField1.setText(bootDir.toString()); 
+            this.jTextField1.setText(bootDir.toString());
         }
     }//GEN-LAST:event_browseButtonActionPerformed
 
     private void okButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_okButtonActionPerformed
-        if(this.setCaDir(this.bootDir)){
+        if (this.setCaDir(this.bootDir)) {
             // If setCaDir returns true - a writable '.ca' dir was selected/created 
             // so hide this dialog. 
-            this.setVisible(false); 
+            this.setVisible(false);
         }
     }//GEN-LAST:event_okButtonActionPerformed
 

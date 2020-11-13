@@ -1,6 +1,6 @@
 <CA>
-  <Policy>
-     <MaxExpiredReKey>30</MaxExpiredReKey>
-     <MaxPrivateKeyLifeTime>395</MaxPrivateKeyLifeTime>
-  </Policy>
+    <Policy>
+        <MaxExpiredReKey>30</MaxExpiredReKey>
+        <MaxPrivateKeyLifeTime>395</MaxPrivateKeyLifeTime>
+    </Policy>
 </CA>

@@ -4,26 +4,23 @@
  */
 package uk.ngs.ca.common;
 
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
-
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.AlgorithmParameters;
 import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.Provider;
+import java.security.PublicKey;
+import java.security.interfaces.RSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import java.security.Provider;
-
-import org.bouncycastle.util.encoders.Base64;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-
-import javax.crypto.spec.PBEParameterSpec;
-import java.security.AlgorithmParameters;
-import java.security.interfaces.RSAPublicKey;
-import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.SecretKeyFactory;
 import javax.crypto.Cipher;
 import javax.crypto.EncryptedPrivateKeyInfo;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.PBEParameterSpec;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.encoders.Base64;
 
 /**
  *
@@ -92,7 +89,7 @@ public class EncryptUtil {
             Provider provider = new BouncyCastleProvider();
             byte[] decodedPubKey = Base64.decode(encodedPublicKeyString);
             X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(decodedPubKey);
-            KeyFactory keyFactory = KeyFactory.getInstance( "RSA", provider );
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA", provider);
             PublicKey pubKey = keyFactory.generatePublic(pubKeySpec);
 
             return pubKey;
@@ -103,9 +100,9 @@ public class EncryptUtil {
 
     }
 
-    public static String getKeyid(String encodedPublicKeyString){ //throws NoSuchAlgorithmException, InvalidKeySpecException {
+    public static String getKeyid(String encodedPublicKeyString) { //throws NoSuchAlgorithmException, InvalidKeySpecException {
         String keyid = null;
-        try{
+        try {
             Provider provider = new BouncyCastleProvider();
             byte[] decodedPubKey = Base64.decode(encodedPublicKeyString);
             X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(decodedPubKey);
@@ -125,9 +122,9 @@ public class EncryptUtil {
             keyid = modulusHexString + "." + exponentHexString;
 
             return keyid;
-        }catch( Exception ep ){
+        } catch (Exception ep) {
             ep.printStackTrace();
-        }finally{
+        } finally {
             return keyid;
         }
     }

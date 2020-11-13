@@ -9,8 +9,8 @@ import java.util.Observable;
 import uk.ngs.ca.tools.property.SysProperty;
 
 /**
- * This class is <code>Observable</code>. Registered <code>Observer</code>s
- * will be updated when the <code>isOnline</code> system changes.
+ * This class is <code>Observable</code>. Registered <code>Observer</code>s will
+ * be updated when the <code>isOnline</code> system changes.
  *
  * @author xw75
  */
@@ -21,55 +21,57 @@ public class SystemStatus extends Observable {
     //public static AtomicBoolean ISINIT = new AtomicBoolean(false);;
     private String errorMessage = null;
 
-    private File homeDir = new File(System.getProperty("user.home")); 
+    private File homeDir = new File(System.getProperty("user.home"));
 
     private boolean isOnline = false;
 
-    public synchronized File getHomeDir(){
-        return new File(this.homeDir.getAbsolutePath()); 
+    public synchronized File getHomeDir() {
+        return new File(this.homeDir.getAbsolutePath());
     }
 
-    public synchronized void setHomeDir(File dir){
-        this.homeDir = dir; 
+    public synchronized void setHomeDir(File dir) {
+        this.homeDir = dir;
     }
-   
-    public synchronized boolean getIsOnline(){
+
+    public synchronized boolean getIsOnline() {
         return this.isOnline;
     }
 
     /**
-     * Set the online system status flag and update any Observers registered
-     * to observe online status changes.
+     * Set the online system status flag and update any Observers registered to
+     * observe online status changes.
+     *
      * @param online
      */
-    public synchronized void setIsOnline(boolean online){
+    public synchronized void setIsOnline(boolean online) {
         //if (online != this.isOnline) {
-            this.isOnline = online;
-            setChanged();
-            notifyObservers();
+        this.isOnline = online;
+        setChanged();
+        notifyObservers();
         //}
     }
 
-
-   
-   /**
-    * SystemStatusHolder is loaded on the first execution of SystemStatus.getInstance()
-    * or the first access to SystemStatusHolder.sysStatus, not before.
-    */
+    /**
+     * SystemStatusHolder is loaded on the first execution of
+     * SystemStatus.getInstance() or the first access to
+     * SystemStatusHolder.sysStatus, not before.
+     */
     private static class SystemStatusHolder {
-         public static final SystemStatus sysStatus = new SystemStatus();
+
+        public static final SystemStatus sysStatus = new SystemStatus();
     }
 
     //force non-instantiation
     private SystemStatus() {
     }
 
-     /**
+    /**
      * Get the shared, thread safe instance.
+     *
      * @return
      */
-    public static SystemStatus getInstance(){
-      return SystemStatusHolder.sysStatus;
+    public static SystemStatus getInstance() {
+        return SystemStatusHolder.sysStatus;
     }
 
     public String getErrorMessage() {
@@ -82,7 +84,7 @@ public class SystemStatus extends Observable {
         if (value == null) {
             System.out.println("[SystemStatus] could not find out the value of " + key + " in your property file.");
         }
-        String homePath = SystemStatus.getInstance().getHomeDir().getAbsolutePath(); 
+        String homePath = SystemStatus.getInstance().getHomeDir().getAbsolutePath();
         homePath = homePath + System.getProperty("file.separator") + ".ca";
         homePath = homePath + System.getProperty("file.separator") + value;
         if (new File(homePath).exists()) {

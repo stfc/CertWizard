@@ -13,15 +13,16 @@ import uk.ngs.ca.util.KeyStoreChangePasswordGuiHelper;
 
 /**
  * Dialog for displaying properties about the keyStore and keyStore management
- * such as changing the password. 
- * @author David Meredith 
+ * such as changing the password.
+ *
+ * @author David Meredith
  */
 public class KeyStorePropertiesJDialog extends javax.swing.JDialog {
 
     private ClientKeyStoreCaServiceWrapper caKeyStoreModel;
-    private MainWindowPanel masterPane; 
-    private char[] passphrase; 
-    
+    private MainWindowPanel masterPane;
+    private char[] passphrase;
+
     /**
      * Creates new form KeyStorePropertiesJDialog
      */
@@ -29,47 +30,46 @@ public class KeyStorePropertiesJDialog extends javax.swing.JDialog {
         super(parent, modal);
         initComponents();
     }
-    
-    public KeyStorePropertiesJDialog(java.awt.Frame parent, boolean modal, 
-            MainWindowPanel masterPane, ClientKeyStoreCaServiceWrapper caKeyStoreModel){
+
+    public KeyStorePropertiesJDialog(java.awt.Frame parent, boolean modal,
+            MainWindowPanel masterPane, ClientKeyStoreCaServiceWrapper caKeyStoreModel) {
         super(parent, modal);
         initComponents();
         this.caKeyStoreModel = caKeyStoreModel;
-        this.masterPane = masterPane; 
+        this.masterPane = masterPane;
         //File caDir = new File(SystemStatus.getInstance().getHomeDir(), ".ca");
         //this.keyStorePathTextField.setText(caDir.getAbsolutePath()+File.separatorChar+"cakeystore.pkcs12");
-        if(this.caKeyStoreModel.getClientKeyStore().getKeyStoreFilePath() != null){
-          this.keyStorePathTextField.setText(this.caKeyStoreModel.getClientKeyStore().getKeyStoreFilePath());
-          File keystore = new File(this.caKeyStoreModel.getClientKeyStore().getKeyStoreFilePath()); 
-          if(keystore.exists()){
-              long lastMod = keystore.lastModified();
-              Date d = new Date(lastMod); 
-              this.lastModLabel.setText(d.toString()); 
-          }
+        if (this.caKeyStoreModel.getClientKeyStore().getKeyStoreFilePath() != null) {
+            this.keyStorePathTextField.setText(this.caKeyStoreModel.getClientKeyStore().getKeyStoreFilePath());
+            File keystore = new File(this.caKeyStoreModel.getClientKeyStore().getKeyStoreFilePath());
+            if (keystore.exists()) {
+                long lastMod = keystore.lastModified();
+                Date d = new Date(lastMod);
+                this.lastModLabel.setText(d.toString());
+            }
         }
-        
-        
+
         URL iconURL = Apply.class.getResource("/ngs-icon.png");
         if (iconURL != null) {
             this.setIconImage(Toolkit.getDefaultToolkit().getImage(iconURL));
         }
-        this.setTitle("CertWizard keyStore File"); 
-        
+        this.setTitle("CertWizard keyStore File");
+
     }
-    
-    private void doChangePasswordAction(){
-       if (masterPane.confirmBackgroundTaskRunning()) {
-           return;
-       }
-       KeyStoreChangePasswordGuiHelper pwChange = new KeyStoreChangePasswordGuiHelper(this, this.caKeyStoreModel); 
-       char[] newPassword = pwChange.changeKeyStorePassword(); 
-       if(newPassword != null){
-           passphrase = newPassword; 
-       }
+
+    private void doChangePasswordAction() {
+        if (masterPane.confirmBackgroundTaskRunning()) {
+            return;
+        }
+        KeyStoreChangePasswordGuiHelper pwChange = new KeyStoreChangePasswordGuiHelper(this, this.caKeyStoreModel);
+        char[] newPassword = pwChange.changeKeyStorePassword();
+        if (newPassword != null) {
+            passphrase = newPassword;
+        }
     }
-    
-    public char[] getPassphase(){
-        return this.passphrase; 
+
+    public char[] getPassphase() {
+        return this.passphrase;
     }
 
     /**

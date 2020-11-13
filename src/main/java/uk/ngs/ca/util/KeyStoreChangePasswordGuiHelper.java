@@ -16,8 +16,8 @@ import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
 import uk.ngs.ca.tools.property.SysProperty;
 
 /**
- * GUI helper class to change the keyStore protection password. 
- * 
+ * GUI helper class to change the keyStore protection password.
+ *
  * @author David Meredith
  */
 public class KeyStoreChangePasswordGuiHelper {
@@ -25,7 +25,7 @@ public class KeyStoreChangePasswordGuiHelper {
     private ClientKeyStoreCaServiceWrapper caKeyStoreModel;
     private Component parentCompoent;
     //private char[] PASSPHRASE;
-    
+
     private static final String RB_BASENAME = FPortecle.class.getPackage().getName() + "/resources";
     /**
      * Portecle Resource bundle base name
@@ -34,17 +34,18 @@ public class KeyStoreChangePasswordGuiHelper {
 
     public KeyStoreChangePasswordGuiHelper(Component parentCompoent, ClientKeyStoreCaServiceWrapper caKeyStoreModel) {
         this.parentCompoent = parentCompoent;
-        this.caKeyStoreModel = caKeyStoreModel; 
+        this.caKeyStoreModel = caKeyStoreModel;
     }
 
     /**
-     * Lead the user through the password change process. 
-     * @return the new updated password or null if not changed or error. 
+     * Lead the user through the password change process.
+     *
+     * @return the new updated password or null if not changed or error.
      */
     public char[] changeKeyStorePassword() {
         //ask for the current password first.
-        DGetPassword dGetPassword =
-                new DGetPassword(null, "Enter the current Keystore Password");
+        DGetPassword dGetPassword
+                = new DGetPassword(null, "Enter the current Keystore Password");
         dGetPassword.setLocationRelativeTo(parentCompoent);
         SwingHelper.showAndWait(dGetPassword);
 
@@ -64,8 +65,8 @@ public class KeyStoreChangePasswordGuiHelper {
         }
 
         // Get a new password for the new keystore password
-        DGetNewPassword dGetNewPassword =
-                new DGetNewPassword(null, RB.getString("FPortecle.SetKeyStorePassword.Title"));
+        DGetNewPassword dGetNewPassword
+                = new DGetNewPassword(null, RB.getString("FPortecle.SetKeyStorePassword.Title"));
         dGetNewPassword.setLocationRelativeTo(parentCompoent);
         SwingHelper.showAndWait(dGetNewPassword);
 

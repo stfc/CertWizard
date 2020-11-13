@@ -7,7 +7,6 @@ package uk.ngs.ca.common;
 //import java.io.UnsupportedEncodingException;
 //import java.security.MessageDigest;
 //import java.security.NoSuchAlgorithmException;
-
 /**
  *
  * @author xw75
@@ -37,8 +36,6 @@ public class HashUtil {
         }
     }
 
-
-
     /*private static String convertToHex(byte[] data) {
         StringBuffer buf = new StringBuffer();
         for (int i = 0; i < data.length; i++) {
@@ -64,6 +61,4 @@ public class HashUtil {
         sha1hash = md.digest();
         return convertToHex(sha1hash);
     }*/
-
-
 }

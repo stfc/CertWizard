@@ -85,12 +85,12 @@ public class CSRCSR {
             key = request.getPublicKey();
         } catch (Exception ep) {
             ep.printStackTrace();
-        }finally{
+        } finally {
             return key;
         }
     }
 
-    public String getOwner(){
+    public String getOwner() {
         String owner = null;
         try {
             XPath xpath = XPathFactory.newInstance().newXPath();
@@ -105,7 +105,7 @@ public class CSRCSR {
         }
     }
 
-    public String getRA(){
+    public String getRA() {
         String ra = null;
         try {
             XPath xpath = XPathFactory.newInstance().newXPath();
@@ -124,7 +124,7 @@ public class CSRCSR {
         }
     }
 
-    public String getCN(){
+    public String getCN() {
         String cn = null;
         try {
             XPath xpath = XPathFactory.newInstance().newXPath();
@@ -139,7 +139,7 @@ public class CSRCSR {
         }
     }
 
-    public String getStatus(){
+    public String getStatus() {
         String status = null;
         try {
             XPath xpath = XPathFactory.newInstance().newXPath();
@@ -154,7 +154,7 @@ public class CSRCSR {
         }
     }
 
-    public String getPIN(){
+    public String getPIN() {
         String pin = null;
         try {
             XPath xpath = XPathFactory.newInstance().newXPath();
@@ -183,5 +183,5 @@ public class CSRCSR {
             return email;
         }
     }
-    
+
 }

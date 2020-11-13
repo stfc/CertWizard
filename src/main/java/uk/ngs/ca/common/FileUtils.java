@@ -10,9 +10,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Methods copied from Apache Commons IO: {@link http://commons.apache.org/io/}. 
- * If more file IO requirements arise, consider using commons IO instead. 
- * 
+ * Methods copied from Apache Commons IO: {@link http://commons.apache.org/io/}.
+ * If more file IO requirements arise, consider using commons IO instead.
+ *
  * @author David Meredith
  */
 public class FileUtils {
@@ -31,21 +31,21 @@ public class FileUtils {
     private static final long FILE_COPY_BUFFER_SIZE = ONE_MB * 30;
 
     /**
-     * Copies a file to a new location. <p> This method copies the contents of
-     * the specified source file to the specified destination file. The
-     * directory holding the destination file is created if it does not exist.
-     * If the destination file exists, then this method will overwrite it. <p>
-     * <strong>Note:</strong> Setting
-     * <code>preserveFileDate</code> to
+     * Copies a file to a new location.
+     * <p>
+     * This method copies the contents of the specified source file to the
+     * specified destination file. The directory holding the destination file is
+     * created if it does not exist. If the destination file exists, then this
+     * method will overwrite it.
+     * <p>
+     * <strong>Note:</strong> Setting <code>preserveFileDate</code> to
      * <code>true</code> tries to preserve the file's last modified date/times
      * using {@link File#setLastModified(long)}, however it is not guaranteed
      * that the operation will succeed. If the modification operation fails, no
      * indication is provided.
      *
-     * @param srcFile an existing file to copy, must not be
-     * <code>null</code>
-     * @param destFile the new file, must not be
-     * <code>null</code>
+     * @param srcFile an existing file to copy, must not be <code>null</code>
+     * @param destFile the new file, must not be <code>null</code>
      * @param preserveFileDate true if the file date of the copy should be the
      * same as the original
      *
@@ -87,8 +87,7 @@ public class FileUtils {
     /**
      * Internal copy file method.
      *
-     * @param srcFile the validated source file, must not be
-     * <code>null</code>
+     * @param srcFile the validated source file, must not be <code>null</code>
      * @param destFile the validated destination file, must not be
      * <code>null</code>
      * @param preserveFileDate whether to preserve the file date

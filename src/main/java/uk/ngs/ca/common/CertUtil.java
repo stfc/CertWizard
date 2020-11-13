@@ -13,18 +13,19 @@ public class CertUtil {
     };
 
     /**
-     * Return a version of the given DN that can be used with OpenCA 
-     * e.g. for issuing PKCS#10 certificate requests. 
-     * The given distinguished name must be separated using commas following RFC1779 
-     * or RFC 2253 and can also contain the 'E' or 'EMAILADDRESS' attributes. 
+     * Return a version of the given DN that can be used with OpenCA e.g. for
+     * issuing PKCS#10 certificate requests. The given distinguished name must
+     * be separated using commas following RFC1779 or RFC 2253 and can also
+     * contain the 'E' or 'EMAILADDRESS' attributes.
      * <p/>
-     * The returned DN is in RFC2253 form, and may optionally prefix the DN with 
-     * the 'emailAddress=' attribute if addHostEmailAttributeIfPresent is true and 
-     * the given DN is considered a host cert (i.e. it contains a dot '.' char). 
-     * 
+     * The returned DN is in RFC2253 form, and may optionally prefix the DN with
+     * the 'emailAddress=' attribute if addHostEmailAttributeIfPresent is true
+     * and the given DN is considered a host cert (i.e. it contains a dot '.'
+     * char).
+     *
      * @param dn
-     * @param addHostEmailAttributeIfPresent 
-     * @return A DN that is suitable for use with OpenCA. 
+     * @param addHostEmailAttributeIfPresent
+     * @return A DN that is suitable for use with OpenCA.
      */
     public static String prepareDNforOpenCA(String dn, boolean addHostEmailAttributeIfPresent) {
         String ou = CertUtil.extractDnAttribute(dn, CertUtil.DNAttributeType.OU);
@@ -47,8 +48,6 @@ public class CertUtil {
         //   x500.getName(): 1.2.840.113549.1.9.1=#161b7363742d63657274696669636174657340737466632e61632e756b,CN=code-sign.ngs.dl.ac.uk,L=DL,OU=CLRC,O=eScience,C=UK
         //System.out.println("x500.getName(X500Principal.RFC2253)): "+toRenewCert.getSubjectX500Principal().getName(X500Principal.RFC2253));
         //   x500.getName(X500Principal.RFC2253)): 1.2.840.113549.1.9.1=#161b7363742d63657274696669636174657340737466632e61632e756b,CN=code-sign.ngs.dl.ac.uk,L=DL,OU=CLRC,O=eScience,C=UK
-   
-        
         //  if this is a host DN, then test to see if it contains an email attribute
         if (cn.contains(".")) {
             hostcert = true;
@@ -92,8 +91,8 @@ public class CertUtil {
     }
 
     /**
-     * Get the value of the specified DN attribute. The given dn must use 
-     * the comma char to separate attributes, ala RFC2253 or RFC1179. 
+     * Get the value of the specified DN attribute. The given dn must use the
+     * comma char to separate attributes, ala RFC2253 or RFC1179.
      *
      * @param dn
      * @param attribute

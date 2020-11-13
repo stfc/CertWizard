@@ -12,8 +12,8 @@ import org.restlet.data.Method;
 import org.restlet.data.Reference;
 import org.restlet.data.Status;
 import org.restlet.util.Series;
-import uk.ngs.ca.common.RestletClient;
 import uk.ngs.ca.common.ClientHostName;
+import uk.ngs.ca.common.RestletClient;
 import uk.ngs.ca.common.SystemStatus;
 import uk.ngs.ca.tools.property.SysProperty;
 
@@ -59,7 +59,7 @@ public final class PingService {
 
             Client client = RestletClient.getClient();
             Request request = new Request(Method.GET, new Reference(pingURL));
-            
+
             Series<Header> headers = request.getHeaders();
             headers.set("LocalHost", ClientHostName.getHostName());
             org.restlet.data.ClientInfo info = new org.restlet.data.ClientInfo();

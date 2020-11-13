@@ -23,9 +23,8 @@ import net.sf.portecle.crypto.KeyPairUtil;
 import net.sf.portecle.crypto.X509CertUtil;
 
 /**
- * Create a report of the managed keyStore
- * Based on Portecle. 
- * 
+ * Create a report of the managed keyStore Based on Portecle.
+ *
  * @author David Meredith
  */
 public class ClientKeyStoreReport {
@@ -48,8 +47,8 @@ public class ClientKeyStoreReport {
      * Get the KeyStoreReport as plain text.
      *
      * @return Keystore report
-     * @throws IllegalStateException If a problem was encountered
-     * generating the keystore report
+     * @throws IllegalStateException If a problem was encountered generating the
+     * keystore report
      */
     public String getKeyStoreReport() {
         try {
@@ -57,7 +56,6 @@ public class ClientKeyStoreReport {
             StringBuilder sbReport = new StringBuilder(2000);
 
             // General keystore information...
-
             // Keystore type
             sbReport.append(m_keystore.getType());
             sbReport.append("\n");
@@ -80,11 +78,9 @@ public class ClientKeyStoreReport {
                 sbReport.append("\n");
 
                 // Creation date
-
                 //if (ksType.isEntryCreationDateUseful())
                 //{
                 //	Date dCreation = m_keystore.getCreationDate(sAlias);
-
                 // Include time zone
                 //	String sCreation =
                 //	    DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.LONG).format(dCreation);
@@ -92,7 +88,6 @@ public class ClientKeyStoreReport {
                 //	    sCreation));
                 //	sbReport.append("\n");
                 //}
-
                 Certificate[] certChain = null;
 
                 // Get entry type and certificates
@@ -122,8 +117,8 @@ public class ClientKeyStoreReport {
                     sbReport.append(MessageFormat.format(RB.getString("DKeyStoreReport.report.certs"), 0));
                     sbReport.append("\n\n");
                 } else {
-                    X509Certificate[] x509CertChain =
-                            X509CertUtil.convertCertificates(certChain);
+                    X509Certificate[] x509CertChain
+                            = X509CertUtil.convertCertificates(certChain);
 
                     // One or more certificates
                     int iChainLen = x509CertChain.length;
@@ -162,18 +157,18 @@ public class ClientKeyStoreReport {
 
                         // Valid From
                         Date dValidFrom = x509Cert.getNotBefore();
-                        String sValidFrom =
-                                DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM).format(
-                                dValidFrom);
+                        String sValidFrom
+                                = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM).format(
+                                        dValidFrom);
                         sbReport.append(MessageFormat.format(
                                 RB.getString("DKeyStoreReport.report.validfrom"), sValidFrom));
                         sbReport.append("\n");
 
                         // Valid Until
                         Date dValidTo = x509Cert.getNotAfter();
-                        String sValidTo =
-                                DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM).format(
-                                dValidTo);
+                        String sValidTo
+                                = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM).format(
+                                        dValidTo);
                         sbReport.append(MessageFormat.format(
                                 RB.getString("DKeyStoreReport.report.validuntil"), sValidTo));
                         sbReport.append("\n");
@@ -181,9 +176,9 @@ public class ClientKeyStoreReport {
                         // Public Key (algorithm and key size)
                         int iKeySize = KeyPairUtil.getKeyLength(x509Cert.getPublicKey());
                         String sKeyAlg = x509Cert.getPublicKey().getAlgorithm();
-                        String fmtKey =
-                                (iKeySize == KeyPairUtil.UNKNOWN_KEY_SIZE)
-                                ? "DKeyStoreReport.report.pubkeynosize" : "DKeyStoreReport.report.pubkey";
+                        String fmtKey
+                                = (iKeySize == KeyPairUtil.UNKNOWN_KEY_SIZE)
+                                        ? "DKeyStoreReport.report.pubkeynosize" : "DKeyStoreReport.report.pubkey";
                         sbReport.append(MessageFormat.format(RB.getString(fmtKey), sKeyAlg, iKeySize));
                         sbReport.append("\n");
 

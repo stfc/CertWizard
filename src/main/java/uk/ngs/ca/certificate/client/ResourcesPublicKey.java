@@ -2,7 +2,6 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package uk.ngs.ca.certificate.client;
 
 import java.security.PublicKey;
@@ -54,12 +53,12 @@ public class ResourcesPublicKey {
     private Document document = null;
     private String encodedPublicKey = null;
 
-    public ResourcesPublicKey( PublicKey publicKey ){
+    public ResourcesPublicKey(PublicKey publicKey) {
         this.encodedPublicKey = EncryptUtil.getEncodedPublicKey(publicKey);
     }
-   
-    public boolean isExist(){
-        Document _document ;
+
+    public boolean isExist() {
+        Document _document;
         boolean isExist = false;
         try {
 
@@ -79,22 +78,22 @@ public class ResourcesPublicKey {
             request.setClientInfo(info);
 
             Response response = c.handle(request);
-            if( response.getStatus().equals(Status.SUCCESS_OK)){
+            if (response.getStatus().equals(Status.SUCCESS_OK)) {
                 _document = new DomRepresentation(response.getEntity()).getDocument(); //response.getEntityAsDom().getDocument();
                 this.document = _document;
                 isExist = true;
-            }else{
+            } else {
                 isExist = false;
             }
 
         } catch (Exception ep) {
             ep.printStackTrace();
-        }finally{
+        } finally {
             return isExist;
         }
     }
 
-    public Document getDocument(){
+    public Document getDocument() {
         return this.document;
     }
 

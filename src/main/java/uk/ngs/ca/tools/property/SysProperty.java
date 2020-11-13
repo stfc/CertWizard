@@ -194,7 +194,7 @@ public class SysProperty {
             CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
             Certificate escienceRootCert = certificateFactory.generateCertificate(escienceroot);
             Certificate escience2bCert = certificateFactory.generateCertificate(escience2b);
- 
+
             keyStore = KeyStore.getInstance("JKS", "SUN");
             keyStore.load(null, null);
             keyStore.setCertificateEntry("eScienceRoot", escienceRootCert);

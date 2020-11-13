@@ -6,8 +6,8 @@ package uk.ngs.ca.certificate;
 
 import java.io.StringReader;
 import javax.xml.parsers.DocumentBuilderFactory;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.restlet.Response;
 import org.restlet.data.Status;
 import org.w3c.dom.Document;
@@ -16,13 +16,14 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 /**
- * Common utility methods for processing CSR new and renew requests. 
- * 
+ * Common utility methods for processing CSR new and renew requests.
+ *
  * @author David Meredith
  */
 public class OnlineCertUtil {
+
     private static final Logger logger = LogManager.getLogger(OnlineCertUtil.class);
-    
+
     /**
      * Try and parse the server error response XML doc (if any) and return a
      * message.

@@ -63,7 +63,6 @@ public class CertificateExportGuiHelper {
         this.caKeyStoreModel = caKeyStoreModel;
     }
 
-    
     public static Window findWindow(Component c) {
         if (c == null) {
             return JOptionPane.getRootFrame();
@@ -73,7 +72,7 @@ public class CertificateExportGuiHelper {
             return findWindow(c.getParent());
         }
     }
-    
+
     /**
      * Let the user export the selected entry. Based on Portecle.
      *
@@ -89,8 +88,8 @@ public class CertificateExportGuiHelper {
             // a new KeyStoreWrapper because this is required by
             // the DExport constructor.
             // Pass a snapshot of the keystore when exporting. 
-            
-            DExport dExport = new DExport(findWindow(parentCompoent), 
+
+            DExport dExport = new DExport(findWindow(parentCompoent),
                     new KeyStoreWrapper(this.caKeyStoreModel.getClientKeyStore().getKeyStoreCopy()), sAlias);
             dExport.setLocationRelativeTo(this.parentCompoent);
             SwingHelper.showAndWait(dExport);
@@ -169,14 +168,13 @@ public class CertificateExportGuiHelper {
 
         //KeyStore keyStore = this.keyStoreCaWrapper.getClientKeyStore().getKeyStoreCopy();
         //char[] cPassword = this.PASSPHRASE;
-
         File fExportFile = null;
         FileOutputStream fos = null;
         try {
 
             // First get a new password for the PKCS #12 keystore
-            DGetNewPassword dGetNewPassword =
-                    new DGetNewPassword(findWindow(parentCompoent), RB.getString("FPortecle.Pkcs12Password.Title")); 
+            DGetNewPassword dGetNewPassword
+                    = new DGetNewPassword(findWindow(parentCompoent), RB.getString("FPortecle.Pkcs12Password.Title"));
             dGetNewPassword.setLocationRelativeTo(parentCompoent);
             SwingHelper.showAndWait(dGetNewPassword);
             char[] newPKCS12Password = dGetNewPassword.getPassword();
@@ -187,7 +185,6 @@ public class CertificateExportGuiHelper {
             // Get the private key and certificate chain from the entry
             Key privKey = this.caKeyStoreModel.getClientKeyStore().getKey(sEntryAlias, this.caKeyStoreModel.getPassword());
             Certificate[] certs = this.caKeyStoreModel.getClientKeyStore().getCertificateChain(sEntryAlias);
-
 
             // Create a new PKCS12 keystore
             // DM: Important note. We Cannot use portecle's 'KeyStoreUtil.createKeyStore' 
@@ -203,7 +200,6 @@ public class CertificateExportGuiHelper {
             // limitations (which may apply to DECRYPTION only) - so we are ok 
             // to use it for creating new keystores. 
             // http://www.ngs.ac.uk/tools/jcepolicyfiles 
-
             //KeyStore newPkcs12 = KeyStoreUtil.createKeyStore(KeyStoreType.PKCS12);
             KeyStore newPkcs12 = KeyStore.getInstance(KeyStoreType.PKCS12.name());
             newPkcs12.load(null, null);
@@ -211,7 +207,6 @@ public class CertificateExportGuiHelper {
             // Place the private key and certificate chain into the PKCS #12 keystore under the same alias as
             // it has in the loaded keystore
             newPkcs12.setKeyEntry(sEntryAlias, privKey, newPKCS12Password, certs);
-
 
             String basename = null;
             if (certs.length > 0 && certs[0] instanceof X509Certificate) {
@@ -242,8 +237,8 @@ public class CertificateExportGuiHelper {
             return true;
 
         } catch (FileNotFoundException ex) {
-            String sMessage =
-                    MessageFormat.format(RB.getString("FPortecle.NoWriteFile.message"), fExportFile.getName());
+            String sMessage
+                    = MessageFormat.format(RB.getString("FPortecle.NoWriteFile.message"), fExportFile.getName());
             JOptionPane.showMessageDialog(parentCompoent, sMessage, "File not found", JOptionPane.WARNING_MESSAGE);
             return false;
         } catch (IOException ex) {
@@ -277,7 +272,6 @@ public class CertificateExportGuiHelper {
 
         //KeyStore keyStore = this.keyStoreCaWrapper.getClientKeyStore().getKeyStoreCopy();
         //char[] cPassword = this.PASSPHRASE;
-
         File fExportFile = null;
         JcaPEMWriter pw = null;
 
@@ -287,8 +281,8 @@ public class CertificateExportGuiHelper {
             Certificate[] certs = this.caKeyStoreModel.getClientKeyStore().getCertificateChain(sEntryAlias);
 
             // Get a new password to encrypt the private key with
-            DGetNewPassword dGetNewPassword =
-                    new DGetNewPassword(null, RB.getString("FPortecle.PrivateKeyExportPassword.Title"));
+            DGetNewPassword dGetNewPassword
+                    = new DGetNewPassword(null, RB.getString("FPortecle.PrivateKeyExportPassword.Title"));
             dGetNewPassword.setLocationByPlatform(true);
             dGetNewPassword.setLocationRelativeTo(this.parentCompoent);
             SwingHelper.showAndWait(dGetNewPassword);
@@ -338,8 +332,8 @@ public class CertificateExportGuiHelper {
 
             return true;
         } catch (FileNotFoundException ex) {
-            String sMessage =
-                    MessageFormat.format(RB.getString("FPortecle.NoWriteFile.message"), fExportFile.getName());
+            String sMessage
+                    = MessageFormat.format(RB.getString("FPortecle.NoWriteFile.message"), fExportFile.getName());
             JOptionPane.showMessageDialog(parentCompoent, sMessage, "File not found", JOptionPane.WARNING_MESSAGE);
             return false;
         } catch (IOException ex) {
@@ -410,8 +404,8 @@ public class CertificateExportGuiHelper {
             m_lastDir.updateLastDir(fExportFile);
             return true;
         } catch (FileNotFoundException ex) {
-            String sMessage =
-                    MessageFormat.format(RB.getString("FPortecle.NoWriteFile.message"), fExportFile.getName());
+            String sMessage
+                    = MessageFormat.format(RB.getString("FPortecle.NoWriteFile.message"), fExportFile.getName());
             JOptionPane.showMessageDialog(null, sMessage, "File not found", JOptionPane.WARNING_MESSAGE);
             return false;
         } catch (IOException ex) {
@@ -476,8 +470,8 @@ public class CertificateExportGuiHelper {
 
             return true;
         } catch (FileNotFoundException ex) {
-            String sMessage =
-                    MessageFormat.format(RB.getString("FPortecle.NoWriteFile.message"), fExportFile.getName());
+            String sMessage
+                    = MessageFormat.format(RB.getString("FPortecle.NoWriteFile.message"), fExportFile.getName());
             JOptionPane.showMessageDialog(null, sMessage, "File not found", JOptionPane.WARNING_MESSAGE);
             return false;
         } catch (IOException ex) {
@@ -537,8 +531,8 @@ public class CertificateExportGuiHelper {
             m_lastDir.updateLastDir(fExportFile);
             return true;
         } catch (FileNotFoundException ex) {
-            String sMessage =
-                    MessageFormat.format(RB.getString("FPortecle.NoWriteFile.message"), fExportFile.getName());
+            String sMessage
+                    = MessageFormat.format(RB.getString("FPortecle.NoWriteFile.message"), fExportFile.getName());
             JOptionPane.showMessageDialog(parentCompoent, sMessage, "File not found", JOptionPane.WARNING_MESSAGE);
             return false;
         } catch (IOException ex) {
@@ -600,8 +594,8 @@ public class CertificateExportGuiHelper {
 
             return true;
         } catch (FileNotFoundException ex) {
-            String sMessage =
-                    MessageFormat.format(RB.getString("FPortecle.NoWriteFile.message"), fExportFile.getName());
+            String sMessage
+                    = MessageFormat.format(RB.getString("FPortecle.NoWriteFile.message"), fExportFile.getName());
             JOptionPane.showMessageDialog(parentCompoent, sMessage, "File not found", JOptionPane.WARNING_MESSAGE);
             return false;
         } catch (IOException ex) {
@@ -666,8 +660,8 @@ public class CertificateExportGuiHelper {
 
             return true;
         } catch (FileNotFoundException ex) {
-            String sMessage =
-                    MessageFormat.format(RB.getString("FPortecle.NoWriteFile.message"), fExportFile.getName());
+            String sMessage
+                    = MessageFormat.format(RB.getString("FPortecle.NoWriteFile.message"), fExportFile.getName());
             JOptionPane.showMessageDialog(parentCompoent, sMessage, "File not found", JOptionPane.WARNING_MESSAGE);
             return false;
         } catch (IOException ex) {
@@ -813,8 +807,8 @@ public class CertificateExportGuiHelper {
      */
     private boolean confirmOverwrite(File file, String title) {
         if (file.isFile()) {
-            String sMessage =
-                    MessageFormat.format(RB.getString("FPortecle.OverWriteFile.message"), file.getName());
+            String sMessage
+                    = MessageFormat.format(RB.getString("FPortecle.OverWriteFile.message"), file.getName());
             int iSelected = JOptionPane.showConfirmDialog(parentCompoent, sMessage, title, JOptionPane.YES_NO_OPTION);
             return iSelected == JOptionPane.YES_OPTION;
         }
@@ -838,15 +832,15 @@ public class CertificateExportGuiHelper {
             // Get the entry's head certificate
             X509Certificate cert;
             if (this.caKeyStoreModel.getClientKeyStore().isKeyEntry(sEntryAlias)) {
-                cert =
-                        X509CertUtil.orderX509CertChain(X509CertUtil.convertCertificates(this.caKeyStoreModel.getClientKeyStore().getCertificateChain(sEntryAlias)))[0];
+                cert
+                        = X509CertUtil.orderX509CertChain(X509CertUtil.convertCertificates(this.caKeyStoreModel.getClientKeyStore().getCertificateChain(sEntryAlias)))[0];
             } else {
                 cert = X509CertUtil.convertCertificate(this.caKeyStoreModel.getClientKeyStore().getCertificate(sEntryAlias));
             }
             return cert;
         } catch (KeyStoreException ex) {
-            String sMessage =
-                    MessageFormat.format(RB.getString("FPortecle.NoAccessEntry.message"), sEntryAlias);
+            String sMessage
+                    = MessageFormat.format(RB.getString("FPortecle.NoAccessEntry.message"), sEntryAlias);
             throw new CryptoException(sMessage, ex);
         }
     }

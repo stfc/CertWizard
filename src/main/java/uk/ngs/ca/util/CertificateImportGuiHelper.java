@@ -39,10 +39,10 @@ import uk.ngs.ca.certificate.management.KeyStoreEntryWrapper;
 import uk.ngs.ca.common.SystemStatus;
 
 /**
- * Helper class for assisting users with importing of certificates into the 
- * applications managed keyStore. 
- * The methods invoked by this class present GUI components during their processing. 
- * 
+ * Helper class for assisting users with importing of certificates into the
+ * applications managed keyStore. The methods invoked by this class present GUI
+ * components during their processing.
+ *
  * @author David Meredith
  */
 public class CertificateImportGuiHelper {
@@ -67,7 +67,7 @@ public class CertificateImportGuiHelper {
         this.parentCompoent = parentCompoent;
         //this.PASSPHRASE = passphrase;
         //this.caKeyStoreModel = ClientKeyStoreCaServiceWrapper.getInstance(this.PASSPHRASE);
-        this.caKeyStoreModel = caKeyStoreModel; 
+        this.caKeyStoreModel = caKeyStoreModel;
     }
 
     /**
@@ -104,10 +104,10 @@ public class CertificateImportGuiHelper {
                 @Override
                 public char[] getPassword() {
                     // Get the user to enter the private key password
-                    DGetPassword dGetPassword =
-                            new DGetPassword(null, MessageFormat.format(
-                            RB.getString("FPortecle.PrivateKeyPassword.Title"),
-                            new Object[]{String.valueOf(passwordNumber)}));
+                    DGetPassword dGetPassword
+                            = new DGetPassword(null, MessageFormat.format(
+                                    RB.getString("FPortecle.PrivateKeyPassword.Title"),
+                                    new Object[]{String.valueOf(passwordNumber)}));
                     dGetPassword.setLocationRelativeTo(parentCompoent);
                     SwingHelper.showAndWait(dGetPassword);
                     char[] cPassword = dGetPassword.getPassword();
@@ -136,8 +136,8 @@ public class CertificateImportGuiHelper {
         if (tempStore == null) {
 
             // Get the user to enter the PKCS #12 keystore's password
-            DGetPassword dGetPassword =
-                    new DGetPassword(null, RB.getString("FPortecle.Pkcs12Password.Title"));
+            DGetPassword dGetPassword
+                    = new DGetPassword(null, RB.getString("FPortecle.Pkcs12Password.Title"));
             dGetPassword.setLocationRelativeTo(parentCompoent);
             SwingHelper.showAndWait(dGetPassword);
             char[] cPkcs12Password = dGetPassword.getPassword();
@@ -159,10 +159,10 @@ public class CertificateImportGuiHelper {
         }
 
         if (tempStore == null && !exceptions.isEmpty()) {
-            int iSelected =
-                    SwingHelper.showConfirmDialog(parentCompoent,
-                    MessageFormat.format(RB.getString("FPortecle.NoOpenKeyPairFile.message"), fKeyPairFile),
-                    RB.getString("FPortecle.ImportKeyPairFile.Title"));
+            int iSelected
+                    = SwingHelper.showConfirmDialog(parentCompoent,
+                            MessageFormat.format(RB.getString("FPortecle.NoOpenKeyPairFile.message"), fKeyPairFile),
+                            RB.getString("FPortecle.ImportKeyPairFile.Title"));
             if (iSelected == JOptionPane.YES_OPTION) {
                 for (Exception e : exceptions) {
                     DThrowable.showAndWait(null, null, e);
@@ -170,7 +170,6 @@ public class CertificateImportGuiHelper {
             }
             return null;
         }
-
 
         // Display the import key pair dialog supplying the PKCS #12 keystore to it
         DImportKeyPair dImportKeyPair = new DImportKeyPair(null, tempStore);
@@ -189,10 +188,10 @@ public class CertificateImportGuiHelper {
         // Get an alias for the new keystore entry
         //String newHeadCertImportAlias = dImportKeyPair.getAlias();
         //if (newHeadCertImportAlias == null) {
-          String newHeadCertImportAlias = X509CertUtil.getCertificateAlias(X509CertUtil.convertCertificate(certChain[0]));
+        String newHeadCertImportAlias = X509CertUtil.getCertificateAlias(X509CertUtil.convertCertificate(certChain[0]));
         //}
         if (newHeadCertImportAlias == null) {
-            newHeadCertImportAlias = "My imported certificate"; 
+            newHeadCertImportAlias = "My imported certificate";
         }
 
         newHeadCertImportAlias = getNewEntryAliasHelper(newHeadCertImportAlias, "FPortecle.KeyPairEntryAlias.Title", false);
@@ -206,7 +205,7 @@ public class CertificateImportGuiHelper {
             JOptionPane.showMessageDialog(
                     parentCompoent,
                     MessageFormat.format("The keystore already contains an entry with the alias " + newHeadCertImportAlias + "\n"
-                    + "Please enter a unique alias", newHeadCertImportAlias),
+                            + "Please enter a unique alias", newHeadCertImportAlias),
                     RB.getString("FPortecle.RenameEntry.Title"), JOptionPane.ERROR_MESSAGE);
             return null;
         }
@@ -230,7 +229,6 @@ public class CertificateImportGuiHelper {
             // this may be a java issue?). 
             //Enumeration<String> aliases = this.caKeyStoreModel.getClientKeyStore().aliases();
             //while(aliases.hasMoreElements()){System.out.println("alias "+aliases.nextElement()); }
-
             // get a list of aliases that now exist after the import 
             ArrayList<String> postImportAliases = Collections.list(this.caKeyStoreModel.getClientKeyStore().aliases());
 
@@ -295,8 +293,8 @@ public class CertificateImportGuiHelper {
             throws KeyStoreException {
         while (true) {
             // Get the alias for the new entry
-            DGetAlias dGetAlias =
-                    new DGetAlias(null, RB.getString(dialogTitleKey), sAlias.toLowerCase(), selectAlias);
+            DGetAlias dGetAlias
+                    = new DGetAlias(null, RB.getString(dialogTitleKey), sAlias.toLowerCase(), selectAlias);
             dGetAlias.setLocationRelativeTo(parentCompoent);
             SwingHelper.showAndWait(dGetAlias);
 
