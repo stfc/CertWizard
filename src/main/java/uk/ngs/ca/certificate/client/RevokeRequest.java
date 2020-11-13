@@ -136,8 +136,6 @@ public class RevokeRequest {
                 _info.setAgent(USERAGENT);
                 request.setClientInfo(_info);
                 response = client.handle(request);
-
-                //Series<Header> _headers = response.getHeaders();
             }
 
             if (response.getStatus().equals(Status.SUCCESS_CREATED)) {

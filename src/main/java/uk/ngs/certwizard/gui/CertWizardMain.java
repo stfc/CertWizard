@@ -89,62 +89,12 @@ public class CertWizardMain extends javax.swing.JFrame {
         // Run ping check in a new thread so we don't block while it tries to connect.
         onlineStatusPanel.startScheduledPingCheckTask();
 
-        //Timer timer = new Timer();
-        // execute once with no delay required.
-        //timer.schedule(new runPingCheck(), 0); 
-        // repeat every n millisecs with no delay (GUI will automatically update if the connection is lost).
-        //timer.schedule(new runPingCheck(), 0, 10000); 
         this.getContentPane().add(BorderLayout.CENTER, this.tabbedPane);
         this.getContentPane().add(BorderLayout.SOUTH, this.onlineStatusPanel);
         this.pack();
     }
 
     private void setupHomeDir() {
-        // ********************* USE this for Java 1.6 (DONT forget to comment out the java.nio import above) 
-        /*File homeDir = new File(System.getProperty("user.home"));
-        SystemStatus.getInstance().setHomeDir(homeDir);
-        File caDir = new File(homeDir, System.getProperty("file.separator") + ".ca");
-        if (!caDir.exists()) {
-            if (!caDir.mkdir()) {
-                JOptionPane.showMessageDialog(null,
-                        "Can't create '$HOME/.ca' dir. Please edit this directories permissions \n[" + caDir.getAbsolutePath() + "]",
-                        "Error", JOptionPane.ERROR_MESSAGE);
-                System.exit(0);
-            }
-        }
-        // Check that caDir is a directory 
-        if (!caDir.isDirectory()) {
-            JOptionPane.showMessageDialog(null,
-                    "'HOME/.ca' is not a directory. CWiz needs to store its configuration in the following dir: \n[" + caDir.getAbsolutePath() + "]",
-                    "Error", JOptionPane.ERROR_MESSAGE);
-            System.exit(0);
-        }
-        
-        // See if the HOME/.ca directory is writable 
-        boolean writable = true; 
-        if(!caDir.canWrite()){
-            writable = false; 
-        }
-        // Also need to create a tmp file to see if this dir is writable (can't just rely on 
-        // caDir.canWrite() as this is not reliable due to java bug: 
-        // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4787931 
-        File tmp = null; 
-        try{
-            tmp = File.createTempFile("cwiztouchtmp", ".tmp", caDir); 
-            writable = true; 
-        } catch(IOException ex){
-            writable = false; 
-        } finally {
-            try{ if(tmp!=null){tmp.delete(); }}catch(Exception ex){}
-        }
-        if (!writable) {
-            JOptionPane.showMessageDialog(null,
-                    "Can't write to 'HOME/.ca' directory. CWiz needs to store its configuration in the following dir: \n[" + caDir.getAbsolutePath() + "]",
-                    "Error", JOptionPane.ERROR_MESSAGE);
-            System.exit(0);
-        }*/
-
-        // ********************* USE this for Java 1.7 
         GetBootstrapDir bootDia = new GetBootstrapDir(this, true, ".ca");
         bootDia.setLocationRelativeTo(null);
         bootDia.setVisible(true);
@@ -156,7 +106,6 @@ public class CertWizardMain extends javax.swing.JFrame {
             homeDir = homeDir.getParent();
         }
         SystemStatus.getInstance().setHomeDir(homeDir.toFile());
-        //*********************************
     }
 
     private void createGlobusDirIfNotExistsShowWarnings() {
@@ -207,80 +156,13 @@ public class CertWizardMain extends javax.swing.JFrame {
 
     private void initTabbedPane() {
         JPanel tabPanelManageCerts = new JPanel();
-        // JPanel tabPanelSetup = new JPanel();
-        // JPanel tabPanelUseCert = new JPanel();
         tabbedPane.addTab("Apply For/Manage Your Certificate", tabPanelManageCerts);
-        // JK comment out next 2 lines once other references to these things have gone
-        // tabbedPane.addTab("Use Your Installed Certificate", tabPanelUseCert);
-        // tabbedPane.addTab("Setup", tabPanelSetup);
 
         // Tidy up ComponentSettingsPanel and DoActionsPanel since no longer needed
         // First, create the settings/setup panel and the doActions panel.
-        // final ComponentSettingsPanel setupPanel = new ComponentSettingsPanel(tabPanelSetup);
-        // final DoActionsPanel doActions = new DoActionsPanel(tabPanelUseCert);
         final PasswordPanel pp = new PasswordPanel(tabPanelManageCerts);
-
-        // tabPanelSetup.add(setupPanel);
-        // tabPanelUseCert.add(doActions);
         tabPanelManageCerts.add(pp);
-
-        // if the user's pem files already exist in the default location, then 
-        // set the focus on the Use Certifiate panel 
-        // if (doPemFilesExist()) {
-        // tabbedPane.setSelectedComponent(tabPanelUseCert);
-        // }
-        // Second, add componentListeners so that the panel's can be refreshed
-        // when the appropriate tab is shown.
-        /*
-        tabPanelSetup.addComponentListener(new ComponentAdapter() {
-
-            @Override
-            public void componentShown(ComponentEvent evt) {
-                // we could refresh the dislay from this listener which will be
-                // called whenever the settings tab is re-shown.
-                //System.out.println("settings tab shown....");
-                setupPanel.updateCertificateComponent();
-            }
-        });
-         */
- /*
-        tabPanelUseCert.addComponentListener(new ComponentAdapter() {
-
-            @Override
-            public void componentShown(ComponentEvent evt) {
-                // we need to refresh the display on the CertWizard's 'use certificate'
-                // panel because we have chosen a new certificate.
-                //System.out.println("use cert tab shown....");
-                doActions.update();
-            }
-        });
-         */
     }
-
-    /**
-     * See if pem files already exist in default location
-     */
-//    private boolean doPemFilesExist() {
-//        CoGProperties props = CoGProperties.getDefault();
-//        String certPemFile = props.getUserCertFile();
-//        String keyPemFile = props.getUserKeyFile();
-//        File fCertFile = new File(certPemFile);
-//        File fKeyFile = new File(keyPemFile);
-//
-//        boolean fKeyExist = false;
-//        boolean fCertExist = false;
-//        if (fKeyFile.exists()) {
-//            fKeyExist = true;
-//        }
-//        if (fCertFile.exists()) {
-//            fCertExist = true;
-//        }
-//        if (fKeyExist && fCertExist) {
-//            return true;
-//        } else {
-//            return false;
-//        }
-//    }
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always

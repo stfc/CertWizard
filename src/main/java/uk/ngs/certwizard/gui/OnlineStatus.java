@@ -15,12 +15,11 @@ import uk.ngs.ca.common.GuiExecutor;
  *
  * @author David Meredith
  */
-public class OnlineStatus extends javax.swing.JPanel /*implements Observer*/ {
+public class OnlineStatus extends javax.swing.JPanel {
 
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     // Records whether the last ping check completed ok 
     private AtomicBoolean pingedOK = new AtomicBoolean(false);
-    //private Runnable sleepTask; 
 
     /**
      * Creates new form OnlineStatus
@@ -156,27 +155,7 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
     private javax.swing.JTextField timeoutTextField;
     // End of variables declaration//GEN-END:variables
 
-    /*private void doHelpButtonActionPerformed(java.awt.event.ActionEvent evt) {
-        JOptionPane.showMessageDialog(this, "todo",
-                    "Configure Network Connection", JOptionPane.INFORMATION_MESSAGE);
-    }*/
-    /**
-     * change the timeout value
-     */
-    /*private void doChangeTimeout() {
-        try {
-            String timeoutMilliSecs = this.timeoutTextField.getText();
-            int timeout = Integer.parseInt(timeoutMilliSecs);
-            if (timeout <= 0) {
-                throw new NumberFormatException();
-            }
-            SysProperty.setTimeoutMilliSecs(timeout * 1000);
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Invalid timeout value. Please specify a number (timout in seconds)",
-                    "Invalid timeout", JOptionPane.ERROR_MESSAGE);
-            this.timeoutTextField.setText(String.valueOf(SysProperty.getTimeoutMilliSecs() / 1000));
-        }
-    }*/
+    
     /**
      * Attempt a ping check and update our global state.
      */
@@ -191,20 +170,6 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
         t.start();
     }
 
-    /**
-     * Update this panels online status GUI components in the AWT event dispatch
-     * thread. Online status is based on the <code>SystemStatus.ISONLINE</code>
-     * property.
-     */
-    /*public void update(Observable o, Object arg) {
-        SwingUtilities.invokeLater(new Runnable() {
-
-            public void run() {
-                //System.out.println("Will print true: "+SwingUtilities.isEventDispatchThread()); 
-                updateGUI();
-            }
-        });
-    }*/
     /**
      * Updates the GUI. Guarantees to run the GUI updates in the AWT event
      * dispatch thread.
@@ -248,54 +213,4 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
             }
         }
     }
-
-    /*private class SleepTask implements Runnable {
-        @Override
-        public void run() {
-            try {
-                updateGUI(true);
-                try { Thread.sleep(3000);} catch(Exception ignore){}
-            } finally {
-                updateGUI(false);
-            }
-        }
-    }*/
-    /**
-     * Handle onlineUpdateTask property changes (runs in AWT Event thread)
-     */
-    /* private PropertyChangeListener pingTaskPropertyListener = new PropertyChangeListener() {
-
-        public void propertyChange(PropertyChangeEvent e) {
-            String propertyName = e.getPropertyName();
-            if ("progress".equals(propertyName)) {
-                // not handled currently 
-                System.out.println("progress called");
-            } else if ("state".equals(propertyName)) {
-                System.out.println("state change is: "+pingTask.getState());
-                if (SwingWorker.StateValue.DONE.equals(pingTask.getState())) {
-                    updateGUI(false);
-                } else if (SwingWorker.StateValue.PENDING.equals(pingTask.getState())) {
-                    updateGUI(true);
-                } else if (SwingWorker.StateValue.STARTED.equals(pingTask.getState())) {
-                    updateGUI(true);
-                } else {
-                    updateGUI(false);
-                }
-            }
-        }
-    };*/
-    // I wanted to use a SwingWorker with a listener but beware of this 
-    // top 25 bug: http://bugs.sun.com/view_bug.do;jsessionid=e13cfc6ea10a4ffffffffce8c9244b60e54d?bug_id=6880336 
-    /*private class PingTask extends SwingWorker<Void, Object[]>{
-        @Override
-        protected Void doInBackground() throws Exception {
-            PingService.getPingService().isPingService();
-            return null; 
-        }
-        @Override
-        public void done() {
-            //System.out.println("done in AWT event dispatch thread");
-            //updateGUI(false);
-        }
-    }*/
 }

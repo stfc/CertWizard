@@ -263,12 +263,6 @@ public class Apply extends javax.swing.JDialog {
         if (!userCN_Pattern.matcher(this.txtName.getText()).matches()) {
             return false;
         }
-        // don't do this here as whenever usr enters a dn, it is continuously 
-        // trimmed so that they can't enter a CN with two or more names ! 
-        // replace all interleaved whitespace with single whitespace
-        //cn = cn.replaceAll("\\s", " "); 
-        //cn = cn.trim(); // replace leading and trailing whitespace 
-        //cn = cn.toLowerCase(); 
 
         String[] names = cn.split("\\s");
         // Must be at least TWO names 

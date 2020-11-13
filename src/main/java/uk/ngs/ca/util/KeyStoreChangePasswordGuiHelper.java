@@ -24,7 +24,6 @@ public class KeyStoreChangePasswordGuiHelper {
 
     private ClientKeyStoreCaServiceWrapper caKeyStoreModel;
     private Component parentCompoent;
-    //private char[] PASSPHRASE;
 
     private static final String RB_BASENAME = FPortecle.class.getPackage().getName() + "/resources";
     /**

@@ -16,9 +16,6 @@ import uk.ngs.ca.tools.property.SysProperty;
  */
 public class SystemStatus extends Observable {
 
-    // ISONLINE and ISINIT represent shared mutable state: Need to be atomic.
-    //public static AtomicBoolean ISONLINE = new AtomicBoolean(true);
-    //public static AtomicBoolean ISINIT = new AtomicBoolean(false);;
     private String errorMessage = null;
 
     private File homeDir = new File(System.getProperty("user.home"));
@@ -94,32 +91,4 @@ public class SystemStatus extends Observable {
         }
     }
 
-    /*public synchronized boolean isValidPassphrase(char[] passphrase) {
-        //uk.ngs.ca.common.ClientKeyStore keyStore = new uk.ngs.ca.common.ClientKeyStore(passphrase);
-        ClientKeyStore keyStore = ClientKeyStore.getClientkeyStore(passphrase);
-        String _errorMessage = keyStore.getErrorMessage();
-
-        if (_errorMessage == null) {
-            uk.ngs.ca.common.ClientCertKeyStore certStore = uk.ngs.ca.common.ClientCertKeyStore.getClientCertKeyStore(passphrase);
-            String __errorMessage = certStore.getErrorMessage();
-            if (__errorMessage == null) {
-                return true;
-            } else if (__errorMessage.indexOf("key size") >= 0) {
-                __errorMessage = "A problem was encountered trying to create your Globus/Grid environment.\n" + "US encryption policy means password cannot be more than 7 characters.\n" + "This may be corrected in some cases by changing Java Security policy files.\n" + "See the User Certificate help page.";
-                errorMessage = __errorMessage;
-                return false;
-            } else {
-                errorMessage = __errorMessage;
-                return false;
-            }
-        } else if (_errorMessage.indexOf("key size") >= 0) {
-            _errorMessage = "A problem was encountered trying to create your Globus/Grid environment.\n" + "US encryption policy means password cannot be more than 7 characters.\n" + "This may be corrected in some cases by changing Java Security policy files.\n" + "See the User Certificate help page.";
-            errorMessage = _errorMessage;
-            return false;
-        } else {
-            errorMessage = _errorMessage;
-            return false;
-        }
-
-    }*/
 }

@@ -283,16 +283,7 @@ public class OnlineCertRenewRequest {
         rootElement.appendChild(eltName);
 
         d.normalizeDocument();
-
-        /*
-         * TransformerFactory transFactory = TransformerFactory.newInstance();
-         * Transformer transformer = transFactory.newTransformer(); StringWriter
-         * buffer = new StringWriter();
-         * transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION,
-         * "yes"); transformer.transform(new DOMSource(d), new
-         * StreamResult(buffer)); String str = buffer.toString();
-         * System.out.println(str);
-         */
+        
         return representation;
     }
 }

@@ -82,12 +82,6 @@ public class CertificateRenewRevokeGuiHelper {
 
         }
 
-        // TODO - need to remove this once host certs are suppored. 
-//        if (selectedKSEW.getX500PrincipalName().contains(".")) {
-//            JOptionPane.showMessageDialog(parentComponent, "Host cert revocations not yet supported. Coming very soon !",
-//                    "Host cert revocations not yet supported", JOptionPane.WARNING_MESSAGE);
-//            return false;
-//        }
         if (JOptionPane.showConfirmDialog(parentComponent,
                 "Are you sure you want to revoke the selected certificate?\n\n"
                 + "Alias: [" + selectedKSEW.getAlias() + "]\n"
@@ -102,7 +96,6 @@ public class CertificateRenewRevokeGuiHelper {
         if (reason == null) {
             return false;
         }
-        //if(true) return false; 
         try {
             parentComponent.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 

@@ -74,8 +74,7 @@ public class OnlineUpdateKeyStoreEntriesSwingWorker extends SwingWorker<Void, Ob
                 if (isCancelled()) {
                     break;
                 }
-                //Thread.sleep(2000); // to test 
-                //if(false){
+                
                 if (caKeyStoreModel.onlineUpdateKeyStoreEntry(keyStoreEntryWrapper)) {
                     updated = true;
                 }

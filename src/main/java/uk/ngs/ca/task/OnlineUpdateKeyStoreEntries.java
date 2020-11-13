@@ -81,24 +81,11 @@ public class OnlineUpdateKeyStoreEntries extends BackgroundTask<Void> {
 
     @Override
     public void onCompletion(Void result, Throwable exception, boolean cancelled) {
-        //System.out.println("Is true: "+SwingUtilities.isEventDispatchThread());          
-        // No need to synchronize access to runningOnlineUpdateTask or 
-        // updateGUI() as they are confined to the AWT event thread. 
-
-        //runningOnlineUpdateTask = null;
-        //onlineUpdateTaskRunning.set(false); 
-        //updateGUI(); 
-        //runningFlag.set(false);
         this.doNotifyObservers();
     }
 
     @Override
     public void onProgress(int current, int max) {
-        //System.out.println("Is true: "+SwingUtilities.isEventDispatchThread()); 
-        //System.out.println("Finished checking "+current+" of "+max);          
-        // No need to synchronize call to updateGUI() as it is 
-        // confined to the AWT event thread. 
-        //updateGUI(); 
         this.doNotifyObservers();
     }
 

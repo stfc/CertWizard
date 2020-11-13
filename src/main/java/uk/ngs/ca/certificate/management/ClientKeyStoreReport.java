@@ -77,17 +77,6 @@ public class ClientKeyStoreReport {
                 sbReport.append(sAlias);
                 sbReport.append("\n");
 
-                // Creation date
-                //if (ksType.isEntryCreationDateUseful())
-                //{
-                //	Date dCreation = m_keystore.getCreationDate(sAlias);
-                // Include time zone
-                //	String sCreation =
-                //	    DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.LONG).format(dCreation);
-                //	sbReport.append(MessageFormat.format(RB.getString("DKeyStoreReport.report.creation"),
-                //	    sCreation));
-                //	sbReport.append("\n");
-                //}
                 Certificate[] certChain = null;
 
                 // Get entry type and certificates

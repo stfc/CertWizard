@@ -72,27 +72,6 @@ public class CAInfo {
         }
     }
 
-    /*public String getVersion() {
-        try {
-            XPath xpath = XPathFactory.newInstance().newXPath();
-            XPathExpression expr = xpath.compile("/CA/certWizard/latestVersion[1]/text()");
-            return (String) expr.evaluate(document, XPathConstants.STRING);
-        } catch (Exception ep) {
-            ep.printStackTrace();
-            return null;
-        }
-    }*/
-
- /*public String getMoTDMessage() {
-        try {
-            XPath xpath = XPathFactory.newInstance().newXPath();
-            XPathExpression expr = xpath.compile("/CA/motd/text[1]/text()");
-            return (String) expr.evaluate(document, XPathConstants.STRING);
-        } catch (Exception ep) {
-            ep.printStackTrace();
-            return null;
-        }
-    }*/
     /**
      * @return the list of RAs fetched from the server.
      */
@@ -123,24 +102,4 @@ public class CAInfo {
             throw new IllegalStateException("Problem parsing RAList", ex); // coding error
         }
     }
-
-    /*
-     * public static String[] offLineRAs = {"Aberystwyth ComputerScience",
-     * "Aston University ISA", "Authority CLRC", "BBSRC BITS", "BBSRC IGER",
-     * "BBSRC Roslin", "Bangor SOI", "Bath BUCS", "Bath Chemistry", "Birmingham
-     * ParticlePhysics", "Bristol IS", "Bristol Physics", "Brunel ECE", "CLRC
-     * DL", "CLRC External", "CLRC RAL", "Cambridge UCS", "Cardiff WeSC",
-     * "Cranfield CCC", "CranfieldShrivenham CS", "Culham IT", "DLS DAG",
-     * "Durham eScience", "Edinburgh NeSC", "Glasgow Compserv", "Imperial LeSC",
-     * "Imperial Physics", "Kingston Grid", "Lancaster LeSC", "Lancaster
-     * Physics", "Leeds ISS", "Leicester Physics", "Liverpool CSD", "Liverpool
-     * Physics", "Macaulay ITS", "Manchester HEP", "Manchester MC",
-     * "ManchesterMet ISU", "NERC CEH", "NERC POL", "NERC SO", "Newcastle
-     * NEReSC", "Nottingham IS", "Oxford OeSC", "PML DTG", "Portsmouth DSG",
-     * "QUB BESC", "QueenMaryLondon Physics", "Reading ITS",
-     * "RoyalHollowayLondon Physics", "SOAS Linguistics", "Sheffield CICS",
-     * "Southampton NOC", "Southampton SOC", "Southampton SeSC", "Stirling IS",
-     * "Swansea LIS", "Training RA", "UCL EISD", "UEA ITCS", "Unis ITS",
-     * "Warwick UOW", "Westminster ComputerScience", "York ComputerScience"};
-     */
 }

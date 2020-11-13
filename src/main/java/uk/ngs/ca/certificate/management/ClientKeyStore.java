@@ -235,26 +235,6 @@ public final class ClientKeyStore {
         return false;
     }
 
-    /*public synchronized boolean isExistPrivateKey(PrivateKey privateKey) {
-        try {
-            Enumeration aliases = this.keyStore.aliases();
-             while (aliases.hasMoreElements()) {
-                String alias = (String) aliases.nextElement();
-                if (this.keyStore.isKeyEntry(alias)) {
-                    if( this.keyStore.getKey(alias, PASSPHRASE).equals(privateKey) ){
-                        return true;
-                    }
-                }
-            }
-        } catch (KeyStoreException ex) {
-            ex.printStackTrace();
-        } catch (NoSuchAlgorithmException ex) {
-            ex.printStackTrace();
-        } catch (UnrecoverableKeyException ex){
-            ex.printStackTrace();
-        }
-        return false;
-    }*/
     public synchronized PrivateKey getPrivateKey(PublicKey publicKey) {
         try {
             Enumeration aliases = this.keyStore.aliases();
@@ -278,55 +258,6 @@ public final class ClientKeyStore {
         return null;
     }
 
-    /**
-     * Create a new self-signed certificate (key pair) in the keyStore file.
-     * Important: the <b>keyStore is NOT reStored to file</b>.
-     *
-     * @param alias a suggested alias (can be null, a new meaningless alias will
-     * be created instead)
-     * @return alias of new keyStore entry or null if a problem occurred.
-     */
-    /*public synchronized String createNewSelfSignedCert(String alias, String ou, String l, String cn) throws KeyStoreException {
-            KeyPair keyPair = CAKeyPair.getNewKeyPair();
-            // the self signed certificate has some hardwired values - why?
-            X509Certificate cert = CAKeyPair.createSelfSignedCertificate(keyPair, ou, l, cn );
-            X509Certificate[] certs = {cert};
-            // Alias not valid so create a meaningless alias instead. 
-            if(alias == null || alias.trim().length() == 0 || this.keyStore.containsAlias(alias)){
-               alias = new Long(new Date().getTime()).toString();
-            }
-            this.keyStore.setKeyEntry(alias, keyPair.getPrivate(), PASSPHRASE, certs);
-            return alias;
-    }*/
-
- /*public synchronized String getAlias( X509Certificate cert ){
-        try{
-            return this.keyStore.getCertificateAlias(cert);
-        }catch(KeyStoreException ex ){
-            ex.printStackTrace();
-        }
-        return null;
-    }*/
- /*public synchronized boolean addNewKey(PrivateKey privateKey, X509Certificate cert) {
-        if ((privateKey == null) || (cert == null)) {
-            return false;
-        }
-        PublicKey publicKey = cert.getPublicKey();
-        if (isExistPublicKey(publicKey) && isExistPrivateKey(privateKey)) {
-            return true;
-        }
-        X509Certificate[] chain = {cert}; //new X509Certificate[1];
-        long _alias = new Date().getTime();
-        String my_alias = new Long(_alias).toString();
-        try {
-            this.keyStore.setKeyEntry(my_alias, privateKey, PASSPHRASE, chain);
-            reStore();
-            return true;
-        } catch (Exception ep) {
-            ep.printStackTrace();
-            return false;
-        }
-    }*/
     /**
      * Get the x509 certificate for the keyStore entry with the requested alias
      * or null if alias does not represent an x509 cert.
@@ -374,28 +305,6 @@ public final class ClientKeyStore {
         return null;
     }
 
-
-    /*public synchronized boolean removeKey(PrivateKey privateKey) {
-        boolean isSuccess = true;
-        try {
-            if (isExistPrivateKey(privateKey)) {
-                Enumeration aliases = this.keyStore.aliases();
-                while (aliases.hasMoreElements()) {
-                    String alias = (String) aliases.nextElement();
-                    PrivateKey _privateKey = (PrivateKey) this.keyStore.getKey(alias, PASSPHRASE);
-                    if (privateKey.equals(_privateKey)) {
-                       this.keyStore.deleteEntry(alias); 
-                    }
-                }
-                reStore();
-            }
-        } catch (Exception ep) {
-            ep.printStackTrace();
-            isSuccess = false;
-        } finally {
-            return isSuccess;
-        }
-    }*/
     /**
      * @see java.security.KeyStore#deleteEntry(java.lang.String)
      */

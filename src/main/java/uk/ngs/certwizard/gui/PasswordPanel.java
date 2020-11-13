@@ -46,16 +46,12 @@ public class PasswordPanel extends javax.swing.JPanel {
         this.parentPanel = parent;
         initComponents();
 
-//        this.setFocusable(true);
-//        txtPassword.requestFocusInWindow();
         if (this.isExistKeyStore) {
             jLabel3.setVisible(false);
             txtConfirmPassword.setVisible(false);
-//            messageLabel.setText("<html>Please enter your password.</html>");
         } else {
             jLabel3.setVisible(true);
             txtConfirmPassword.setVisible(true);
-//            messageLabel.setText("<html>Please enter and confirm a new password.</html>");
         }
         okButton.setEnabled(false);
 

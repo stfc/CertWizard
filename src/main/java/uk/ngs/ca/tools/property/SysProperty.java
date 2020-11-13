@@ -99,32 +99,6 @@ public class SysProperty {
             throw new IllegalStateException("[SysProperty] could not find out the value of " + key + " in your property file.");
         }
 
-        /*String homePath = SystemStatus.getInstance().getHomeDir().getAbsolutePath(); 
-        homePath = homePath + System.getProperty("file.separator") + FILEPATH;
-        if (!new File(homePath).isDirectory()) {
-            new File(homePath).mkdir();
-            String _homePath = homePath + System.getProperty("file.separator") + value;
-            try {
-                new File(_homePath).createNewFile();
-                //boolean result = SysProperty.createTemplateFile(_homePath, passphrase);
-            } catch (IOException ioe) {
-                ioe.printStackTrace();
-                myLogger.error("[SysProperty] failed to create file ");
-                return null;
-            }
-        }
-
-        homePath = homePath + System.getProperty("file.separator") + value;
-        if (!new File(homePath).exists()) {
-            try {
-                new File(homePath).createNewFile();
-                SysProperty.createTemplateFile(homePath);
-            } catch (IOException ioe) {
-                ioe.printStackTrace();
-                myLogger.error("[SysProperty] failed to create file");
-                return null;
-            }
-        }*/
         String absPath = SystemStatus.getInstance().getHomeDir().getAbsolutePath()
                 + File.separator + FILEPATH + File.separator + value;
         // check if the size of file is zero, if yes, then remove it and create a new template file.
@@ -150,7 +124,6 @@ public class SysProperty {
             DOMSource domSource = new DOMSource(doc);
             TransformerFactory tf = TransformerFactory.newInstance();
             Transformer transformer = tf.newTransformer();
-            //transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
             transformer.setOutputProperty(OutputKeys.METHOD, "xml");
             transformer.setOutputProperty(OutputKeys.ENCODING, "ISO-8859-1");
             transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");

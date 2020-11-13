@@ -57,9 +57,7 @@ public class CertificateExportGuiHelper {
     private Component parentCompoent;
 
     public CertificateExportGuiHelper(Component parentCompoent, ClientKeyStoreCaServiceWrapper caKeyStoreModel) throws KeyStoreException, IOException, CertificateException {
-        //this.PASSPHRASE = passphrase;
         this.parentCompoent = parentCompoent;
-        //this.caKeyStoreModel = ClientKeyStoreCaServiceWrapper.getInstance(this.PASSPHRASE);
         this.caKeyStoreModel = caKeyStoreModel;
     }
 
@@ -364,8 +362,6 @@ public class CertificateExportGuiHelper {
      */
     private boolean exportAllCertsPkcs7(String sEntryAlias) {
         // Get the certificates
-        //KeyStore keyStore = m_keyStoreWrap.getKeyStoreCopy();
-        //KeyStore keyStore = this.keyStoreCaWrapper.getClientKeyStore().getKeyStoreCopy();
         X509Certificate[] certChain;
         try {
             certChain = X509CertUtil.convertCertificates(this.caKeyStoreModel.getClientKeyStore().getCertificateChain(sEntryAlias));

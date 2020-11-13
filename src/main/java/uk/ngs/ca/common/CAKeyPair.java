@@ -107,7 +107,6 @@ public class CAKeyPair {
 
             X509v3CertificateBuilder builder = new X509v3CertificateBuilder(nameBuilder.build(), serialNumber, startDate, expiryDate, Locale.UK, nameBuilder.build(), SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded()));
 
-            //rootCert = v1certGen.generateX509Certificate(_rootKeyPair.getPrivate(), "BC");
             return new JcaX509CertificateConverter().setProvider(new BouncyCastleProvider()).getCertificate(builder.build(contentSigner));
 
             // For now lets throw an IllegalStateException; the application is 

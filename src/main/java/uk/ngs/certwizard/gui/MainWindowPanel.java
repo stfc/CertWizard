@@ -78,10 +78,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
      * Portecle Resource bundle
      */
     public static final ResourceBundle RB = ResourceBundle.getBundle(RB_BASENAME);
-    //private final AtomicBoolean onlineUpdateTaskRunning = new AtomicBoolean(false); 
     private final ExecutorService invokeOnceBackgroundExec = Executors.newSingleThreadExecutor();
-    //private final ScheduledExecutorService schedBackgroundExec = Executors.newSingleThreadScheduledExecutor();
-    //private BackgroundTask<Void> runningOnlineUpdateTask;  // confined to AWT event thread. 
     private OnlineUpdateKeyStoreEntriesSwingWorker onlineUpdateTask = new OnlineUpdateKeyStoreEntriesSwingWorker(null, null, null);
     private final ScheduledExecutorService messageOfDayExecutor = Executors.newSingleThreadScheduledExecutor();
 
@@ -552,8 +549,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
 
         public ComboBoxRenderer() {
             setOpaque(true);
-            //setHorizontalAlignment(CENTER);
-            //setVerticalAlignment(CENTER);
         }
 
         @Override

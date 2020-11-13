@@ -37,8 +37,6 @@ public class KeyStorePropertiesJDialog extends javax.swing.JDialog {
         initComponents();
         this.caKeyStoreModel = caKeyStoreModel;
         this.masterPane = masterPane;
-        //File caDir = new File(SystemStatus.getInstance().getHomeDir(), ".ca");
-        //this.keyStorePathTextField.setText(caDir.getAbsolutePath()+File.separatorChar+"cakeystore.pkcs12");
         if (this.caKeyStoreModel.getClientKeyStore().getKeyStoreFilePath() != null) {
             this.keyStorePathTextField.setText(this.caKeyStoreModel.getClientKeyStore().getKeyStoreFilePath());
             File keystore = new File(this.caKeyStoreModel.getClientKeyStore().getKeyStoreFilePath());
