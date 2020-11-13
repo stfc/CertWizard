@@ -5,11 +5,9 @@ with 3rd party legacy).
 
 Requirements
 ===============
-Java JDK 1.7 +
-Apache Ant 1.8+
-netbeans 8.2+ (you don't need netbeans to build/compile this project
-  since netbeans uses 100% apache ant to build netbeans projects, but it is 
-  very useful for building the GUI).
+Java JDK 1.11 +
+Maven
+netbeans 8.2+ (it's used for building the GUI)
 
 CertWizard is a java client tool to access and manage user/host certificates. 
 It is developed based on Restlet APIs (see http://www.restlet.org/) and is the
@@ -34,7 +32,6 @@ Configuration:
         'uk/ngs/ca/tools/property/configure.properties' (and modify as required) 
     
    (for ukca, use one of the provided configure files): 
-// JK: should the 2nd not be cwiz-dev rather than cwiz?
        'uk/ngs/ca/tools/property/configure.cwiz-live.ca.ngs.ac.uk.properties, (production CA)
        'uk/ngs/ca/tools/property/configure.cwiz.ca.ngs.ac.uk.properties, (development CA)
 
@@ -58,38 +55,24 @@ openssl pkcs12 -clcerts -nokeys -in somepkcs12file.p12 -out hostcert.pem
 
 Build / Compile
 ====================
-Use netbeans or in the project directory run the following:
-    ant clean
-    ant jar
-(although this is a netbeans project, netbeans uses 100% ant to build so you
-don't actually need netbeans to build/compile the project)
+
+mvn clean
+mvn package -DskipTests # this skips running tests
 
 Running:
 ===========
 cd into the dist dir and run: 
 java -jar Certwizard.jar
 
-note, although not common, you can also cd into the build dir and run:
-java uk.ngs.certwizard.gui.CertWizardMain
+An executable installer for Windows is also built if you build this on Windows, 
+which includes a slimmed down JRE 11 so the user doesn't need Java installed.
 
-
-Crytpo BC/JCE unlimited strength provider notes
-================================================
-CWiz requires an unlimited strength jce security provider to allow big password 
-access to a PKCS12 keystore without policy restrictions on pw length. This is provided 
-with the following custom class that is provided as part of the 'MyProxyUploader2.jar' 
-dependency (a sub-project): 'org.bouncycastle.jce.provider.unlimited.PKCS12KeyStoreUnlimited;' 
-
-To remove the dependency on MyProxyUploader2.jar, this class would need to be 
-copied into the src tree of this project under the same package. This class 
-also requires a particular build of the BC crypto provider (bcprov-jdk15-145.jar). 
-
-This class is provided by NIKHEF, see: http://wiki.nikhef.nl/grid/PKCS12KeyStoreUnlimited 
-and is also copied into the 'resources/pkcs12KeyStoreUnlimited' dir for archive. 
 
  
 Code Signing for deployment via Java WebStart as a RIA (Rich Internet App)
 ===========================================================================
+Java Web Start is no longer supported! This is left here for historical reference.
+
 To deploy Cwiz via Java WebStart, you need to sign all the dist/**/*.jar files. To do this, 
 you can use either:
 a) the 'SignDistJars' ant target in the build.xml file. This target requires 
@@ -145,7 +128,7 @@ then resign with your code-sign cert.
 
 JCE/JCA code signing for cryptography extensions
 =================================================
-This application deploys Java crytpo libraries - the 'bcprov-jdk15-145.jar' from 
+This application deploys Java crytpo libraries - the 'bcprov-jdk15-166.jar' from 
 Bouncy Castle. This library needs to be signed by a special JCA/JCE certificate that
 can be requested free from Oracle (you can't use your normal code-sign cert, it has
 to be a special JCE code-sign cert as described at the link below). Note, this jar  
@@ -186,18 +169,8 @@ TODOs:
 There are lots of to do items. Much of the code needs refactoring (many parts 
 are poorly written with 3rd party legacy): 
 
-- Address following bug: System property "user.home" does not correspond to "USERPROFILE" (win)
-   http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4787931
 - Export multiple certificates into a PKCS12 file (currently, can only export one at a time)  
 - When exporting certs, need to change the perms on *nix box much like 
   when installing the pem files (think this may be done - check).  
 - Edit/choose Colours 
 - Apply needs fixing for the regex pattern to prevent accented chars. 
-
-
-Deprecated todos:
-=================
-- Remove "Authority CLRC" from RA list and update the RA list in the DB. 
-  OpenCA gets the list of RAs from /usr/local/OpenCA/etc/**/*.conf 
-  (there is probably a ra.conf, a ca.conf, and a server.conf and something to that effect, which contains a line with a list of RAs in alphabetical order). 
-  For CertWizard, we should try to ensure that the deprecated RAs - like Authority CLRC and CLRC External - are not displayed.  One way of doing this is to have a "deprecated" flag in the database - I assume they're coming from raoplist? - and maybe even a view which hides the deprecated ones.
