@@ -102,6 +102,9 @@
                     <resource>
                         <directory>src/main/resources</directory>
                     </resource>
+                    <resource>
+                        <directory>src/test/resources</directory>
+                    </resource>
                 </resources>
                 <plugins>
                     <plugin>
@@ -148,6 +151,12 @@
                                 <configuration>
                                     <mainClass>${mainClass}</mainClass>
                                     <bundleJre>true</bundleJre>
+                                    <version>0.8</version>
+                                    <displayName>CertWizard</displayName>
+                                    <organizationName>STFC</organizationName>
+                                    <organizationUrl>https://stfc.ukri.org</organizationUrl>
+                                    <organizationEmail>support@grid-support.ac.uk</organizationEmail>
+                                    <name>CertWizard</name>
                                 </configuration>
                             </execution>
                         </executions>

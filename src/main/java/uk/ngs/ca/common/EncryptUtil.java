@@ -17,10 +17,10 @@ import javax.crypto.EncryptedPrivateKeyInfo;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.util.encoders.Base64;
 
 /**
  *
@@ -47,7 +47,7 @@ public class EncryptUtil {
             byte[] wrappedKey = cipher.wrap(privateKey);
 
             EncryptedPrivateKeyInfo pInfo = new EncryptedPrivateKeyInfo(params, wrappedKey);
-            String encryptedKey = new String(Base64.encode(pInfo.getEncoded()));
+            String encryptedKey = new String(Base64.encodeBase64(pInfo.getEncoded()));
 
             return encryptedKey;
 
@@ -67,7 +67,7 @@ public class EncryptUtil {
             SecretKeyFactory keyFact = SecretKeyFactory.getInstance(ENCRYPTIONALGORITHM);
             Cipher cipher = Cipher.getInstance(ENCRYPTIONALGORITHM);
             cipher.init(Cipher.DECRYPT_MODE, keyFact.generateSecret(pbeSpec), params);
-            EncryptedPrivateKeyInfo pInfo = new EncryptedPrivateKeyInfo(Base64.decode(value));
+            EncryptedPrivateKeyInfo pInfo = new EncryptedPrivateKeyInfo(Base64.decodeBase64(value));
             PKCS8EncodedKeySpec keySpec = pInfo.getKeySpec(cipher);
 
             KeyFactory keyFactory = java.security.KeyFactory.getInstance("RSA");
@@ -81,13 +81,14 @@ public class EncryptUtil {
     }
 
     public static String getEncodedPublicKey(PublicKey publicKey) {
-        return new String(Base64.encode(publicKey.getEncoded()));
+        String key = new String(Base64.encodeBase64(publicKey.getEncoded()));
+        return key;
     }
 
     public static PublicKey getPublicKey(String encodedPublicKeyString) {
         try {
             Provider provider = new BouncyCastleProvider();
-            byte[] decodedPubKey = Base64.decode(encodedPublicKeyString);
+            byte[] decodedPubKey = Base64.decodeBase64(encodedPublicKeyString);
             X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(decodedPubKey);
             KeyFactory keyFactory = KeyFactory.getInstance("RSA", provider);
             PublicKey pubKey = keyFactory.generatePublic(pubKeySpec);
@@ -104,7 +105,7 @@ public class EncryptUtil {
         String keyid = null;
         try {
             Provider provider = new BouncyCastleProvider();
-            byte[] decodedPubKey = Base64.decode(encodedPublicKeyString);
+            byte[] decodedPubKey = Base64.decodeBase64(encodedPublicKeyString);
             X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(decodedPubKey);
             KeyFactory keyFactory = KeyFactory.getInstance("RSA", provider);
             PublicKey publicKey = keyFactory.generatePublic(pubKeySpec);

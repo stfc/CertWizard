@@ -4,33 +4,27 @@
  */
 package xmlparsing;
 
-import java.io.File;
-import java.io.FilePermission;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Element;
+import java.io.StringReader;
 import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.StringReader;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.AccessController;
-import java.util.regex.Pattern;
-import javax.xml.parsers.DocumentBuilderFactory;
 import org.junit.After;
 import org.junit.AfterClass;
+import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
-import resources.TestUtil;
-import static org.junit.Assert.*;
+import utils.TestUtil;
 
 /**
  * Test parsing of a sample error message. 
@@ -81,7 +75,7 @@ public class TestParseXMLErrorDoc {
 
     @Test
     public void testParseErrorDoc() throws Exception {
-        String path = TestParseXMLErrorDoc.class.getResource("/resources/errorSample1.xml").toURI().getPath();
+        String path = TestParseXMLErrorDoc.class.getResource("/errorSample1.xml").toURI().getPath();
         String xmlString = TestUtil.readFileAsString(path); 
      
         

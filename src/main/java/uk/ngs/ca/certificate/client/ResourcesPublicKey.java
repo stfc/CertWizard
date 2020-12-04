@@ -10,8 +10,10 @@ import org.restlet.Request;
 import org.restlet.Response;
 import org.restlet.data.*;
 import org.restlet.ext.xml.DomRepresentation;
+import org.restlet.representation.Representation;
 import org.restlet.util.Series;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import uk.ngs.ca.common.ClientHostName;
 import uk.ngs.ca.common.EncryptUtil;
 import uk.ngs.ca.common.RestletClient;
@@ -65,11 +67,12 @@ public class ResourcesPublicKey {
             // call CA server and ask 'do you know about a certficate with this pub key'
             // url = /resources/resource/publickey/<base64encodedpubkey>
             String resourceURL = SysProperty.getValue("uk.ngs.ca.request.resource.publickey");
-            resourceURL = resourceURL + "/" + this.encodedPublicKey;
-            //System.out.println("publickeyresourceurl: "+resourceURL);
             Client c = RestletClient.getClient();
+            
+            // We add a fake public key here as we're maintaining the same API endpoint for backwards compatibility with old clients
+            resourceURL = resourceURL + "/pk";
 
-            Request request = new Request(Method.GET, new Reference(resourceURL));
+            Request request = new Request(Method.POST, new Reference(resourceURL), getRepresentation(this.encodedPublicKey));
 
             Series<Header> headers = request.getHeaders();
             headers.set("LocalHost", ClientHostName.getHostName());
@@ -95,6 +98,24 @@ public class ResourcesPublicKey {
 
     public Document getDocument() {
         return this.document;
+    }
+    
+    private Representation getRepresentation(String base64EncodedPublicKey) {
+        DomRepresentation representation;
+        try {
+            representation = new DomRepresentation(MediaType.APPLICATION_XML);
+            Document d = representation.getDocument();
+
+            Element rootElement = d.createElement("PublicKey");
+            d.appendChild(rootElement);
+            rootElement.appendChild(d.createTextNode(base64EncodedPublicKey));
+
+            d.normalizeDocument();
+        } catch (Exception ep) {
+            ep.printStackTrace();
+            return null;
+        }
+        return representation;
     }
 
 }

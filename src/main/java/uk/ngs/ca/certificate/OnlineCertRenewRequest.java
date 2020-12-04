@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Date;
 import java.util.Locale;
@@ -163,14 +164,14 @@ public class OnlineCertRenewRequest {
             String _keyid = _keyidP.getValue();
             int index = _keyid.indexOf(".");
             String m = _keyid.substring(0, index).toUpperCase(Locale.ENGLISH);
-            String q = getPrivateExponent(this.authPrivateKey);
+            BigInteger q = getPrivateExponent(this.authPrivateKey);
 
             String _nonce = _nonceP.getValue() + ":" + new Date().getTime();
             _nonce = _nonce.toLowerCase(Locale.ENGLISH);
             String c = asciiToHex(_nonce);
             c = c.toUpperCase(Locale.ENGLISH);
             BigInteger b_c = new BigInteger(c, 16);
-            BigInteger b_q = new BigInteger(q, 16);
+            BigInteger b_q = q;
             BigInteger b_m = new BigInteger(m, 16);
             BigInteger b_response = b_c.modPow(b_q, b_m);
             String _response = b_response.toString(16);
@@ -230,15 +231,9 @@ public class OnlineCertRenewRequest {
         return hex.toString();
     }
 
-    // hmm, this looks hacky 
-    private String getPrivateExponent(PrivateKey _privateKey) {
-        int index = _privateKey.toString().indexOf("private exponent:");
-        index = index + 17;
-        String subString = _privateKey.toString().substring(index);
-        index = subString.indexOf("\n");
-        subString = subString.substring(0, index);
-        subString = subString.trim();
-        return subString;
+    private BigInteger getPrivateExponent(PrivateKey _privateKey) {
+        RSAPrivateKey p = (RSAPrivateKey) _privateKey;
+        return p.getPrivateExponent();
     }
 
     private Representation getDomRepresentation() {

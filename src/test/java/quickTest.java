@@ -3,10 +3,6 @@
  * and open the template in the editor.
  */
 
-
-import java.awt.BorderLayout;
-import java.awt.Cursor;
-import java.awt.Dimension;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.security.cert.CertificateFactory;
@@ -16,15 +12,10 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
-import javax.swing.*;
-import net.sf.portecle.gui.error.DThrowable;
 import org.junit.*;
 import static org.junit.Assert.*;
-import org.junit.Test;
-import resources.TestUtil;
 import uk.ngs.ca.common.EncryptUtil;
-import uk.ngs.ca.common.GuiExecutor;
-import uk.ngs.certwizard.gui.GeneralMessageDialog;
+import utils.TestUtil;
 
 /**
  * Use this class to do quick testing. 
@@ -57,7 +48,7 @@ public class quickTest {
 
     @Test
     public void testDave() throws Exception{
-        String path = quickTest.class.getResource("/resources/sample.pem").toURI().getPath();
+        String path = quickTest.class.getResource("/sample.pem").toURI().getPath();
         String pemString = TestUtil.readFileAsString(path); 
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
         InputStream is = new ByteArrayInputStream(pemString.getBytes("UTF-8"));
@@ -113,45 +104,4 @@ public class quickTest {
         String okSeq  = "DAVE this is theworld 111343 comc ad"; 
         assertTrue(alphaNumericSpaceOnly.matcher(okSeq).matches());
     }
-    
-
-    
-    
-    
-    
-    /*@Test
-    public void hello() {
-        //String text = "adfaasdfafaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-        //        + "aaaaaaaaaaaaaaaaaaaaaaaa\n"
-        //        + "asssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss"; 
-        //GeneralMessageDialog.showAndWait(null, text, "title", JOptionPane.ERROR_MESSAGE); 
-        
-        final JDialog dlg = new JDialog();
-        dlg.setModal(true);
-        dlg.setTitle("Please wait...");
-        //JProgressBar dpb = new JProgressBar();
-        //dpb.setIndeterminate(true);
-        //dlg.add(BorderLayout.CENTER, dpb);
-        dlg.add(BorderLayout.CENTER, new JLabel("Processing"));
-        //dlg.add(BorderLayout.NORTH, new JLabel("Progress..."));
-        dlg.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
-        dlg.setSize(300, 50);
-        //dlg.setLocationRelativeTo(this);
-        GuiExecutor.instance().execute(new Runnable() {
-
-            public void run() {
-                dlg.setVisible(true);
-            }
-        }); 
-        
-
-        try {
-            Thread.sleep(3000);
-            dlg.dispose();
-        } catch (Exception ex) {
-            dlg.dispose();
-        }
-
-    }*/
-
 }
