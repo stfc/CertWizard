@@ -29,6 +29,8 @@ import java.util.logging.Logger;
 import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
+
+import com.vdurmont.semver4j.Semver;
 import net.sf.portecle.DGetAlias;
 import net.sf.portecle.DViewCertificate;
 import net.sf.portecle.FPortecle;
@@ -69,7 +71,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private ClientKeyStoreCaServiceWrapper caKeyStoreModel = null;
     private final String stringMotDOffline = "You are working offline.\n\nYou will not be able to apply-for, renew or revoke "
             + "your certificates until a connection has been established. "
-            + "Hit the Refresh button to try and reconnect.\n\nTo configure CertWizard's connection see:\nhttp://ngs.ac.uk/tools/certwizard";
+            + "Hit the Refresh button to try and reconnect.\n\nTo configure CertWizard's connection see:\nhttp://www.ngs.ac.uk/ukca/certificates/certwizard.html";
     /**
      * Portecle Resource bundle base name
      */
@@ -162,7 +164,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 @Override
                 public void run() {
                     String certWizardVersion = SysProperty.getValue("ngsca.certwizard.versionNumber");
-                    if (latestVersion != null && (!certWizardVersion.equals(latestVersion))) {
+                    Semver ourVersion = new Semver(certWizardVersion);
+                    Semver serverVersion = new Semver(latestVersion);
+                    if (serverVersion.isGreaterThan(ourVersion)) {
                         JOptionPane.showMessageDialog(null, "A new version of the Certificate Wizard is available!\n"
                                 + "Please go to www.ngs.ac.uk in order to obtain the latest version",
                                 "New Version of Certificate Wizard", JOptionPane.INFORMATION_MESSAGE);
@@ -1106,8 +1110,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             }
 
             // ok, install the selected cert
-            // TODO: remove the dependency on org.globus.common.GoGProperties (we can do this ourselves - better to not depend on this)
-            //CoGProperties props = CoGProperties.getDefault();
             String certPemFile = System.getProperty("user.home") + File.separator + ".globus" + File.separator + "usercert.pem";
             String keyPemFile = System.getProperty("user.home") + File.separator + ".globus" + File.separator + "userkey.pem";
             File fCertFile = new File(certPemFile);

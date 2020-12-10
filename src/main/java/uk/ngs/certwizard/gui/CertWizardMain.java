@@ -48,11 +48,7 @@ public class CertWizardMain extends javax.swing.JFrame {
 
         this.createGlobusDirIfNotExistsShowWarnings();
         this.setupHomeDir();
-
-        // TODO - determine how the Apache http/https connector (org.apache.httpclient.jar)
-        // determines the proxy settings to use. 
-        //System.out.println("http.proxyHost "+System.getProperty("http.proxyHost"));
-        //System.out.println("http.proxyPort "+System.getProperty("http.proxyPort"));
+        
         try {
             SysProperty.setupTrustStore(); // throws IllegalStateException if prob
             String trustStoreFile = SysProperty.getValue("ngsca.truststore.file");

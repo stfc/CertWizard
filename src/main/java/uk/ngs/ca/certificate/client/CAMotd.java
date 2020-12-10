@@ -70,7 +70,7 @@ public class CAMotd {
      * retrieved from the server.
      */
     public String getLatestVersion() {
-        String latestVersion = null;
+        String latestVersion = "0.0.0";
         try {
             String csrURL = SysProperty.getValue("uk.ngs.ca.request.ca.url");
             Client c = RestletClient.getClient();
@@ -85,7 +85,7 @@ public class CAMotd {
             Response response = c.handle(request);
             //response.getStatus().
             if (!response.getStatus().equals(Status.SUCCESS_OK)) {
-                return null;
+                return "0.0.0";
             }
 
             Document document = new DomRepresentation(response.getEntity()).getDocument(); //response.getEntityAsDom().getDocument();
