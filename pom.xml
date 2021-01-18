@@ -80,9 +80,18 @@
         <maven.compiler.source>1.9</maven.compiler.source>
         <maven.compiler.target>1.9</maven.compiler.target>
         <mainClass>uk.ngs.certwizard.gui.CertWizardMain</mainClass>
+        <codeSignCert>C:\\Users\\fou43474\\OneDrive - Science and Technology Facilities Council\\Documents\\Certs\\ComodoCodeSign-all.p12</codeSignCert>
     </properties>
-    <build>
 
+    <licenses>
+        <license>
+            <name>GPL-2.0</name>
+            <url>https://www.gnu.org/licenses/old-licenses/gpl-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <build>
+        <finalName>${project.artifactId}</finalName>
     </build>
     
     <profiles>
@@ -143,11 +152,33 @@
                             </execution>
                         </executions>
                     </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-jarsigner-plugin</artifactId>
+                        <version>3.0.0</version>
+                        <executions>
+                            <execution>
+                                <id>sign</id>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <keystore>${codeSignCert}</keystore>
+                            <!--suppress UnresolvedMavenProperty -->
+                            <storepass>${codesignpass}</storepass>
+                            <!--suppress UnresolvedMavenProperty -->
+                            <keypass>${codesignpass}</keypass>
+                            <alias>1</alias>
+                        </configuration>
+                    </plugin>
                     
                     <plugin>
                         <groupId>io.github.fvarrui</groupId>
                         <artifactId>javapackager</artifactId>
-                        <version>1.4.2</version>
+                        <version>1.4.3-SNAPSHOT</version>
                         <configuration>
                             <mainClass>${mainClass}</mainClass>
                             <bundleJre>true</bundleJre>
@@ -176,6 +207,12 @@
                                         <setupMode>askTheUser</setupMode>
                                         <createDesktopIconTask>true</createDesktopIconTask>
                                         <icoFile>src/main/resources/ngs-icon.ico</icoFile>
+                                        <signing>
+                                            <storetype>PKCS12</storetype>
+                                            <keystore>${codeSignCert}</keystore>
+                                            <!--suppress UnresolvedMavenProperty -->
+                                            <storepass>${codesignpass}</storepass>
+                                        </signing>
                                     </winConfig>
                                 </configuration>
                             </execution>
