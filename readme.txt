@@ -29,29 +29,17 @@ Configuration:
 ===============
 1) Copy 'uk/ngs/ca/tools/property/template.configure.properties' 
          to:
-        'uk/ngs/ca/tools/property/configure.properties' (and modify as required) 
-    
-   (for ukca, use one of the provided configure files): 
-       'uk/ngs/ca/tools/property/configure.cwiz-live.ca.ngs.ac.uk.properties, (production CA)
-       'uk/ngs/ca/tools/property/configure.cwiz.ca.ngs.ac.uk.properties, (development CA)
+        'uk/ngs/ca/tools/property/configure.properties' (and modify as required)
 
 2) Modify the copied properties file as required.  
     If you want to access a different CA server, just overwrite configure.properties by
     using the above template files.
 
-3) For new CA servers, either add the host cert pem of the CA-Server host you 
-need to interact with OR the CA cert chain that signed the CA-Server's hosts cert to 
-'uk/ngs/ca/tools/property/hostcert.pem' XML file (certs need to be in pem format).   
+3) Update the root CA certificates at src/main/resources/escience*.pem
 
 This file is configured with the UK eScience CA chain (CA cert and root) so it can
 be used against cwiz-live and cwiz.ca without modification.
- 
-This file is actually an XML file (not a pem encoded cert) and can store 
-multiple public certs for convenience. Note, when
-adding the base64 encoded pem file, do not have any spaces after <hostcert>
-and before </hostcert> 
-To export a pem from a p12 use openssl with (-clcerts = only out client certs, -nokeys don't export key): 
-openssl pkcs12 -clcerts -nokeys -in somepkcs12file.p12 -out hostcert.pem
+
 
 Build / Compile
 ====================
@@ -128,6 +116,8 @@ then resign with your code-sign cert.
 
 JCE/JCA code signing for cryptography extensions
 =================================================
+This is left here for historical reference, NOT required, we don't modify BC any more!
+
 This application deploys Java crytpo libraries - the 'bcprov-jdk15-166.jar' from 
 Bouncy Castle. This library needs to be signed by a special JCA/JCE certificate that
 can be requested free from Oracle (you can't use your normal code-sign cert, it has
