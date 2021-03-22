@@ -178,7 +178,7 @@
                     <plugin>
                         <groupId>io.github.fvarrui</groupId>
                         <artifactId>javapackager</artifactId>
-                        <version>1.4.3-SNAPSHOT</version>
+                        <version>1.5.1</version>
                         <configuration>
                             <mainClass>${mainClass}</mainClass>
                             <bundleJre>true</bundleJre>
@@ -225,7 +225,7 @@
                                 <configuration>
                                     <platform>mac</platform>
                                     <createZipball>true</createZipball>
-                                    <jdkPath>C:\\jdk\\OpenJDK11U-jdk_x64_mac_hotspot_11.0.9.1_1\\jdk-11.0.9.1+1\\Contents\\Home</jdkPath>
+                                    <jdkPath>C:\jdk\OpenJDK11U-jdk_x64_mac_hotspot_11.0.9.1_1\jdk-11.0.9.1+1\Contents\Home</jdkPath>
                                     <macConfig>
                                         <icnsFile>src/main/resources/ngs-icon.icns</icnsFile>
                                     </macConfig>
