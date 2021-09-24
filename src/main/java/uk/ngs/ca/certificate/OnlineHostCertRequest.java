@@ -18,12 +18,6 @@
  */
 package uk.ngs.ca.certificate;
 
-import java.io.IOException;
-import java.math.BigInteger;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPrivateKey;
-import java.util.Date;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.restlet.Client;
@@ -39,6 +33,15 @@ import uk.ngs.ca.common.ClientHostName;
 import uk.ngs.ca.common.Pair;
 import uk.ngs.ca.common.RestletClient;
 import uk.ngs.ca.tools.property.SysProperty;
+
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
+import java.util.Date;
+
+import static uk.ngs.ca.common.CertUtil.asciiToHex;
+import static uk.ngs.ca.common.CertUtil.getPrivateExponent;
 
 /**
  * Performs a new host certificate request with the server. An X509 certificate
@@ -62,20 +65,20 @@ public class OnlineHostCertRequest {
      * Create a new instance. After creation call {@link #doHostCSR() } when
      * ready to perform the CSR request with the server.
      *
-     * @param authCert Used to authenticate the CSR request with the server.
+     * @param authCert   Used to authenticate the CSR request with the server.
      * @param privateKey This must be the corresponding private key to
-     * <tt>authCert</tt>.
-     * @param pkcs10 A string encoded PKCS#10 certificate signing request.
-     * @param pinHash Hash of the pin number. To be manually checked by the RA.
-     * @param email Contact Email address that will be associated with this host
-     * cert (e.g. the server administrator).
+     *                   <tt>authCert</tt>.
+     * @param pkcs10     A string encoded PKCS#10 certificate signing request.
+     * @param pinHash    Hash of the pin number. To be manually checked by the RA.
+     * @param email      Contact Email address that will be associated with this host
+     *                   cert (e.g. the server administrator).
      */
     public OnlineHostCertRequest(X509Certificate authCert, PrivateKey privateKey, String pkcs10, String pinHash, String email) {
         this.pkcs10 = pkcs10;
         this.pinHash = pinHash;
         this.email = email;
         this.authCert = authCert;
-        this.exponent = this.getPrivateExponent(privateKey);
+        this.exponent = getPrivateExponent(privateKey);
     }
 
     /**
@@ -137,9 +140,6 @@ public class OnlineHostCertRequest {
         Header realmP = headers.getFirst("realm");
         Header nonceP = headers.getFirst("nonce");
         Header keyidP = headers.getFirst("keyid");
-        System.out.println(realmP.getValue());
-        System.out.println(nonceP.getValue());
-        System.out.println(keyidP.getValue());
         //Parameter opaqueP = headers.getFirst("opaque"); // TODO don't support yet 
 
         // Check that nonceP and keyidP are returned from the server, if not we can throw 
@@ -151,16 +151,14 @@ public class OnlineHostCertRequest {
         String keyid = keyidP.getValue();
         int index = keyid.indexOf(".");
         String m = keyid.substring(0, index).toUpperCase();
-        BigInteger q = this.exponent;
 
         String nonce = nonceP.getValue() + ":" + new Date().getTime();
         nonce = nonce.toLowerCase();
         String c = asciiToHex(nonce);
         c = c.toUpperCase();
         BigInteger b_c = new BigInteger(c, 16);
-        BigInteger b_q = q;
         BigInteger b_m = new BigInteger(m, 16);
-        BigInteger b_response = b_c.modPow(b_q, b_m);
+        BigInteger b_response = b_c.modPow(this.exponent, b_m);
         String _response = b_response.toString(16);
 
         Client client = RestletClient.getClient();
@@ -225,18 +223,5 @@ public class OnlineHostCertRequest {
 
         d.normalizeDocument();
         return representation;
-    }
-
-    private String asciiToHex(String ascii) {
-        StringBuilder hex = new StringBuilder();
-        for (int i = 0; i < ascii.length(); i++) {
-            hex.append(Integer.toHexString(ascii.charAt(i)));
-        }
-        return hex.toString();
-    }
-
-    private BigInteger getPrivateExponent(PrivateKey _privateKey) {
-        RSAPrivateKey p = (RSAPrivateKey) _privateKey;
-        return p.getPrivateExponent();
     }
 }

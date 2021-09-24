@@ -18,14 +18,6 @@
  */
 package uk.ngs.ca.certificate.client;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpression;
-import javax.xml.xpath.XPathFactory;
 import org.restlet.Client;
 import org.restlet.Request;
 import org.restlet.Response;
@@ -39,8 +31,16 @@ import uk.ngs.ca.common.ClientHostName;
 import uk.ngs.ca.common.RestletClient;
 import uk.ngs.ca.tools.property.SysProperty;
 
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathFactory;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+
 /**
- *
  * @author xw75
  */
 public class CertificateDownload {

@@ -21,11 +21,7 @@ package uk.ngs.ca.certificate;
 import org.restlet.Client;
 import org.restlet.Request;
 import org.restlet.Response;
-import org.restlet.data.ClientInfo;
-import org.restlet.data.Header;
-import org.restlet.data.MediaType;
-import org.restlet.data.Method;
-import org.restlet.data.Reference;
+import org.restlet.data.*;
 import org.restlet.ext.xml.DomRepresentation;
 import org.restlet.representation.Representation;
 import org.restlet.util.Series;
@@ -38,7 +34,6 @@ import uk.ngs.ca.common.RestletClient;
 import uk.ngs.ca.tools.property.SysProperty;
 
 /**
- *
  * @author xw75 (Xiao Wang)
  */
 public class OnlineUserCertRequest {

@@ -18,6 +18,13 @@
  */
 package uk.ngs.ca.certificate.management;
 
+import net.sf.portecle.FPortecle;
+import net.sf.portecle.StringUtil;
+import net.sf.portecle.crypto.DigestType;
+import net.sf.portecle.crypto.DigestUtil;
+import net.sf.portecle.crypto.KeyPairUtil;
+import net.sf.portecle.crypto.X509CertUtil;
+
 import java.io.IOException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -29,12 +36,6 @@ import java.text.MessageFormat;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.ResourceBundle;
-import net.sf.portecle.FPortecle;
-import net.sf.portecle.StringUtil;
-import net.sf.portecle.crypto.DigestType;
-import net.sf.portecle.crypto.DigestUtil;
-import net.sf.portecle.crypto.KeyPairUtil;
-import net.sf.portecle.crypto.X509CertUtil;
 
 /**
  * Create a report of the managed keyStore Based on Portecle.
@@ -62,7 +63,7 @@ public class ClientKeyStoreReport {
      *
      * @return Keystore report
      * @throws IllegalStateException If a problem was encountered generating the
-     * keystore report
+     *                               keystore report
      */
     public String getKeyStoreReport() {
         try {
@@ -162,7 +163,7 @@ public class ClientKeyStoreReport {
                         Date dValidFrom = x509Cert.getNotBefore();
                         String sValidFrom
                                 = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM).format(
-                                        dValidFrom);
+                                dValidFrom);
                         sbReport.append(MessageFormat.format(
                                 RB.getString("DKeyStoreReport.report.validfrom"), sValidFrom));
                         sbReport.append("\n");
@@ -171,7 +172,7 @@ public class ClientKeyStoreReport {
                         Date dValidTo = x509Cert.getNotAfter();
                         String sValidTo
                                 = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM).format(
-                                        dValidTo);
+                                dValidTo);
                         sbReport.append(MessageFormat.format(
                                 RB.getString("DKeyStoreReport.report.validuntil"), sValidTo));
                         sbReport.append("\n");
@@ -181,7 +182,7 @@ public class ClientKeyStoreReport {
                         String sKeyAlg = x509Cert.getPublicKey().getAlgorithm();
                         String fmtKey
                                 = (iKeySize == KeyPairUtil.UNKNOWN_KEY_SIZE)
-                                        ? "DKeyStoreReport.report.pubkeynosize" : "DKeyStoreReport.report.pubkey";
+                                ? "DKeyStoreReport.report.pubkeynosize" : "DKeyStoreReport.report.pubkey";
                         sbReport.append(MessageFormat.format(RB.getString(fmtKey), sKeyAlg, iKeySize));
                         sbReport.append("\n");
 

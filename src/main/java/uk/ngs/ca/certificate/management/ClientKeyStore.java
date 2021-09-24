@@ -18,16 +18,20 @@
  */
 package uk.ngs.ca.certificate.management;
 
-import java.io.*;
+import uk.ngs.ca.common.FileUtils;
+import uk.ngs.ca.common.SystemStatus;
+import uk.ngs.ca.tools.property.SysProperty;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.logging.Level;
-import uk.ngs.ca.common.FileUtils;
-import uk.ngs.ca.common.SystemStatus;
-import uk.ngs.ca.tools.property.SysProperty;
 
 /**
  * A thread safe singleton that wraps the managed
@@ -44,10 +48,10 @@ import uk.ngs.ca.tools.property.SysProperty;
  * methods. This is delegated to the calling client with manual invocations of {@link #reStore()
  * }.
  *
- * @todo DM: Lots, more refactoring is needed, especially all the exception
- * swallowing to fix
  * @author xw75 (Xiao Wang)
  * @author David Meredith (refactoring - still lots to fix)
+ * @todo DM: Lots, more refactoring is needed, especially all the exception
+ * swallowing to fix
  */
 public final class ClientKeyStore {
 
@@ -72,7 +76,7 @@ public final class ClientKeyStore {
      * @param passphrase used to protect the keyStore.
      * @return
      * @throws IllegalStateException if there is problem creating or loading the
-     * KeyStore
+     *                               KeyStore
      */
     static synchronized ClientKeyStore getClientkeyStore(char[] passphrase) throws KeyStoreException, IOException, CertificateException {
         // Static factory method allows us to choose whether we return the same instance
@@ -92,7 +96,7 @@ public final class ClientKeyStore {
 
     /**
      * Force non-instantiation with private constructor
-     *
+     * <p>
      * If $HOME/.ca/cakeystore.pkcs12 already exists, load it otherwise create
      * an empty pkcs12 file.
      *
@@ -137,7 +141,8 @@ public final class ClientKeyStore {
      */
     public KeyStore getKeyStoreCopy() throws KeyStoreException, IOException, CertificateException {
         try {
-            KeyStore ks = KeyStore.getInstance("PKCS12", "BC");;
+            KeyStore ks = KeyStore.getInstance("PKCS12", "BC");
+            ;
             FileInputStream fis = null;
             try {
                 File f = new File(this.keyStoreFilePath);
@@ -229,10 +234,10 @@ public final class ClientKeyStore {
     }
 
     /*
-     * DM: Methods below provide thread-safe read/write access to the keystore and 
-     * its contained entries since all code paths that access the encapsulated 
-     * keystore are guarded by this classes intrinsic lock. 
-     * This is known as 'instance confinement' and the java 'monitor pattern' 
+     * DM: Methods below provide thread-safe read/write access to the keystore and
+     * its contained entries since all code paths that access the encapsulated
+     * keystore are guarded by this classes intrinsic lock.
+     * This is known as 'instance confinement' and the java 'monitor pattern'
      */
     public synchronized boolean isExistPublicKey(PublicKey publicKey) throws KeyStoreException {
         Enumeration aliases = this.keyStore.aliases();

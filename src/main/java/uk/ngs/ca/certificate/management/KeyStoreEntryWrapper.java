@@ -32,7 +32,9 @@ public class KeyStoreEntryWrapper {
     /* The choices for a valid keystore entry type */
     public static enum KEYSTORE_ENTRY_TYPE {
         KEY_PAIR_ENTRY, TRUST_CERT_ENTRY, KEY_ENTRY
-    };
+    }
+
+    ;
 
     /* Required fields - not nullable */
     private String alias;
@@ -47,13 +49,13 @@ public class KeyStoreEntryWrapper {
     /**
      * Constructor
      *
-     * @param sAlias KeyStore entry alias
-     * @param eEntryType entry type
+     * @param sAlias        KeyStore entry alias
+     * @param eEntryType    entry type
      * @param dCreationDate the creation date
      * @throws IllegalArgumentException if any of the given params are null.
      */
     public KeyStoreEntryWrapper(String sAlias, KEYSTORE_ENTRY_TYPE eEntryType,
-            Date dCreationDate) {
+                                Date dCreationDate) {
         if (sAlias == null || dCreationDate == null) {
             throw new IllegalArgumentException("alias or creation date is null");
         }

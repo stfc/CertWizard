@@ -18,6 +18,15 @@
  */
 package uk.ngs.ca.certificate.management;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import uk.ngs.ca.certificate.client.CertificateDownload;
+import uk.ngs.ca.certificate.client.ResourcesPublicKey;
+import uk.ngs.ca.tools.property.SysProperty;
+
+import javax.xml.xpath.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,14 +43,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.xml.xpath.*;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import uk.ngs.ca.certificate.client.CertificateDownload;
-import uk.ngs.ca.certificate.client.ResourcesPublicKey;
-import uk.ngs.ca.tools.property.SysProperty;
 
 /**
  * Shared singleton that wraps the {@link ClientKeyStore} class and hosts a map
@@ -56,7 +57,6 @@ import uk.ngs.ca.tools.property.SysProperty;
  * Importantly, the keyStore is <b>NEVER reStored to disk</b> by any of the
  * methods. ReStoring to disk has to be called manually by the client via
  * {@link ClientKeyStore}.
- *
  *
  * @author Xiao Wang
  * @author David Meredith (many modifications - more still needed)
@@ -93,7 +93,7 @@ public class ClientKeyStoreCaServiceWrapper {
      *
      * @param passphrase used to protect the keyStore file.
      * @return
-     * @throws KeyStoreException if keyStore file cannot be created or read
+     * @throws KeyStoreException     if keyStore file cannot be created or read
      * @throws IllegalStateException if class cannot load for some other reason
      */
     public static synchronized ClientKeyStoreCaServiceWrapper getInstance(char[] passphrase) throws KeyStoreException, IOException, CertificateException {
@@ -268,6 +268,7 @@ public class ClientKeyStoreCaServiceWrapper {
             this.checkEntryForUpdates(keyStoreEntryWrapper);
         }
     }*/
+
     /**
      * Download the <b>latest</b> cert/CSR status that matches the given
      * KeyStoreEntryWrapper's public key from the server and update the
@@ -280,8 +281,8 @@ public class ClientKeyStoreCaServiceWrapper {
      * server response (XML) and add as a member object of the
      * <code>keyStoreEntryWrapper</code>.
      *
-     * @deprecated use checkEntryForUpdates2 instead
      * @param keyStoreEntryWrapper
+     * @deprecated use checkEntryForUpdates2 instead
      */
     private void checkEntryForUpdates(KeyStoreEntryWrapper keyStoreEntryWrapper) throws KeyStoreException {
         // return if not KEY_PAIR_ENTRY
@@ -300,13 +301,13 @@ public class ClientKeyStoreCaServiceWrapper {
         // If this entry is a chain, getCertificate returns the first
         // element in that chain is returned.
         /*
-             * String keyStoreAlias = keyStoreEntryWrapper.getAlias();
-             * X509Certificate cert = (X509Certificate)
-             * clientKeyStore.getKeyStoreCopy().getCertificate(keyStoreAlias); if (
-             * !(cert.getSubjectDN().toString().equals(cert.getIssuerDN().toString())
-             * || cert.getIssuerDN().toString().equals(
-             * SysProperty.getValue("ngsca.issuer.dn") )) ) { return;
-             *  }
+         * String keyStoreAlias = keyStoreEntryWrapper.getAlias();
+         * X509Certificate cert = (X509Certificate)
+         * clientKeyStore.getKeyStoreCopy().getCertificate(keyStoreAlias); if (
+         * !(cert.getSubjectDN().toString().equals(cert.getIssuerDN().toString())
+         * || cert.getIssuerDN().toString().equals(
+         * SysProperty.getValue("ngsca.issuer.dn") )) ) { return;
+         *  }
          */
         String keyStoreAlias = keyStoreEntryWrapper.getAlias();
         X509Certificate cert = (X509Certificate) clientKeyStore.getCertificate(keyStoreAlias);
@@ -533,10 +534,10 @@ public class ClientKeyStoreCaServiceWrapper {
      * identical, then replace the keyStore cert entry with the newly downloaded
      * cert under the same alias (the private key already resides in keyStore).
      *
-     * @deprecated This method will be combined into checkEntryForUpdates2
      * @param keyStoreEntryWrapper
      * @return true if <code>this.clientKeyStore</code> was updated, otherwise
      * false.
+     * @deprecated This method will be combined into checkEntryForUpdates2
      */
     private boolean updateKeyStoreEntryWithCert_IfVALID(KeyStoreEntryWrapper keyStoreEntryWrapper) throws KeyStoreException {
 
@@ -548,7 +549,7 @@ public class ClientKeyStoreCaServiceWrapper {
             // Download the cert from server by passing the id (dont think this returns a cert chain)
             X509Certificate downloadedCert
                     = (new CertificateDownload(keyStoreEntryWrapper.getServerCertificateCSRInfo().getId()))
-                            .getCertificate();
+                    .getCertificate();
 
             if (downloadedCert == null) {
                 // maybe we temporarily lost connection or the code that downloaded 

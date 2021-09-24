@@ -18,16 +18,14 @@
  */
 package uk.ngs.ca.certificate;
 
-import java.io.IOException;
-import java.io.StringWriter;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import javax.security.auth.x500.X500Principal;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.*;
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.ExtensionsGenerator;
+import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
@@ -36,6 +34,12 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
 import uk.ngs.ca.common.CertUtil;
+
+import javax.security.auth.x500.X500Principal;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 
 public class CertificateRequestCreator {
 
@@ -49,7 +53,9 @@ public class CertificateRequestCreator {
      */
     public enum TYPE {
         HOST, USER
-    };
+    }
+
+    ;
     private final TYPE type;
 
     /**
@@ -82,7 +88,7 @@ public class CertificateRequestCreator {
      * the given pubkey and privkey.
      *
      * @param privkey Private Key
-     * @param pubkey Public Key
+     * @param pubkey  Public Key
      * @return CSR as string
      * @throws java.io.IOException
      * @throws IllegalStateException if the PKCS#10 can't be created.
@@ -98,7 +104,7 @@ public class CertificateRequestCreator {
         GeneralNames subjectAltNames;
         PKCS10CertificationRequestBuilder builder;
 
-      
+
         try {
             if (TYPE.USER.equals(this.type)) {
                 builder = new JcaPKCS10CertificationRequestBuilder(new X500Principal(attrDN), pubkey);
@@ -113,7 +119,7 @@ public class CertificateRequestCreator {
 
             extGen.addExtension(Extension.subjectAlternativeName, false, subjectAltNames);
             builder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest, extGen.generate());
-           
+
 
             request = builder.build(contentSigner);
 

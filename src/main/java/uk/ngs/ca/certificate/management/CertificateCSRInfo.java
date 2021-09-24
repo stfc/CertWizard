@@ -19,7 +19,6 @@
 package uk.ngs.ca.certificate.management;
 
 /**
- *
  * @author xw75 (Xiao Wang)
  */
 public class CertificateCSRInfo {

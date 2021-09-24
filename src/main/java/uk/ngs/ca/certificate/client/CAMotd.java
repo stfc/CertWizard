@@ -19,10 +19,6 @@
 
 package uk.ngs.ca.certificate.client;
 
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpression;
-import javax.xml.xpath.XPathFactory;
 import org.restlet.Client;
 import org.restlet.Request;
 import org.restlet.Response;
@@ -40,8 +36,12 @@ import uk.ngs.ca.common.ClientHostName;
 import uk.ngs.ca.common.RestletClient;
 import uk.ngs.ca.tools.property.SysProperty;
 
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathFactory;
+
 /**
- *
  * @author xw75
  */
 public class CAMotd {

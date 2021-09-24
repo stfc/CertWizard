@@ -18,7 +18,6 @@
  */
 package uk.ngs.ca.certificate.client;
 
-import java.security.PublicKey;
 import org.restlet.Client;
 import org.restlet.Request;
 import org.restlet.Response;
@@ -33,8 +32,9 @@ import uk.ngs.ca.common.EncryptUtil;
 import uk.ngs.ca.common.RestletClient;
 import uk.ngs.ca.tools.property.SysProperty;
 
+import java.security.PublicKey;
+
 /**
- *
  * @author xw75 Xiao Wang
  */
 public class ResourcesPublicKey {
@@ -82,7 +82,7 @@ public class ResourcesPublicKey {
             // url = /resources/resource/publickey/<base64encodedpubkey>
             String resourceURL = SysProperty.getValue("uk.ngs.ca.request.resource.publickey");
             Client c = RestletClient.getClient();
-            
+
             // We add a fake public key here as we're maintaining the same API endpoint for backwards compatibility with old clients
             resourceURL = resourceURL + "/pk";
 
@@ -113,7 +113,7 @@ public class ResourcesPublicKey {
     public Document getDocument() {
         return this.document;
     }
-    
+
     private Representation getRepresentation(String base64EncodedPublicKey) {
         DomRepresentation representation;
         try {

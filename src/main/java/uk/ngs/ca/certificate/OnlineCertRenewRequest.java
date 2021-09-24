@@ -18,16 +18,6 @@
  */
 package uk.ngs.ca.certificate;
 
-import java.io.IOException;
-import java.math.BigInteger;
-import java.security.KeyPair;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
-import java.util.Date;
-import java.util.Locale;
-import java.util.Random;
 import org.restlet.Client;
 import org.restlet.Request;
 import org.restlet.Response;
@@ -37,12 +27,21 @@ import org.restlet.representation.Representation;
 import org.restlet.util.Series;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import uk.ngs.ca.common.CertUtil;
-import uk.ngs.ca.common.ClientHostName;
-import uk.ngs.ca.common.HashUtil;
-import uk.ngs.ca.common.Pair;
-import uk.ngs.ca.common.RestletClient;
+import uk.ngs.ca.common.*;
 import uk.ngs.ca.tools.property.SysProperty;
+
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPublicKey;
+import java.util.Date;
+import java.util.Locale;
+import java.util.Random;
+
+import static uk.ngs.ca.common.CertUtil.asciiToHex;
+import static uk.ngs.ca.common.CertUtil.getPrivateExponent;
 
 /**
  * Create a PKCS#10 CSR renewal for the given Host or User cert and send it to
@@ -71,17 +70,17 @@ public class OnlineCertRenewRequest {
      * calling client to test for expiry and yet to be valid.
      *
      * @param authAndRenewCertP The certificate that is to be renewed and used
-     * for PPPK authentication. The DN of this certificate is extracted and used
-     * to build the PKCS#10 DN.
-     * @param authPrivateKeyP Certificate private key (used for PPPK
-     * authentication).
-     * @param csrKeyPair The key pair used to create the PKCS#10 request.
-     * @param emailAddressP Used to specify the email element in the CSR XML
-     * document and is the email value that will be associated with the renewed
-     * certificate.
+     *                          for PPPK authentication. The DN of this certificate is extracted and used
+     *                          to build the PKCS#10 DN.
+     * @param authPrivateKeyP   Certificate private key (used for PPPK
+     *                          authentication).
+     * @param csrKeyPair        The key pair used to create the PKCS#10 request.
+     * @param emailAddressP     Used to specify the email element in the CSR XML
+     *                          document and is the email value that will be associated with the renewed
+     *                          certificate.
      */
     public OnlineCertRenewRequest(X509Certificate authAndRenewCertP, PrivateKey authPrivateKeyP,
-            KeyPair csrKeyPair, String emailAddressP) {
+                                  KeyPair csrKeyPair, String emailAddressP) {
 
         this.authAndRenewCert = authAndRenewCertP;
         this.email = emailAddressP;
@@ -127,8 +126,7 @@ public class OnlineCertRenewRequest {
      */
     public Pair<Boolean, String> doRenewal() {
         Response response = this.doInitialRequest();
-        Pair<Boolean, String> result = this.respondToPPPKChallenge(response);
-        return result;
+        return this.respondToPPPKChallenge(response);
     }
 
     /**
@@ -189,9 +187,8 @@ public class OnlineCertRenewRequest {
             String c = asciiToHex(_nonce);
             c = c.toUpperCase(Locale.ENGLISH);
             BigInteger b_c = new BigInteger(c, 16);
-            BigInteger b_q = q;
             BigInteger b_m = new BigInteger(m, 16);
-            BigInteger b_response = b_c.modPow(b_q, b_m);
+            BigInteger b_response = b_c.modPow(q, b_m);
             String _response = b_response.toString(16);
 
             Client client = RestletClient.getClient();
@@ -241,19 +238,6 @@ public class OnlineCertRenewRequest {
         }
     }
 
-    private String asciiToHex(String ascii) {
-        StringBuilder hex = new StringBuilder();
-        for (int i = 0; i < ascii.length(); i++) {
-            hex.append(Integer.toHexString(ascii.charAt(i)));
-        }
-        return hex.toString();
-    }
-
-    private BigInteger getPrivateExponent(PrivateKey _privateKey) {
-        RSAPrivateKey p = (RSAPrivateKey) _privateKey;
-        return p.getPrivateExponent();
-    }
-
     private Representation getDomRepresentation() {
         DomRepresentation representation;
         Document d;
@@ -296,7 +280,7 @@ public class OnlineCertRenewRequest {
         rootElement.appendChild(eltName);
 
         d.normalizeDocument();
-        
+
         return representation;
     }
 }
