@@ -117,7 +117,7 @@ public class CertificateRenewRevokeGuiHelper {
         try {
             parentComponent.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 
-            final long cert_id = new Long(selectedKSEW.getServerCertificateCSRInfo().getId()).longValue();
+            final long cert_id = Long.valueOf(selectedKSEW.getServerCertificateCSRInfo().getId()).longValue();
             RevokeRequest revokeRequest = new RevokeRequest(
                     this.caKeyStoreModel.getClientKeyStore().getPrivateKey(selectedKSEW.getAlias()),
                     cert_id, reason);

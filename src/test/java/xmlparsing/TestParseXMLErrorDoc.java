@@ -51,11 +51,11 @@ public class TestParseXMLErrorDoc {
     }
 
     @BeforeClass
-    public static void setUpClass() throws Exception {
+    public static void setUpClass() {
     }
 
     @AfterClass
-    public static void tearDownClass() throws Exception {
+    public static void tearDownClass() {
     }
     
     @Before
@@ -69,7 +69,7 @@ public class TestParseXMLErrorDoc {
 
     
     @Test 
-    public void quickTest() throws Exception{
+    public void quickTest() {
        
         String sample = " one   two three, four    five  "; 
         String[] vals = sample.trim().split("[,\\s]+"); 

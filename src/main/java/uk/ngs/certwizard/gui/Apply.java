@@ -68,10 +68,11 @@ public class Apply extends javax.swing.JDialog {
     /**
      * Options for the type of certificate application.
      */
-    public static enum CERT_TYPE {
+    public enum CERT_TYPE {
 
         HOST_CERT, USER_CERT
-    };
+    }
+
     private CERT_TYPE certType = CERT_TYPE.USER_CERT;
 
     /**
@@ -173,9 +174,6 @@ public class Apply extends javax.swing.JDialog {
 
             setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
             try {
-                /*progressMonitor = new ProgressMonitor(Apply.this,
-                 "Please Wait", "", 0, 100);
-                 progressMonitor.setProgress(0);*/
                 if (CERT_TYPE.USER_CERT.equals(this.certType)) {
                     this.processCertApplication(model, CertificateRequestCreator.TYPE.USER);
                 } else {
@@ -184,7 +182,7 @@ public class Apply extends javax.swing.JDialog {
 
             } catch (Exception ex) {
                 setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-                System.out.println(ex.toString());
+                System.out.println(ex);
                 DThrowable.showAndWait(this, "Problem Processing CSR Application", ex);
             } finally {
                 setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));

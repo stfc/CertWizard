@@ -66,7 +66,6 @@ public final class ClientKeyStore {
     private final String backupKeyStoreFilePath;
     private final String backupDir;
     private char[] PASSPHRASE = null;
-    private String errorMessage = null;
     private static ClientKeyStore clientKeyStore = null;
 
     /**
@@ -142,7 +141,6 @@ public final class ClientKeyStore {
     public KeyStore getKeyStoreCopy() throws KeyStoreException, IOException, CertificateException {
         try {
             KeyStore ks = KeyStore.getInstance("PKCS12", "BC");
-            ;
             FileInputStream fis = null;
             try {
                 File f = new File(this.keyStoreFilePath);
@@ -169,10 +167,6 @@ public final class ClientKeyStore {
         }
     }
 
-    public synchronized String getErrorMessage() {
-        return this.errorMessage;
-    }
-
     /**
      * Save the managed keyStore file to its default location and re-init the
      * managed key store <code>this.keyStore</code>.
@@ -192,7 +186,7 @@ public final class ClientKeyStore {
             fbackupDir.mkdir();
         }
 
-        if (srcFile.exists() && srcFile.length() > 0l) {
+        if (srcFile.exists() && srcFile.length() > 0L) {
             // create swap file first 
             FileUtils.copyFile(srcFile, swpFile, true);
             // now update backup file 
@@ -233,27 +227,6 @@ public final class ClientKeyStore {
         }
     }
 
-    /*
-     * DM: Methods below provide thread-safe read/write access to the keystore and
-     * its contained entries since all code paths that access the encapsulated
-     * keystore are guarded by this classes intrinsic lock.
-     * This is known as 'instance confinement' and the java 'monitor pattern'
-     */
-    public synchronized boolean isExistPublicKey(PublicKey publicKey) throws KeyStoreException {
-        Enumeration aliases = this.keyStore.aliases();
-        while (aliases.hasMoreElements()) {
-            String alias = (String) aliases.nextElement();
-            if (this.keyStore.isKeyEntry(alias)) {
-                java.security.cert.Certificate cert = this.keyStore.getCertificate(alias);
-                //X509Certificate xcert = (X509Certificate) this.keyStore.getCertificate(alias);
-                if (cert.getPublicKey() != null && cert.getPublicKey().equals(publicKey)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
     public synchronized PrivateKey getPrivateKey(PublicKey publicKey) {
         try {
             Enumeration aliases = this.keyStore.aliases();
@@ -291,22 +264,6 @@ public final class ClientKeyStore {
                 X509Certificate cert = (X509Certificate) this.keyStore.getCertificate(alias);
                 return cert;
             }
-        }
-        return null;
-    }
-
-    /**
-     * Get the public key for the keyStore entry with the requested alias or
-     * null if alias does not represent a certificate.
-     *
-     * @param alias
-     * @return public key or null
-     * @throws KeyStoreException
-     */
-    public synchronized PublicKey getPublicKey(String alias) throws KeyStoreException {
-        java.security.cert.Certificate cert = this.keyStore.getCertificate(alias);
-        if (cert != null) {
-            return cert.getPublicKey();
         }
         return null;
     }

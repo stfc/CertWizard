@@ -30,11 +30,9 @@ import java.util.Date;
 public class KeyStoreEntryWrapper {
 
     /* The choices for a valid keystore entry type */
-    public static enum KEYSTORE_ENTRY_TYPE {
+    public enum KEYSTORE_ENTRY_TYPE {
         KEY_PAIR_ENTRY, TRUST_CERT_ENTRY, KEY_ENTRY
     }
-
-    ;
 
     /* Required fields - not nullable */
     private String alias;
@@ -97,13 +95,6 @@ public class KeyStoreEntryWrapper {
      */
     public synchronized KEYSTORE_ENTRY_TYPE getEntryType() {
         return entrytype;
-    }
-
-    /**
-     * @return the mDate
-     */
-    public synchronized Date getCreationDate() {
-        return creationDate;
     }
 
     /**

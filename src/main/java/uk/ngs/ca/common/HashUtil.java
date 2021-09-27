@@ -18,6 +18,8 @@
  */
 package uk.ngs.ca.common;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  *
  * @author xw75
@@ -29,7 +31,7 @@ public class HashUtil {
             java.security.MessageDigest d = null;
             d = java.security.MessageDigest.getInstance("SHA-1");
             d.reset();
-            d.update(originalValue.getBytes("UTF-8"));  //originally was: d.update(originalValue.getBytes());
+            d.update(originalValue.getBytes(StandardCharsets.UTF_8));  //originally was: d.update(originalValue.getBytes());
             byte[] b = d.digest();
 
             StringBuffer sb = new StringBuffer(b.length * 2);

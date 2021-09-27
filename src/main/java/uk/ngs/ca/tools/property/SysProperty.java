@@ -18,29 +18,17 @@
  */
 package uk.ngs.ca.tools.property;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.util.Properties;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.w3c.dom.DOMImplementation;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import uk.ngs.ca.common.SystemStatus;
 
 /**
@@ -54,7 +42,6 @@ public class SysProperty {
     private static final String PROP_FILE = "/configure.properties";
     private static boolean isInitialized = false;
     private static Properties properties = new Properties();
-    private static final String FILEPATH = ".ca";
 
     private static int timeoutMilliSecs = 5000;
 
@@ -65,15 +52,6 @@ public class SysProperty {
      */
     public static int getTimeoutMilliSecs() {
         return timeoutMilliSecs;
-    }
-
-    /**
-     * Set the timeout in milliseconds for the http(s) connections.
-     *
-     * @param milliSecs
-     */
-    public static void setTimeoutMilliSecs(int milliSecs) {
-        timeoutMilliSecs = milliSecs;
     }
 
     /**
@@ -92,72 +70,6 @@ public class SysProperty {
             throw new IllegalStateException("[SysProperty] could not find out the value of " + key + " in your property file.");
         }
         return value;
-    }
-
-    /**
-     * Returns configure xml file path. If there is no file, then create a
-     * template one.
-     *
-     * @param key property key
-     * @param passphrase passphrase
-     * @return configure xml file path
-     */
-    public static String getLocalCertXMLFilePath(String key, char[] passphrase) {
-        myLogger.debug("[SysProperty] getLocalXMLFilePath ...");
-        //File myFile;
-        if (!SysProperty.isInitialized) {
-            SysProperty.init();
-        }
-        String value = properties.getProperty(key);
-        if (value == null) {
-            throw new IllegalStateException("[SysProperty] could not find out the value of " + key + " in your property file.");
-        }
-
-        String absPath = SystemStatus.getInstance().getHomeDir().getAbsolutePath()
-                + File.separator + FILEPATH + File.separator + value;
-        // check if the size of file is zero, if yes, then remove it and create a new template file.
-        if (!(new File(absPath).exists()) || (new File(absPath).length() == 0)) {
-            SysProperty.createTemplateFile(absPath);
-        }
-
-        return absPath;
-    }
-
-    private static boolean createTemplateFile(String filePath) {
-        try {
-
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            DOMImplementation impl = builder.getDOMImplementation();
-
-            Document doc = impl.createDocument(null, null, null);
-            Element rootElement = doc.createElement("Certificates");
-
-            doc.appendChild(rootElement);
-            // transform the Document into a String
-            DOMSource domSource = new DOMSource(doc);
-            TransformerFactory tf = TransformerFactory.newInstance();
-            Transformer transformer = tf.newTransformer();
-            transformer.setOutputProperty(OutputKeys.METHOD, "xml");
-            transformer.setOutputProperty(OutputKeys.ENCODING, "ISO-8859-1");
-            transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
-            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-            java.io.StringWriter sw = new java.io.StringWriter();
-            StreamResult sr = new StreamResult(sw);
-            transformer.transform(domSource, sr);
-            String xml = sw.toString();
-
-            FileWriter fstream = new FileWriter(filePath);
-            BufferedWriter out = new BufferedWriter(fstream);
-            out.write(xml);
-            out.close();
-        } catch (Exception ep) {
-            ep.printStackTrace();
-            myLogger.error("[SysProperty]failed to create a template file ");
-            return false;
-        }
-        return true;
-
     }
 
     /**
@@ -187,7 +99,7 @@ public class SysProperty {
             keyStore.setCertificateEntry("eScienceRoot", escienceRootCert);
             keyStore.setCertificateEntry("eScienceRoot2B", escience2bCert);
         } catch (Exception ep) {
-            System.out.println(ep.toString());
+            System.out.println(ep);
             throw new IllegalStateException("Error creating a trustStore.", ep);
         }
 
@@ -223,24 +135,6 @@ public class SysProperty {
             } catch (IOException ex) {
             }
         }
-    }
-
-    public static void alterProperties(String key, String value) {
-
-        String _property = SysProperty.getValue(key);
-        properties.setProperty(_property, value);
-        try {
-            FileOutputStream out = new FileOutputStream(PROP_FILE);
-            properties.store(out, _property);
-            out.close();
-
-        } catch (FileNotFoundException ex) {
-            myLogger.error("[SysProperty] Could not find the properties file!");
-        } catch (IOException ex2) {
-            myLogger.error("[SysProperty] Error writing to the file.");
-        }
-        SysProperty.init(); //in order to read the properties file again with the
-        //newest modifications.
     }
 
     private static void init() {

@@ -42,9 +42,6 @@ public class CertificateCSRInfo {
         // package protected constructor
     }
 
-    //public void setPublickey(String publickey) {
-    //    this.publickey = publickey;
-    //}
     public void setIsCSR(boolean isCSR) {
         this.isCSR = isCSR;
     }
@@ -89,9 +86,6 @@ public class CertificateCSRInfo {
         this.description = description;
     }
 
-    //public String getPublickey() {
-    //    return this.publickey;
-    //}
     public boolean getIsCSR() {
         return this.isCSR;
     }

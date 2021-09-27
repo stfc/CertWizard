@@ -52,7 +52,6 @@ import static uk.ngs.ca.common.CertUtil.getPrivateExponent;
  */
 public class OnlineHostCertRequest {
 
-    private static final Logger logger = LogManager.getLogger(OnlineHostCertRequest.class);
     private final String request_URL = SysProperty.getValue("uk.ngs.ca.request.bulkhost.reqid.url");
     private final String userAgent = SysProperty.getValue("uk.ngs.ca.request.useragent");
     private final X509Certificate authCert;
@@ -107,7 +106,6 @@ public class OnlineHostCertRequest {
         Request request = new Request(Method.POST, new Reference(request_URL), representation);
 
         Series<Header> headers = request.getHeaders();
-        ;
         // Setup initial request headers: Add the 'PPPK' header and serial
         headers.set("PPPK", "this is pppk");
         // Send the required auth cert serial number header 

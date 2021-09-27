@@ -95,9 +95,7 @@ public class OnlineUserCertRequest {
                     Element fstNmElmnt = (Element) fstNmElmntLst.item(0);
                     NodeList fstNm = fstNmElmnt.getChildNodes();
 
-                    message = (((Node) fstNm.item(0)).getNodeValue());
-//                      System.out.println("SERVER VERSION NO === : "  + ((Node) fstNm.item(0)).getNodeValue());
-                    //img = ((Node) fstNm.item(0)).getNodeValue();
+                    message = (fstNm.item(0).getNodeValue());
                 }
             }
 

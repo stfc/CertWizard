@@ -18,10 +18,6 @@
  */
 package uk.ngs.ca.info;
 
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpression;
-import javax.xml.xpath.XPathFactory;
 import org.restlet.Client;
 import org.restlet.Request;
 import org.restlet.Response;
@@ -41,10 +37,6 @@ public class ExpiredReKey {
 
     String CAURL = SysProperty.getValue("uk.ngs.ca.request.ca.maxexpiredrekey.url");
     private Document document;
-
-    public ExpiredReKey() {
-        init();
-    }
 
     private void init() {
         Client c = RestletClient.getClient();
@@ -73,19 +65,6 @@ public class ExpiredReKey {
             ep.printStackTrace();
 
         }
-    }
-
-    public int getMaxReKeyTime() {
-        try {
-            XPath xpath = XPathFactory.newInstance().newXPath();
-            XPathExpression expr = xpath.compile("/CA/Policy/MaxExpiredReKey[1]/text()");
-            String result = (String) expr.evaluate(document, XPathConstants.STRING);
-            return new Integer(result).intValue();
-        } catch (Exception ep) {
-            ep.printStackTrace();
-            return -1;
-        }
-
     }
 
 }

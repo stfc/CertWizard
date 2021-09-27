@@ -476,8 +476,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 } catch (Exception ignore) {
                     DThrowable.showAndWait(null, "Problem", ignore);
                 }
-                //this.certificateTypeLabel.setText("Certificate + Private Key");
-                //this.certificateTypeLabel.setIcon(this.images[2]);
                 if (selectedKeyStoreEntry.isCSR()) {
                     this.certificateTypeLabel.setText("Cert Signing Request");
                     this.certificateTypeLabel.setIcon(images[5]);
@@ -943,14 +941,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         if (dialog.getPassphase() != null) {
             this.PASSPHRASE = dialog.getPassphase();
         }
-        /*if (this.confirmBackgroundTaskRunning()) {
-            return;
-        }
-       KeyStoreChangePasswordGuiHelper pwChange = new KeyStoreChangePasswordGuiHelper(this, this.caKeyStoreModel); 
-       char[] newPassword = pwChange.changeKeyStorePassword(); 
-       if(newPassword != null){
-           this.PASSPHRASE = newPassword; 
-       }*/
     }
 
     /**
@@ -1255,8 +1245,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             this.caKeyStoreModel.getClientKeyStore().deleteEntry(sAliasOld);
 
             // Update the frame's components and title
-            //this.reloadKeystoreUpdateGUI();
-            //this.updateCombo();
             KeyStoreEntryWrapper changedKSEW = this.caKeyStoreModel.getKeyStoreEntryMap().get(sAliasOld);
             changedKSEW.setAlias(sAliasNew);
             this.caKeyStoreModel.getKeyStoreEntryMap().remove(sAliasOld);
@@ -1295,9 +1283,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 updateEntries = new HashMap(1);
                 updateEntries.put(selectedKSEW.getAlias(), selectedKSEW);
             }
-            //this.onlineUpdateTask = new OnlineUpdateKeyStoreEntries(updateEntries, this.caKeyStoreModel, this.onlineUpdateTaskRunning);
-            //this.onlineUpdateTask.addObserver(this); 
-            //this.invokeOnceBackgroundExec.execute(onlineUpdateTask);
             this.onlineUpdateTask = new OnlineUpdateKeyStoreEntriesSwingWorker(
                     updateEntries, caKeyStoreModel, this);
             this.onlineUpdateTask.addPropertyChangeListener(onlineUpdateTaskPropertyListener);

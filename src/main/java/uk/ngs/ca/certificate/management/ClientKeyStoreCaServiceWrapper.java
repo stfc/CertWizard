@@ -77,10 +77,7 @@ public class ClientKeyStoreCaServiceWrapper {
      */
     private Map<String, KeyStoreEntryWrapper> keyStoreEntryMap = new ConcurrentHashMap<String, KeyStoreEntryWrapper>(0);
 
-    // some internals
-    private XPath certXpath = XPathFactory.newInstance().newXPath();
     private XPathExpression extractCertificateExpr;
-    private XPath csrXpath = XPathFactory.newInstance().newXPath();
     private XPathExpression exptractCSR_Expr;
     /**
      * Class is a singleton, so hold internal reference
@@ -106,7 +103,10 @@ public class ClientKeyStoreCaServiceWrapper {
     private ClientKeyStoreCaServiceWrapper(char[] passphrase) throws KeyStoreException, IOException, CertificateException {
         this.mKeystorePASSPHRASE = passphrase;
         try {
+            // some internals
+            XPath certXpath = XPathFactory.newInstance().newXPath();
             extractCertificateExpr = certXpath.compile("/resources/resource/certificates/certificate");
+            XPath csrXpath = XPathFactory.newInstance().newXPath();
             exptractCSR_Expr = csrXpath.compile("/resources/resource/CSRs/CSR");
         } catch (XPathExpressionException ex) {
             Logger.getLogger(ClientKeyStoreCaServiceWrapper.class.getName()).log(Level.SEVERE, null, ex);
@@ -177,12 +177,6 @@ public class ClientKeyStoreCaServiceWrapper {
             x500PrincipalName = cert.getSubjectX500Principal().toString();
             issuerName = cert.getIssuerX500Principal().toString();
             // is this cert a self signed CSR cert ? 
-            //if(x500PrincipalName.equals(issuerName) && x500PrincipalName.contains(" CSR ") ){
-            //    String serialNumber = cert.getSerialNumber().toString();
-            //    if ("123456789".equals(serialNumber)) {
-            //        isCSR = true; 
-            //    }
-            //}
             notAfter = cert.getNotAfter();
             notBefore = cert.getNotBefore();
 
@@ -219,8 +213,6 @@ public class ClientKeyStoreCaServiceWrapper {
      * @throws KeyStoreException
      */
     public boolean onlineUpdateKeyStoreEntry(KeyStoreEntryWrapper keyStoreEntryWrapper) throws KeyStoreException {
-        //this.checkEntryForUpdates(keyStoreEntryWrapper);
-        //return this.updateKeyStoreEntryWithCert_IfVALID(keyStoreEntryWrapper); 
         return this.updateKeyStoreEntryWrapper(keyStoreEntryWrapper);
     }
 
@@ -262,12 +254,6 @@ public class ClientKeyStoreCaServiceWrapper {
      * Check for updates for all KeyStoreEntryWrappers. Does not update the
      * keyStore.
      */
-    /*private void checkAllEntriesForUpdates() {
-        for (Iterator<KeyStoreEntryWrapper> it = this.keyStoreEntryMap.values().iterator(); it.hasNext();) {
-            KeyStoreEntryWrapper keyStoreEntryWrapper = it.next();
-            this.checkEntryForUpdates(keyStoreEntryWrapper);
-        }
-    }*/
 
     /**
      * Download the <b>latest</b> cert/CSR status that matches the given

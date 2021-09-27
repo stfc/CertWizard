@@ -58,8 +58,6 @@ public class OnlineStatus extends javax.swing.JPanel {
         // one thread in the swingworker-pool) caused me issues so i use a 
         // simple runnable instead. 
         // http://bugs.sun.com/view_bug.do;jsessionid=e13cfc6ea10a4ffffffffce8c9244b60e54d?bug_id=6880336 
-        //pingTask = new PingTask();
-        //pingTask.addPropertyChangeListener(pingTaskPropertyListener);
         executor.scheduleWithFixedDelay(new PingCheckTask(), 0, 10, TimeUnit.MINUTES);
     }
 
@@ -180,8 +178,6 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
     private void doPingCheckActionPerformed() {
         // Clicking to start this task should not clash with another ping task 
         // because the button that calls this method is disabled when a task
-        // executes. 
-        //sleepTask = null; 
         Runnable sleepTask = new PingCheckTask();
         Thread t = new Thread(sleepTask);
         t.setDaemon(true);
@@ -205,10 +201,10 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
                 } else {
                     Date lastOnline = new Date();
                     if (pingedOK.get()) {
-                        onlineLabel.setText("Last online check at:  " + lastOnline.toString());
+                        onlineLabel.setText("Last online check at:  " + lastOnline);
                         onlineLabel.setForeground(new Color(0, 153, 0));
                     } else {
-                        onlineLabel.setText("Last online check failed at:  " + lastOnline.toString());
+                        onlineLabel.setText("Last online check failed at:  " + lastOnline);
                         onlineLabel.setForeground(Color.RED);
                     }
                     connectButton.setEnabled(true);

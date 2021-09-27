@@ -18,6 +18,10 @@
  */
 package uk.ngs.ca.common;
 
+import java.math.BigInteger;
+import java.security.PrivateKey;
+import java.security.interfaces.RSAPrivateKey;
+
 /**
  * Utility class for certificate related functions. Stateless and thread safe.
  *
@@ -26,9 +30,9 @@ package uk.ngs.ca.common;
  */
 public class CertUtil {
 
-    public static enum DNAttributeType {
+    public enum DNAttributeType {
         CN, L, OU, O, C, E, EMAILADDRESS
-    };
+    }
 
     /**
      * Return a version of the given DN that can be used with OpenCA e.g. for
@@ -113,7 +117,7 @@ public class CertUtil {
      * comma char to separate attributes, ala RFC2253 or RFC1179.
      *
      * @param dn
-     * @param attribute
+     * @param attType
      * @return The value of the attribute, null if the attribute does not exist
      * or has an empty string value.
      */
@@ -139,23 +143,16 @@ public class CertUtil {
         return result;
     }
 
-    /**
-     * Reverse the given DN and use the / char as the attribute separator. The
-     * given DN must use the comma ',' as the attribute separator char. For
-     * example, given: "CN=david meredith ral,L=RAL,OU=CLRC,O=eScienceDev,C=UK"
-     * the returned DN is: "/C=UK/O=eScienceDev/OU=CLRC/L=RAL/CN=david meredith
-     * ral"
-     *
-     * @param dnrfc2253 DN that uses comma chars as the attribute separator.
-     * @return Formatted DN string.
-     */
-    public static String getReverseSlashSeparatedDN(String dnrfc2253) {
-        StringBuilder buff = new StringBuilder("/");
-        String[] oids = dnrfc2253.split(",");
-        for (int i = oids.length - 1; i >= 0; --i) {
-            buff.append(oids[i].trim()).append("/");
+    public static BigInteger getPrivateExponent(PrivateKey _privateKey) {
+        RSAPrivateKey p = (RSAPrivateKey) _privateKey;
+        return p.getPrivateExponent();
+    }
+
+    public static String asciiToHex(String ascii) {
+        StringBuilder hex = new StringBuilder();
+        for (int i = 0; i < ascii.length(); i++) {
+            hex.append(Integer.toHexString(ascii.charAt(i)));
         }
-        buff.delete(buff.length() - 1, buff.length());  //remove trailing / 
-        return buff.toString();
+        return hex.toString();
     }
 }

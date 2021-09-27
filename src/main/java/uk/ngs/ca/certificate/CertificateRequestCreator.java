@@ -55,7 +55,6 @@ public class CertificateRequestCreator {
         HOST, USER
     }
 
-    ;
     private final TYPE type;
 
     /**
@@ -131,7 +130,7 @@ public class CertificateRequestCreator {
             myLogger.debug("[CertificateCreator] createCertificateRequest: successful");
             return writer.toString();
         } catch (IOException | OperatorCreationException ex) {
-            myLogger.error("[CertificateCreator] createCertificateRequest: failed. " + ex.toString());
+            myLogger.error("[CertificateCreator] createCertificateRequest: failed. " + ex);
             throw new IllegalStateException("Failed to make PKCS#10", ex);
         }
     }

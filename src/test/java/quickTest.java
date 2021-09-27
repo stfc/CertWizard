@@ -18,6 +18,7 @@
  */
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.text.Normalizer;
@@ -40,11 +41,11 @@ public class quickTest {
     }
 
     @BeforeClass
-    public static void setUpClass() throws Exception {
+    public static void setUpClass() {
     }
 
     @AfterClass
-    public static void tearDownClass() throws Exception {
+    public static void tearDownClass() {
     }
     
     @Before
@@ -64,7 +65,7 @@ public class quickTest {
         String path = quickTest.class.getResource("/sample.pem").toURI().getPath();
         String pemString = TestUtil.readFileAsString(path); 
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        InputStream is = new ByteArrayInputStream(pemString.getBytes("UTF-8"));
+        InputStream is = new ByteArrayInputStream(pemString.getBytes(StandardCharsets.UTF_8));
         X509Certificate certificate = (X509Certificate) cf.generateCertificate(is);
         String pk64 = EncryptUtil.getEncodedPublicKey(certificate.getPublicKey()); 
         System.out.println(pk64);

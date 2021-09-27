@@ -94,23 +94,6 @@ public class WaitDialog extends JFrame {
     }
 
     /**
-     * This static method uses pre-created dialog, positions it in the center
-     * and displays it to the user.
-     */
-    public static void showDialog(String message) {
-        if (message == null) {
-            jLabel2.setText("Please wait...");
-        } else {
-            jLabel2.setText(message);
-        }
-
-        dlg.setLocation((int) dlg.bounds.getWidth() / 2 - 200, (int) dlg.bounds.getHeight() / 2 - 75);
-        dlg.setVisible(true);
-        dlg.paint(dlg.getGraphics());
-        dlg.toFront();
-    }
-
-    /**
      *
      * This static method hides the wait dialog.
      */

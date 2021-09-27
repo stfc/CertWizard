@@ -178,8 +178,6 @@ public class CertificateExportGuiHelper {
      */
     private boolean exportPrivKeyCertChainPKCS12(String sEntryAlias) {
 
-        //KeyStore keyStore = this.keyStoreCaWrapper.getClientKeyStore().getKeyStoreCopy();
-        //char[] cPassword = this.PASSPHRASE;
         File fExportFile = null;
         FileOutputStream fos = null;
         try {
@@ -282,8 +280,6 @@ public class CertificateExportGuiHelper {
      */
     private boolean exportPrivKeyCertChainPEM(String sEntryAlias) {
 
-        //KeyStore keyStore = this.keyStoreCaWrapper.getClientKeyStore().getKeyStoreCopy();
-        //char[] cPassword = this.PASSPHRASE;
         File fExportFile = null;
         JcaPEMWriter pw = null;
 

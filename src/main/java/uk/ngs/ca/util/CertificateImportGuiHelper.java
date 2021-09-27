@@ -79,8 +79,6 @@ public class CertificateImportGuiHelper {
 
     public CertificateImportGuiHelper(Component parentCompoent, ClientKeyStoreCaServiceWrapper caKeyStoreModel) {
         this.parentCompoent = parentCompoent;
-        //this.PASSPHRASE = passphrase;
-        //this.caKeyStoreModel = ClientKeyStoreCaServiceWrapper.getInstance(this.PASSPHRASE);
         this.caKeyStoreModel = caKeyStoreModel;
     }
 
@@ -121,7 +119,7 @@ public class CertificateImportGuiHelper {
                     DGetPassword dGetPassword
                             = new DGetPassword(null, MessageFormat.format(
                                     RB.getString("FPortecle.PrivateKeyPassword.Title"),
-                                    new Object[]{String.valueOf(passwordNumber)}));
+                            String.valueOf(passwordNumber)));
                     dGetPassword.setLocationRelativeTo(parentCompoent);
                     SwingHelper.showAndWait(dGetPassword);
                     char[] cPassword = dGetPassword.getPassword();

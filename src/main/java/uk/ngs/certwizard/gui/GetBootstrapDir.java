@@ -143,7 +143,7 @@ public class GetBootstrapDir extends javax.swing.JDialog {
             if (Files.isDirectory(dir) && Files.isWritable(dir)) {
                 // Confirm selection dialog and return true if confirmed
                 int retval = JOptionPane.showConfirmDialog(this, "Open the following keyStore folder?\n"
-                        + dir.toString(), "Confirm", JOptionPane.INFORMATION_MESSAGE);
+                        + dir, "Confirm", JOptionPane.INFORMATION_MESSAGE);
                 if (retval == JOptionPane.OK_OPTION) {
                     this.bootDir = dir;
                     return true;
@@ -285,7 +285,7 @@ public class GetBootstrapDir extends javax.swing.JDialog {
     /**
      * @param args the command line arguments
      */
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.

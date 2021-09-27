@@ -46,9 +46,7 @@ public abstract class BackgroundTask<V> extends Observable implements Runnable, 
      */
     protected volatile StateValue state = StateValue.PENDING;
 
-    ;
 
-    
     /**
      * Values for the {@code state} bound property.
      */
