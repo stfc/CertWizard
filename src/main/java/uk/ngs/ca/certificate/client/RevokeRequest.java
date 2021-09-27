@@ -114,7 +114,6 @@ public class RevokeRequest {
                 ClientInfo _info = new org.restlet.data.ClientInfo();
                 _info.setAgent(USERAGENT);
                 request.setClientInfo(_info);
-                response = client.handle(request);
 
             } else {
                 //we will do cookie thing from here
@@ -129,8 +128,8 @@ public class RevokeRequest {
                 ClientInfo _info = new ClientInfo();
                 _info.setAgent(USERAGENT);
                 request.setClientInfo(_info);
-                response = client.handle(request);
             }
+            response = client.handle(request);
 
             if (response.getStatus().equals(Status.SUCCESS_CREATED)) {
                 return true;   // 201

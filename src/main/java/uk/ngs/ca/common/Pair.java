@@ -25,7 +25,7 @@ package uk.ngs.ca.common;
 public class Pair< T, U> {
 
     public static < T, U> Pair< T, U> create(T first, U second) {
-        return new Pair< T, U>(first, second);
+        return new Pair<>(first, second);
     }
 
     public Pair(T first, U second) {

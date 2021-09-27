@@ -73,7 +73,7 @@ public class WaitDialog extends JFrame {
      *
      * @exception Exception if any exception, while creating GUI controls
      */
-    private void jbInit() throws Exception {
+    private void jbInit() {
         this.getContentPane().setLayout(null);
         this.setSize(new Dimension(400, 150));
         this.setResizable(false);

@@ -34,9 +34,9 @@ public class HashUtil {
             d.update(originalValue.getBytes(StandardCharsets.UTF_8));  //originally was: d.update(originalValue.getBytes());
             byte[] b = d.digest();
 
-            StringBuffer sb = new StringBuffer(b.length * 2);
-            for (int i = 0; i < b.length; i++) {
-                int v = b[i] & 0xff;
+            StringBuilder sb = new StringBuilder(b.length * 2);
+            for (byte value : b) {
+                int v = value & 0xff;
                 if (v < 16) {
                     sb.append('0');
                 }

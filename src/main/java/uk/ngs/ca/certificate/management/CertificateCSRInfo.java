@@ -86,18 +86,6 @@ public class CertificateCSRInfo {
         this.description = description;
     }
 
-    public boolean getIsCSR() {
-        return this.isCSR;
-    }
-
-    public String getOwner() {
-        return this.owner;
-    }
-
-    public String getRole() {
-        return this.role;
-    }
-
     public String getStatus() {
         return this.status;
     }
@@ -110,23 +98,4 @@ public class CertificateCSRInfo {
         return this.id;
     }
 
-    public String getStartDate() {
-        return this.startdate;
-    }
-
-    public String getEndDate() {
-        return this.enddate;
-    }
-
-    public String getLifeDays() {
-        return this.lifedays;
-    }
-
-    public String getRenew() {
-        return this.renew;
-    }
-
-    public String getDescription() {
-        return this.description;
-    }
 }

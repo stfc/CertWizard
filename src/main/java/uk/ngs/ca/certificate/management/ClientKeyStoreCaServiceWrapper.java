@@ -75,7 +75,7 @@ public class ClientKeyStoreCaServiceWrapper {
     /**
      * Map.key is keyStore alias and Map.value is a KeyStoreEntryWrapper
      */
-    private Map<String, KeyStoreEntryWrapper> keyStoreEntryMap = new ConcurrentHashMap<String, KeyStoreEntryWrapper>(0);
+    private Map<String, KeyStoreEntryWrapper> keyStoreEntryMap = new ConcurrentHashMap<>(0);
 
     private XPathExpression extractCertificateExpr;
     private XPathExpression exptractCSR_Expr;
@@ -299,17 +299,14 @@ public class ClientKeyStoreCaServiceWrapper {
         X509Certificate cert = (X509Certificate) clientKeyStore.getCertificate(keyStoreAlias);
 
         // check if self signed
-        boolean isSelfSignedCert = false;
-        if (cert.getSubjectX500Principal().getName().equals(cert.getIssuerX500Principal().getName())) {
-            isSelfSignedCert = true;
-        }
+        boolean isSelfSignedCert = cert.getSubjectX500Principal().getName().equals(cert.getIssuerX500Principal().getName());
         // check if cert has known issuer DN
         boolean hasKnownIssuerDN = false;
         String[] allKnownDNs = SysProperty.getValue("ngsca.issuer.dn").split(";");
-        for (int i = 0; i < allKnownDNs.length; i++) {
+        for (String allKnownDN : allKnownDNs) {
             String keystoreCertIssuerDN = cert.getIssuerX500Principal().getName();
             //System.out.println("Comparing: ["+keystoreCertIssuerDN+"] ["+allKnownDNs[i]+"]");
-            if (keystoreCertIssuerDN.equals(allKnownDNs[i])) {
+            if (keystoreCertIssuerDN.equals(allKnownDN)) {
                 hasKnownIssuerDN = true;
                 break;
             }
@@ -327,7 +324,7 @@ public class ClientKeyStoreCaServiceWrapper {
         // if not, return as the CA will not know the status. 
         PublicKey keystorePublicKey = cert.getPublicKey();
         ResourcesPublicKey resourcesPublicKey = new ResourcesPublicKey(keystorePublicKey);
-        if (!resourcesPublicKey.isExist()) {
+        if (resourcesPublicKey.isExist()) {
             return;
         }
 
@@ -525,7 +522,7 @@ public class ClientKeyStoreCaServiceWrapper {
      * false.
      * @deprecated This method will be combined into checkEntryForUpdates2
      */
-    private boolean updateKeyStoreEntryWithCert_IfVALID(KeyStoreEntryWrapper keyStoreEntryWrapper) throws KeyStoreException {
+    private boolean updateKeyStoreEntryWithCert_IfVALID(KeyStoreEntryWrapper keyStoreEntryWrapper) {
 
         if (keyStoreEntryWrapper.getEntryType().equals(KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY)
                 && keyStoreEntryWrapper.getServerCertificateCSRInfo() != null
@@ -694,17 +691,14 @@ public class ClientKeyStoreCaServiceWrapper {
         X509Certificate cert = (X509Certificate) clientKeyStore.getCertificate(keyStoreAlias);
 
         // check if self signed
-        boolean isSelfSignedCert = false;
-        if (cert.getSubjectX500Principal().getName().equals(cert.getIssuerX500Principal().getName())) {
-            isSelfSignedCert = true;
-        }
+        boolean isSelfSignedCert = cert.getSubjectX500Principal().getName().equals(cert.getIssuerX500Principal().getName());
         // check if cert has known issuer DN
         boolean hasKnownIssuerDN = false;
         String[] allKnownDNs = SysProperty.getValue("ngsca.issuer.dn").split(";");
-        for (int i = 0; i < allKnownDNs.length; i++) {
+        for (String allKnownDN : allKnownDNs) {
             String keystoreCertIssuerDN = cert.getIssuerX500Principal().getName();
             //System.out.println("Comparing: ["+keystoreCertIssuerDN+"] ["+allKnownDNs[i]+"]");
-            if (keystoreCertIssuerDN.equals(allKnownDNs[i])) {
+            if (keystoreCertIssuerDN.equals(allKnownDN)) {
                 hasKnownIssuerDN = true;
                 break;
             }
@@ -723,7 +717,7 @@ public class ClientKeyStoreCaServiceWrapper {
         // if not, return as the CA will not know the status. 
         PublicKey keystorePublicKey = cert.getPublicKey();
         ResourcesPublicKey resourcesPublicKey = new ResourcesPublicKey(keystorePublicKey);
-        if (!resourcesPublicKey.isExist()) {
+        if (resourcesPublicKey.isExist()) {
             return false;
         }
 
@@ -834,25 +828,16 @@ public class ClientKeyStoreCaServiceWrapper {
                 }
             }
             if (lastDownloadedX509CertString != null) {
-                InputStream inputStream = null;
-                try {
-                    inputStream = new ByteArrayInputStream(lastDownloadedX509CertString.getBytes());
+                try (InputStream inputStream = new ByteArrayInputStream(lastDownloadedX509CertString.getBytes())) {
                     CertificateFactory cf = CertificateFactory.getInstance("X.509");
                     X509Certificate downloadedCert = (X509Certificate) cf.generateCertificate(inputStream);
-                    // update our certificate in our keyStore with the downloadedCert (or not) 
+                    // update our certificate in our keyStore with the downloadedCert (or not)
                     if (this.updateKeyStoreEntryWithCert(keyStoreEntryWrapper, downloadedCert)) {
                         certUpdatedInKeyStore = true;
                     }
-                } catch (CertificateException ex) {
-                    // maybe the server is returning junk? we should continue on and not return (defensive) 
+                } catch (CertificateException | IOException ex) {
+                    // maybe the server is returning junk? we should continue on and not return (defensive)
                     Logger.getLogger(ClientKeyStoreCaServiceWrapper.class.getName()).log(Level.SEVERE, null, ex);
-                } finally {
-                    try {
-                        if (inputStream != null) {
-                            inputStream.close();
-                        }
-                    } catch (IOException ex) {
-                    }
                 }
             }
 
@@ -932,11 +917,9 @@ public class ClientKeyStoreCaServiceWrapper {
      * @param keyStoreEntryWrapper
      * @param downloadedX509
      * @return
-     * @throws KeyStoreException
      */
     private boolean updateKeyStoreEntryWithCert(
-            KeyStoreEntryWrapper keyStoreEntryWrapper, X509Certificate downloadedX509)
-            throws KeyStoreException {
+            KeyStoreEntryWrapper keyStoreEntryWrapper, X509Certificate downloadedX509) {
 
         if (keyStoreEntryWrapper.getEntryType().equals(KeyStoreEntryWrapper.KEYSTORE_ENTRY_TYPE.KEY_PAIR_ENTRY)
                 && keyStoreEntryWrapper.getServerCertificateCSRInfo() != null

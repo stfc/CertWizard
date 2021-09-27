@@ -158,12 +158,8 @@ public class KeyStoreEntryWrapper {
      * otherwise false.
      */
     public synchronized boolean isCSR() {
-        if (x500PrincipalName != null && issuerName != null
-                && x500PrincipalName.equals(issuerName) && x500PrincipalName.contains(" CSR ")) {
-            return true;
-        } else {
-            return false;
-        }
+        return x500PrincipalName != null && issuerName != null
+                && x500PrincipalName.equals(issuerName) && x500PrincipalName.contains(" CSR ");
     }
 
 }

@@ -178,17 +178,14 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         public void run() {
             latestVersion = motd.getLatestVersion();
             // MUST update the gui in the AWT event dispatch thread. 
-            GuiExecutor.instance().execute(new Runnable() {
-                @Override
-                public void run() {
-                    String certWizardVersion = SysProperty.getValue("ngsca.certwizard.versionNumber");
-                    Semver ourVersion = new Semver(certWizardVersion);
-                    Semver serverVersion = new Semver(latestVersion);
-                    if (serverVersion.isGreaterThan(ourVersion)) {
-                        JOptionPane.showMessageDialog(null, "A new version of the Certificate Wizard is available!\n"
-                                + "Please go to www.ngs.ac.uk in order to obtain the latest version",
-                                "New Version of Certificate Wizard", JOptionPane.INFORMATION_MESSAGE);
-                    }
+            GuiExecutor.instance().execute(() -> {
+                String certWizardVersion = SysProperty.getValue("ngsca.certwizard.versionNumber");
+                Semver ourVersion = new Semver(certWizardVersion);
+                Semver serverVersion = new Semver(latestVersion);
+                if (serverVersion.isGreaterThan(ourVersion)) {
+                    JOptionPane.showMessageDialog(null, "A new version of the Certificate Wizard is available!\n"
+                            + "Please go to www.ngs.ac.uk in order to obtain the latest version",
+                            "New Version of Certificate Wizard", JOptionPane.INFORMATION_MESSAGE);
                 }
             });
         }
@@ -208,13 +205,10 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             if (SystemStatus.getInstance().getIsOnline()) {
                 motdtext = motd.getText();
                 // MUST update the gui in the AWT event dispatch thread. 
-                GuiExecutor.instance().execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (motdtext != null) {
-                            stringMotD = motdtext;
-                            setMOD(motdtext);
-                        }
+                GuiExecutor.instance().execute(() -> {
+                    if (motdtext != null) {
+                        stringMotD = motdtext;
+                        setMOD(motdtext);
                     }
                 });
             }
@@ -237,11 +231,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                     updateOnlineUpdateComponents(false);
                 } else if (SwingWorker.StateValue.PENDING.equals(onlineUpdateTask.getState())) {
                     updateOnlineUpdateComponents(true);
-                } else if (SwingWorker.StateValue.STARTED.equals(onlineUpdateTask.getState())) {
-                    updateOnlineUpdateComponents(true);
-                } else {
-                    updateOnlineUpdateComponents(false);
-                }
+                } else updateOnlineUpdateComponents(SwingWorker.StateValue.STARTED.equals(onlineUpdateTask.getState()));
             }
         }
 
@@ -342,13 +332,9 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
      * executed in the AWT event thread.
      */
     public final void updateKeyStoreGuiFromModel() {
-        GuiExecutor.instance().execute(new Runnable() {
-
-            @Override
-            public void run() {
-                reloadComboFromModel();
-                updateGUIPanel();
-            }
+        GuiExecutor.instance().execute(() -> {
+            reloadComboFromModel();
+            updateGUIPanel();
         });
     }
 
@@ -361,8 +347,8 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         int preSelectedIndex = this.jComboBox1.getSelectedIndex();
         this.jComboBox1.removeAllItems();
         Collection<KeyStoreEntryWrapper> keyStoreEntries = this.caKeyStoreModel.getKeyStoreEntryMap().values();
-        for (Iterator<KeyStoreEntryWrapper> it = keyStoreEntries.iterator(); it.hasNext();) {
-            this.jComboBox1.addItem(it.next());
+        for (KeyStoreEntryWrapper keyStoreEntry : keyStoreEntries) {
+            this.jComboBox1.addItem(keyStoreEntry);
         }
         if (this.jComboBox1.getItemCount() > 0) {
             // show the previously selected index. 
@@ -1280,7 +1266,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 updateEntries = this.caKeyStoreModel.getKeyStoreEntryMap();
             } else {
                 KeyStoreEntryWrapper selectedKSEW = (KeyStoreEntryWrapper) this.jComboBox1.getSelectedItem();
-                updateEntries = new HashMap(1);
+                updateEntries = new HashMap<>(1);
                 updateEntries.put(selectedKSEW.getAlias(), selectedKSEW);
             }
             this.onlineUpdateTask = new OnlineUpdateKeyStoreEntriesSwingWorker(
@@ -1313,8 +1299,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
      * @return alias for new entry, null if user cancels the operation
      */
     private String getNewEntryAliasHelper(String sAlias, String dialogTitleKey,
-            boolean selectAlias)
-            throws KeyStoreException {
+            boolean selectAlias) {
         while (true) {
             // Get the alias for the new entry
             DGetAlias dGetAlias
@@ -1323,9 +1308,6 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             SwingHelper.showAndWait(dGetAlias);
 
             sAlias = dGetAlias.getAlias();
-            if (sAlias == null) {
-                return null;
-            }
             return sAlias;
         }
     }
@@ -1410,11 +1392,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 btnNewCertificateRequestMouseExited(evt);
             }
         });
-        btnNewCertificateRequest.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnNewCertificateRequestActionPerformed(evt);
-            }
-        });
+        btnNewCertificateRequest.addActionListener(this::btnNewCertificateRequestActionPerformed);
 
         btnImportCertificate.setText("Import Cert");
         btnImportCertificate.setToolTipText("Import an existing certificate from a .p12/.pfx file (this file is normally exported from a web browser). ");
@@ -1426,11 +1404,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 btnImportCertificateMouseExited(evt);
             }
         });
-        btnImportCertificate.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnImportCertificateActionPerformed(evt);
-            }
-        });
+        btnImportCertificate.addActionListener(this::btnImportCertificateActionPerformed);
 
         org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -1515,11 +1489,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 btnRenewMouseExited(evt);
             }
         });
-        btnRenew.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnRenewActionPerformed(evt);
-            }
-        });
+        btnRenew.addActionListener(this::btnRenewActionPerformed);
 
         btnRevoke.setIcon(new javax.swing.ImageIcon(getClass().getResource("/revoke.png"))); // NOI18N
         btnRevoke.setText("Revoke");
@@ -1532,11 +1502,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 btnRevokeMouseExited(evt);
             }
         });
-        btnRevoke.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnRevokeActionPerformed(evt);
-            }
-        });
+        btnRevoke.addActionListener(this::btnRevokeActionPerformed);
 
         btnChangeAlias.setIcon(new javax.swing.ImageIcon(getClass().getResource("/edit_icon.gif"))); // NOI18N
         btnChangeAlias.setText("Change Alias");
@@ -1549,11 +1515,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 btnChangeAliasMouseExited(evt);
             }
         });
-        btnChangeAlias.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnChangeAliasActionPerformed(evt);
-            }
-        });
+        btnChangeAlias.addActionListener(this::btnChangeAliasActionPerformed);
 
         btnInstall.setIcon(new javax.swing.ImageIcon(getClass().getResource("/install.PNG"))); // NOI18N
         btnInstall.setText("Install");
@@ -1566,11 +1528,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 btnInstallMouseExited(evt);
             }
         });
-        btnInstall.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnInstallActionPerformed(evt);
-            }
-        });
+        btnInstall.addActionListener(this::btnInstallActionPerformed);
 
         btnExport.setIcon(new javax.swing.ImageIcon(getClass().getResource("/icon_exportBib.gif"))); // NOI18N
         btnExport.setText("Export");
@@ -1583,11 +1541,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 btnExportMouseExited(evt);
             }
         });
-        btnExport.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnExportActionPerformed(evt);
-            }
-        });
+        btnExport.addActionListener(this::btnExportActionPerformed);
 
         btnDelete.setIcon(new javax.swing.ImageIcon(getClass().getResource("/delete_icon.png"))); // NOI18N
         btnDelete.setText("Delete");
@@ -1600,11 +1554,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 btnDeleteMouseExited(evt);
             }
         });
-        btnDelete.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnDeleteActionPerformed(evt);
-            }
-        });
+        btnDelete.addActionListener(this::btnDeleteActionPerformed);
 
         viewCertDetailsButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/view_icon.gif"))); // NOI18N
         viewCertDetailsButton.setToolTipText("View the selected certificate details");
@@ -1616,11 +1566,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 viewCertDetailsButtonMouseExited(evt);
             }
         });
-        viewCertDetailsButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                viewCertDetailsButtonActionPerformed(evt);
-            }
-        });
+        viewCertDetailsButton.addActionListener(this::viewCertDetailsButtonActionPerformed);
 
         jLabel12.setText("Actions:");
 
@@ -1794,11 +1740,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 btnChangePasswdMouseExited(evt);
             }
         });
-        btnChangePasswd.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnChangePasswdActionPerformed(evt);
-            }
-        });
+        btnChangePasswd.addActionListener(this::btnChangePasswdActionPerformed);
 
         jComboBox1.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
@@ -1808,25 +1750,13 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 jComboBox1MouseExited(evt);
             }
         });
-        jComboBox1.addItemListener(new java.awt.event.ItemListener() {
-            public void itemStateChanged(java.awt.event.ItemEvent evt) {
-                jComboBox1ItemStateChanged(evt);
-            }
-        });
-        jComboBox1.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jComboBox1ActionPerformed(evt);
-            }
-        });
+        jComboBox1.addItemListener(this::jComboBox1ItemStateChanged);
+        jComboBox1.addActionListener(this::jComboBox1ActionPerformed);
 
         btnRefreshAll.setIcon(new javax.swing.ImageIcon(getClass().getResource("/ajax-refresh-icon.gif"))); // NOI18N
         btnRefreshAll.setToolTipText("Refresh all/selected keystore certificates");
         btnRefreshAll.setEnabled(false);
-        btnRefreshAll.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnRefreshAllActionPerformed(evt);
-            }
-        });
+        btnRefreshAll.addActionListener(this::btnRefreshAllActionPerformed);
 
         org.jdesktop.layout.GroupLayout jPanel2Layout = new org.jdesktop.layout.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
@@ -1856,11 +1786,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
         btnCancelOnlineUpdate.setToolTipText("Cancel online update with CA");
         btnCancelOnlineUpdate.setBorderPainted(false);
         btnCancelOnlineUpdate.setEnabled(false);
-        btnCancelOnlineUpdate.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnCancelOnlineUpdateActionPerformed(evt);
-            }
-        });
+        btnCancelOnlineUpdate.addActionListener(this::btnCancelOnlineUpdateActionPerformed);
 
         labelOnlineUpdate.setText("...");
         labelOnlineUpdate.setToolTipText("");

@@ -22,7 +22,6 @@ import java.io.File;
 import java.io.IOException;
 import java.security.KeyStoreException;
 import java.security.cert.CertificateException;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -69,7 +68,6 @@ public class OnlineUpdateKeyStoreEntriesSwingWorker extends SwingWorker<Void, Ob
     @Override
     protected Void doInBackground() {
         try {
-            //runningFlag.set(true); 
 
             if (!SystemStatus.getInstance().getIsOnline()) {
                 // we are not online, so try to ping....
@@ -81,20 +79,15 @@ public class OnlineUpdateKeyStoreEntriesSwingWorker extends SwingWorker<Void, Ob
             // Run online update for each keyStore entry in application thread. 
             boolean updated = false;
             int i = 0;
-            for (Iterator<KeyStoreEntryWrapper> it = updateEntriesByAlias.values().iterator(); it.hasNext();) {
-                //for (Iterator<String> it = updateEntriesByAlias.iterator; it.hasNext();) {
-                KeyStoreEntryWrapper keyStoreEntryWrapper = it.next();
+            for (KeyStoreEntryWrapper keyStoreEntryWrapper : updateEntriesByAlias.values()) {
                 // First check to see this runnable has not been interrupted, e.g. by cancel button. 
                 if (isCancelled()) {
                     break;
                 }
-                
+
                 if (caKeyStoreModel.onlineUpdateKeyStoreEntry(keyStoreEntryWrapper)) {
                     updated = true;
                 }
-                //}
-                // call setProgress which will call onProgress in the AWT event thread. 
-                //setProgress(i, caKeyStoreModel.getKeyStoreEntryMap().size());
                 publish(new Object[0]);
                 ++i;
             }
@@ -105,24 +98,16 @@ public class OnlineUpdateKeyStoreEntriesSwingWorker extends SwingWorker<Void, Ob
                 caKeyStoreModel.getClientKeyStore().reStore();
             }
 
-        } catch (KeyStoreException ex) {
+        } catch (KeyStoreException | CertificateException | IOException ex) {
             // swallow and log the exception
             Logger.getLogger(OnlineUpdateKeyStoreEntriesSwingWorker.class.getName()).log(Level.SEVERE, null, ex);
             this.exception = ex;
-        } catch (IOException ex) {
-            Logger.getLogger(OnlineUpdateKeyStoreEntriesSwingWorker.class.getName()).log(Level.SEVERE, null, ex);
-            this.exception = ex;
-        } catch (CertificateException ex) {
-            Logger.getLogger(OnlineUpdateKeyStoreEntriesSwingWorker.class.getName()).log(Level.SEVERE, null, ex);
-            this.exception = ex;
         }
-        //if(true){ this.exception = new Exception("test it"); }
         return null;
     }
 
     @Override
     public void done() {
-        //System.out.println("done in swing worker");      
         if (this.exception != null) {
             JOptionPane.showMessageDialog(null,
                     "Please contact the helpdesk. A backup of your keystore is located in:\n"
@@ -136,7 +121,6 @@ public class OnlineUpdateKeyStoreEntriesSwingWorker extends SwingWorker<Void, Ob
 
     @Override
     protected void process(List<Object[]> chunks) {
-        //System.out.println("process called in swing worker");
         pane.updateKeyStoreGuiFromModel();
     }
 }

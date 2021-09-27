@@ -25,6 +25,8 @@ import java.util.Date;
 import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
 import uk.ngs.ca.util.KeyStoreChangePasswordGuiHelper;
 
+import javax.swing.*;
+
 /**
  * Dialog for displaying properties about the keyStore and keyStore management
  * such as changing the password.
@@ -108,11 +110,7 @@ public class KeyStorePropertiesJDialog extends javax.swing.JDialog {
         jLabel1.setText("Your Keystore Path");
 
         changePwButton.setText("Change Keystore Password");
-        changePwButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                changePwButtonActionPerformed(evt);
-            }
-        });
+        changePwButton.addActionListener(this::changePwButtonActionPerformed);
 
         jLabel2.setText("Last Modified");
 
@@ -187,29 +185,21 @@ public class KeyStorePropertiesJDialog extends javax.swing.JDialog {
                     break;
                 }
             }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(KeyStorePropertiesJDialog.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(KeyStorePropertiesJDialog.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(KeyStorePropertiesJDialog.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+        } catch (ClassNotFoundException | UnsupportedLookAndFeelException | IllegalAccessException | InstantiationException ex) {
             java.util.logging.Logger.getLogger(KeyStorePropertiesJDialog.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
 
         /* Create and display the dialog */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                KeyStorePropertiesJDialog dialog = new KeyStorePropertiesJDialog(new javax.swing.JFrame(), true);
-                dialog.addWindowListener(new java.awt.event.WindowAdapter() {
-                    @Override
-                    public void windowClosing(java.awt.event.WindowEvent e) {
-                        System.exit(0);
-                    }
-                });
-                dialog.setVisible(true);
-            }
+        java.awt.EventQueue.invokeLater(() -> {
+            KeyStorePropertiesJDialog dialog = new KeyStorePropertiesJDialog(new JFrame(), true);
+            dialog.addWindowListener(new java.awt.event.WindowAdapter() {
+                @Override
+                public void windowClosing(java.awt.event.WindowEvent e) {
+                    System.exit(0);
+                }
+            });
+            dialog.setVisible(true);
         });
     }
     // Variables declaration - do not modify//GEN-BEGIN:variables

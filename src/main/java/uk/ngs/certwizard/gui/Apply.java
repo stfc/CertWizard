@@ -88,7 +88,7 @@ public class Apply extends javax.swing.JDialog {
      * @throws IOException If an error occurs when contact the remote server.
      */
     public Apply(ClientKeyStoreCaServiceWrapper model, CERT_TYPE certType, String keyStoreAliasToAuthHostApply)
-            throws IOException, KeyStoreException, CertificateException {
+            throws IOException, KeyStoreException {
         this.certType = certType;
         this.model = model;
         initComponents();
@@ -287,15 +287,12 @@ public class Apply extends javax.swing.JDialog {
         }
         // At least TWO of these names must have length TWO OR MORE
         int ii = 0;
-        for (int i = 0; i < names.length; i++) {
-            if (names[i].length() >= 2) {
+        for (String name : names) {
+            if (name.length() >= 2) {
                 ++ii;
             }
         }
-        if (ii < 2) {
-            return false;
-        }
-        return true;
+        return ii >= 2;
     }
 
     private boolean isInputReadyUpdateGUI() {
@@ -443,11 +440,7 @@ public class Apply extends javax.swing.JDialog {
                 cmbSelectRAMouseExited(evt);
             }
         });
-        cmbSelectRA.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                cmbSelectRAActionPerformed(evt);
-            }
-        });
+        cmbSelectRA.addActionListener(this::cmbSelectRAActionPerformed);
 
         labCN.setText("Common Name");
         labCN.setName("labCN"); // NOI18N
@@ -494,19 +487,11 @@ public class Apply extends javax.swing.JDialog {
         btnApply.setText("Apply");
         btnApply.setEnabled(false);
         btnApply.setName("btnApply"); // NOI18N
-        btnApply.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnApplyActionPerformed(evt);
-            }
-        });
+        btnApply.addActionListener(this::btnApplyActionPerformed);
 
         btnCancel.setText("Cancel");
         btnCancel.setName("btnCancel"); // NOI18N
-        btnCancel.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnCancelActionPerformed(evt);
-            }
-        });
+        btnCancel.addActionListener(this::btnCancelActionPerformed);
 
         txtPin.setName("txtPin"); // NOI18N
         txtPin.addMouseListener(new java.awt.event.MouseAdapter() {

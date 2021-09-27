@@ -77,7 +77,7 @@ public class FileUtils {
         if (destFile == null) {
             throw new NullPointerException("Destination must not be null");
         }
-        if (srcFile.exists() == false) {
+        if (!srcFile.exists()) {
             throw new FileNotFoundException("Source '" + srcFile + "' does not exist");
         }
         if (srcFile.isDirectory()) {
@@ -92,7 +92,7 @@ public class FileUtils {
                 throw new IOException("Destination '" + parentFile + "' directory cannot be created");
             }
         }
-        if (destFile.exists() && destFile.canWrite() == false) {
+        if (destFile.exists() && !destFile.canWrite()) {
             throw new IOException("Destination '" + destFile + "' exists but is read-only");
         }
         doCopyFile(srcFile, destFile, preserveFileDate);
@@ -125,7 +125,7 @@ public class FileUtils {
             long pos = 0;
             long count = 0;
             while (pos < size) {
-                count = size - pos > FILE_COPY_BUFFER_SIZE ? FILE_COPY_BUFFER_SIZE : size - pos;
+                count = Math.min(size - pos, FILE_COPY_BUFFER_SIZE);
                 pos += output.transferFrom(input, pos, count);
             }
         } finally {

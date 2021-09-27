@@ -28,8 +28,7 @@ import org.apache.commons.codec.binary.Base64;
 public class EncryptUtil {
 
     public static String getEncodedPublicKey(PublicKey publicKey) {
-        String key = new String(Base64.encodeBase64(publicKey.getEncoded()));
-        return key;
+        return new String(Base64.encodeBase64(publicKey.getEncoded()));
     }
 
 }

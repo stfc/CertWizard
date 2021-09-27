@@ -30,8 +30,6 @@ import uk.ngs.ca.tools.property.SysProperty;
  */
 public class SystemStatus extends Observable {
 
-    private String errorMessage = null;
-
     private File homeDir = new File(System.getProperty("user.home"));
 
     private boolean isOnline = false;
@@ -85,24 +83,13 @@ public class SystemStatus extends Observable {
         return SystemStatusHolder.sysStatus;
     }
 
-    public String getErrorMessage() {
-        return errorMessage;
-    }
-
     public synchronized boolean isExistKeyStore() {
         String key = "ngsca.key.keystore.file";
         String value = SysProperty.getValue(key);
-        if (value == null) {
-            System.out.println("[SystemStatus] could not find out the value of " + key + " in your property file.");
-        }
         String homePath = SystemStatus.getInstance().getHomeDir().getAbsolutePath();
         homePath = homePath + System.getProperty("file.separator") + ".ca";
         homePath = homePath + System.getProperty("file.separator") + value;
-        if (new File(homePath).exists()) {
-            return true;
-        } else {
-            return false;
-        }
+        return new File(homePath).exists();
     }
 
 }

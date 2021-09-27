@@ -33,7 +33,6 @@ public class RestletClient {
     public static Client getClient() {
         Context context = new Context();
         context.getParameters().add("socketConnectTimeoutMs", String.valueOf(SysProperty.getTimeoutMilliSecs()));
-        Client client = new Client(new Context(), Protocol.HTTPS);
-        return client;
+        return new Client(new Context(), Protocol.HTTPS);
     }
 }

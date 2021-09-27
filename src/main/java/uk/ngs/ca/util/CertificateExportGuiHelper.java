@@ -23,7 +23,6 @@ import java.awt.Window;
 import java.io.*;
 import java.security.*;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
@@ -70,7 +69,7 @@ public class CertificateExportGuiHelper {
     private ClientKeyStoreCaServiceWrapper caKeyStoreModel = null;
     private Component parentCompoent;
 
-    public CertificateExportGuiHelper(Component parentCompoent, ClientKeyStoreCaServiceWrapper caKeyStoreModel) throws KeyStoreException, IOException, CertificateException {
+    public CertificateExportGuiHelper(Component parentCompoent, ClientKeyStoreCaServiceWrapper caKeyStoreModel) {
         this.parentCompoent = parentCompoent;
         this.caKeyStoreModel = caKeyStoreModel;
     }
@@ -232,7 +231,7 @@ public class CertificateExportGuiHelper {
                 return false;
             }
 
-            if (!confirmOverwrite(fExportFile, "Overwrite")) {
+            if (confirmOverwrite(fExportFile, "Overwrite")) {
                 return false;
             }
 
@@ -251,10 +250,7 @@ public class CertificateExportGuiHelper {
                     = MessageFormat.format(RB.getString("FPortecle.NoWriteFile.message"), fExportFile.getName());
             JOptionPane.showMessageDialog(parentCompoent, sMessage, "File not found", JOptionPane.WARNING_MESSAGE);
             return false;
-        } catch (IOException ex) {
-            DThrowable.showAndWait(null, "Problem exporting private key", ex);
-            return false;
-        } catch (GeneralSecurityException ex) {
+        } catch (IOException | GeneralSecurityException ex) {
             DThrowable.showAndWait(null, "Problem exporting private key", ex);
             return false;
         } finally {
@@ -314,7 +310,7 @@ public class CertificateExportGuiHelper {
                 return false;
             }
 
-            if (!confirmOverwrite(fExportFile, "Overwrite")) {
+            if (confirmOverwrite(fExportFile, "Overwrite")) {
                 return false;
             }
 
@@ -344,10 +340,7 @@ public class CertificateExportGuiHelper {
                     = MessageFormat.format(RB.getString("FPortecle.NoWriteFile.message"), fExportFile.getName());
             JOptionPane.showMessageDialog(parentCompoent, sMessage, "File not found", JOptionPane.WARNING_MESSAGE);
             return false;
-        } catch (IOException ex) {
-            DThrowable.showAndWait(null, null, ex);
-            return false;
-        } catch (GeneralSecurityException ex) {
+        } catch (IOException | GeneralSecurityException ex) {
             DThrowable.showAndWait(null, null, ex);
             return false;
         } finally {
@@ -375,10 +368,7 @@ public class CertificateExportGuiHelper {
         X509Certificate[] certChain;
         try {
             certChain = X509CertUtil.convertCertificates(this.caKeyStoreModel.getClientKeyStore().getCertificateChain(sEntryAlias));
-        } catch (KeyStoreException ex) {
-            DThrowable.showAndWait(null, null, ex);
-            return false;
-        } catch (CryptoException ex) {
+        } catch (KeyStoreException | CryptoException ex) {
             DThrowable.showAndWait(null, null, ex);
             return false;
         }
@@ -397,7 +387,7 @@ public class CertificateExportGuiHelper {
             return false;
         }
 
-        if (!confirmOverwrite(fExportFile, "Overwrite")) {
+        if (confirmOverwrite(fExportFile, "Overwrite")) {
             return false;
         }
 
@@ -414,10 +404,7 @@ public class CertificateExportGuiHelper {
                     = MessageFormat.format(RB.getString("FPortecle.NoWriteFile.message"), fExportFile.getName());
             JOptionPane.showMessageDialog(null, sMessage, "File not found", JOptionPane.WARNING_MESSAGE);
             return false;
-        } catch (IOException ex) {
-            DThrowable.showAndWait(null, null, ex);
-            return false;
-        } catch (CryptoException ex) {
+        } catch (IOException | CryptoException ex) {
             DThrowable.showAndWait(null, null, ex);
             return false;
         } finally {
@@ -461,7 +448,7 @@ public class CertificateExportGuiHelper {
             return false;
         }
 
-        if (!confirmOverwrite(fExportFile, "Overwrite")) {
+        if (confirmOverwrite(fExportFile, "Overwrite")) {
             return false;
         }
 
@@ -480,10 +467,7 @@ public class CertificateExportGuiHelper {
                     = MessageFormat.format(RB.getString("FPortecle.NoWriteFile.message"), fExportFile.getName());
             JOptionPane.showMessageDialog(null, sMessage, "File not found", JOptionPane.WARNING_MESSAGE);
             return false;
-        } catch (IOException ex) {
-            DThrowable.showAndWait(null, null, ex);
-            return false;
-        } catch (CryptoException ex) {
+        } catch (IOException | CryptoException ex) {
             DThrowable.showAndWait(null, null, ex);
             return false;
         } finally {
@@ -526,7 +510,7 @@ public class CertificateExportGuiHelper {
             return false;
         }
 
-        if (!confirmOverwrite(fExportFile, "Overwrite")) {
+        if (confirmOverwrite(fExportFile, "Overwrite")) {
             return false;
         }
 
@@ -585,7 +569,7 @@ public class CertificateExportGuiHelper {
             return false;
         }
 
-        if (!confirmOverwrite(fExportFile, "Overwrite")) {
+        if (confirmOverwrite(fExportFile, "Overwrite")) {
             return false;
         }
 
@@ -604,10 +588,7 @@ public class CertificateExportGuiHelper {
                     = MessageFormat.format(RB.getString("FPortecle.NoWriteFile.message"), fExportFile.getName());
             JOptionPane.showMessageDialog(parentCompoent, sMessage, "File not found", JOptionPane.WARNING_MESSAGE);
             return false;
-        } catch (IOException ex) {
-            DThrowable.showAndWait(null, null, ex);
-            return false;
-        } catch (CryptoException ex) {
+        } catch (IOException | CryptoException ex) {
             DThrowable.showAndWait(null, null, ex);
             return false;
         } finally {
@@ -651,7 +632,7 @@ public class CertificateExportGuiHelper {
             return false;
         }
 
-        if (!confirmOverwrite(fExportFile, "Overwrite")) {
+        if (confirmOverwrite(fExportFile, "Overwrite")) {
             return false;
         }
 
@@ -670,10 +651,7 @@ public class CertificateExportGuiHelper {
                     = MessageFormat.format(RB.getString("FPortecle.NoWriteFile.message"), fExportFile.getName());
             JOptionPane.showMessageDialog(parentCompoent, sMessage, "File not found", JOptionPane.WARNING_MESSAGE);
             return false;
-        } catch (IOException ex) {
-            DThrowable.showAndWait(null, null, ex);
-            return false;
-        } catch (CryptoException ex) {
+        } catch (IOException | CryptoException ex) {
             DThrowable.showAndWait(null, null, ex);
             return false;
         } finally {
@@ -816,9 +794,9 @@ public class CertificateExportGuiHelper {
             String sMessage
                     = MessageFormat.format(RB.getString("FPortecle.OverWriteFile.message"), file.getName());
             int iSelected = JOptionPane.showConfirmDialog(parentCompoent, sMessage, title, JOptionPane.YES_NO_OPTION);
-            return iSelected == JOptionPane.YES_OPTION;
+            return iSelected != JOptionPane.YES_OPTION;
         }
-        return true;
+        return false;
     }
 
     /**

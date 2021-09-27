@@ -160,9 +160,7 @@ public final class ClientKeyStore {
                     java.util.logging.Logger.getLogger(ClientKeyStore.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
-        } catch (NoSuchProviderException ke) {
-            throw new IllegalStateException(ke);
-        } catch (NoSuchAlgorithmException ke) {
+        } catch (NoSuchProviderException | NoSuchAlgorithmException ke) {
             throw new IllegalStateException(ke);
         }
     }
@@ -229,9 +227,9 @@ public final class ClientKeyStore {
 
     public synchronized PrivateKey getPrivateKey(PublicKey publicKey) {
         try {
-            Enumeration aliases = this.keyStore.aliases();
+            Enumeration<String> aliases = this.keyStore.aliases();
             while (aliases.hasMoreElements()) {
-                String alias = (String) aliases.nextElement();
+                String alias = aliases.nextElement();
                 if (this.keyStore.isKeyEntry(alias)) {
                     X509Certificate cert = (X509Certificate) this.keyStore.getCertificate(alias);
                     if (cert.getPublicKey().equals(publicKey)) {
@@ -240,11 +238,7 @@ public final class ClientKeyStore {
                     }
                 }
             }
-        } catch (KeyStoreException ex) {
-            ex.printStackTrace();
-        } catch (NoSuchAlgorithmException ex) {
-            ex.printStackTrace();
-        } catch (UnrecoverableKeyException ex) {
+        } catch (KeyStoreException | UnrecoverableKeyException | NoSuchAlgorithmException ex) {
             ex.printStackTrace();
         }
         return null;
@@ -261,8 +255,7 @@ public final class ClientKeyStore {
     public synchronized X509Certificate getX509Certificate(String alias) throws KeyStoreException {
         if (this.keyStore.getCertificate(alias) != null) {
             if (this.keyStore.getCertificate(alias) instanceof X509Certificate) {
-                X509Certificate cert = (X509Certificate) this.keyStore.getCertificate(alias);
-                return cert;
+                return (X509Certificate) this.keyStore.getCertificate(alias);
             }
         }
         return null;
@@ -271,11 +264,7 @@ public final class ClientKeyStore {
     public synchronized PrivateKey getPrivateKey(String alias) {
         try {
             return (PrivateKey) this.keyStore.getKey(alias, PASSPHRASE);
-        } catch (KeyStoreException ex) {
-            ex.printStackTrace();
-        } catch (NoSuchAlgorithmException ex) {
-            ex.printStackTrace();
-        } catch (UnrecoverableKeyException ex) {
+        } catch (KeyStoreException | UnrecoverableKeyException | NoSuchAlgorithmException ex) {
             ex.printStackTrace();
         }
         return null;

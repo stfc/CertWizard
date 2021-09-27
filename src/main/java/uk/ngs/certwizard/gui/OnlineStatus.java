@@ -81,11 +81,7 @@ public class OnlineStatus extends javax.swing.JPanel {
 
         connectButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/arrow_refresh_small.png"))); // NOI18N
         connectButton.setToolTipText("Attempt to ping the CA server to test online connection. ");
-        connectButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                connectButtonActionPerformed(evt);
-            }
-        });
+        connectButton.addActionListener(this::connectButtonActionPerformed);
 
         onlineLabel.setForeground(new java.awt.Color(255, 0, 51));
         onlineLabel.setText("Cannot Contact Server - Click help to configure connection.");
@@ -93,11 +89,7 @@ public class OnlineStatus extends javax.swing.JPanel {
         jLabel1.setText("Online Status:");
 
         timeoutTextField.setText("8");
-        timeoutTextField.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                timeoutTextFieldActionPerformed(evt);
-            }
-        });
+        timeoutTextField.addActionListener(this::timeoutTextFieldActionPerformed);
         timeoutTextField.addFocusListener(new java.awt.event.FocusAdapter() {
             public void focusLost(java.awt.event.FocusEvent evt) {
                 timeoutTextFieldFocusLost(evt);
@@ -108,11 +100,7 @@ public class OnlineStatus extends javax.swing.JPanel {
 
         cancelPingButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/stopRedCrossIcon.gif"))); // NOI18N
         cancelPingButton.setToolTipText("Cancel the online Ping.");
-        cancelPingButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                cancelPingButtonActionPerformed(evt);
-            }
-        });
+        cancelPingButton.addActionListener(this::cancelPingButtonActionPerformed);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
@@ -191,25 +179,23 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
      * @param running
      */
     private void updateGUI(final boolean running) {
-        GuiExecutor.instance().execute(new Runnable() {
-            public void run() {
-                if (running) {
-                    onlineLabel.setText("Pinging Server...");
-                    onlineLabel.setForeground(Color.RED);
-                    connectButton.setEnabled(false);
-                    cancelPingButton.setEnabled(true);
+        GuiExecutor.instance().execute(() -> {
+            if (running) {
+                onlineLabel.setText("Pinging Server...");
+                onlineLabel.setForeground(Color.RED);
+                connectButton.setEnabled(false);
+                cancelPingButton.setEnabled(true);
+            } else {
+                Date lastOnline = new Date();
+                if (pingedOK.get()) {
+                    onlineLabel.setText("Last online check at:  " + lastOnline);
+                    onlineLabel.setForeground(new Color(0, 153, 0));
                 } else {
-                    Date lastOnline = new Date();
-                    if (pingedOK.get()) {
-                        onlineLabel.setText("Last online check at:  " + lastOnline);
-                        onlineLabel.setForeground(new Color(0, 153, 0));
-                    } else {
-                        onlineLabel.setText("Last online check failed at:  " + lastOnline);
-                        onlineLabel.setForeground(Color.RED);
-                    }
-                    connectButton.setEnabled(true);
-                    cancelPingButton.setEnabled(false);
+                    onlineLabel.setText("Last online check failed at:  " + lastOnline);
+                    onlineLabel.setForeground(Color.RED);
                 }
+                connectButton.setEnabled(true);
+                cancelPingButton.setEnabled(false);
             }
         });
     }

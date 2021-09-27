@@ -127,17 +127,11 @@ public class CertWizardMain extends javax.swing.JFrame {
             globusDir.mkdir();
         }
 
-        boolean isDir = true;
-        if (!globusDir.isDirectory()) {
-            isDir = false;
-        }
+        boolean isDir = globusDir.isDirectory();
 
         // See if the HOME/.globus directory is writable 
-        boolean writableDir = true;
-        if (!globusDir.canWrite()) {
-            writableDir = false;
-        }
-        // Also need to create a tmp file to see if this dir is writable (can't just rely on 
+        boolean writableDir = globusDir.canWrite();
+        // Also need to create a tmp file to see if this dir is writable (can't just rely on
         // caDir.canWrite() as this is not reliable due to java bug: 
         // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4787931 
         File tmp = null;
@@ -217,13 +211,10 @@ public class CertWizardMain extends javax.swing.JFrame {
         /*
          * Create and display the form
          */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-
-            public void run() {
-                CertWizardMain cw = new CertWizardMain();
-                cw.setLocationRelativeTo(null);
-                cw.setVisible(true);
-            }
+        java.awt.EventQueue.invokeLater(() -> {
+            CertWizardMain cw = new CertWizardMain();
+            cw.setLocationRelativeTo(null);
+            cw.setVisible(true);
         });
     }
     // Variables declaration - do not modify//GEN-BEGIN:variables

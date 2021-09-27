@@ -105,7 +105,7 @@ public class CertificateImportGuiHelper {
         }
 
         // log all the exceptions that may occur
-        ArrayList<Exception> exceptions = new ArrayList<Exception>();
+        ArrayList<Exception> exceptions = new ArrayList<>();
         KeyStore tempStore = null;
         PEMParser reader = null;
         try {
@@ -246,10 +246,10 @@ public class CertificateImportGuiHelper {
 
             // Create new entires only for the newly imported aliases that 
             // did not previously exist before the import. 
-            for (int i = 0; i < postImportAliases.size(); i++) {
-                if (!preImportAliases.contains(postImportAliases.get(i))) {
-                    KeyStoreEntryWrapper newImport = this.caKeyStoreModel.createKSEntryWrapperInstanceFromEntry(postImportAliases.get(i));
-                    this.caKeyStoreModel.getKeyStoreEntryMap().put(postImportAliases.get(i), newImport);
+            for (String postImportAlias : postImportAliases) {
+                if (!preImportAliases.contains(postImportAlias)) {
+                    KeyStoreEntryWrapper newImport = this.caKeyStoreModel.createKSEntryWrapperInstanceFromEntry(postImportAlias);
+                    this.caKeyStoreModel.getKeyStoreEntryMap().put(postImportAlias, newImport);
                 }
             }
 
@@ -301,8 +301,7 @@ public class CertificateImportGuiHelper {
      * @return alias for new entry, null if user cancels the operation
      */
     private String getNewEntryAliasHelper(String sAlias, String dialogTitleKey,
-            boolean selectAlias)
-            throws KeyStoreException {
+            boolean selectAlias) {
         while (true) {
             // Get the alias for the new entry
             DGetAlias dGetAlias
@@ -311,9 +310,6 @@ public class CertificateImportGuiHelper {
             SwingHelper.showAndWait(dGetAlias);
 
             sAlias = dGetAlias.getAlias();
-            if (sAlias == null) {
-                return null;
-            }
 
             return sAlias;
 

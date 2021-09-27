@@ -56,7 +56,7 @@ public class CertificateRenewRevokeGuiHelper {
 
     private ClientKeyStoreCaServiceWrapper caKeyStoreModel;
     private Component parentComponent;
-    private final Pattern alphaNumericPattern = Pattern.compile("[0-9A-Za-z\\s_\\.,]+");
+    private final Pattern alphaNumericPattern = Pattern.compile("[0-9A-Za-z\\s_.,]+");
 
     /**
      * Portecle Resource bundle base name
@@ -117,7 +117,7 @@ public class CertificateRenewRevokeGuiHelper {
         try {
             parentComponent.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 
-            final long cert_id = Long.valueOf(selectedKSEW.getServerCertificateCSRInfo().getId()).longValue();
+            final long cert_id = Long.parseLong(selectedKSEW.getServerCertificateCSRInfo().getId());
             RevokeRequest revokeRequest = new RevokeRequest(
                     this.caKeyStoreModel.getClientKeyStore().getPrivateKey(selectedKSEW.getAlias()),
                     cert_id, reason);
@@ -154,7 +154,7 @@ public class CertificateRenewRevokeGuiHelper {
      * cancelled or not added for whatever reason.
      */
     public String doRenew(KeyStoreEntryWrapper selectedKSEW)
-            throws KeyStoreException, IOException, CertificateException, NoSuchProviderException, SecurityException, SignatureException, InvalidKeyException {
+            throws KeyStoreException, IOException, CertificateException, SecurityException {
         // First MUST refresh the online status of the selected keyStoreEntryWrapper
         // to guard against TOCTAU attacks and stale data (when was the online status last fetched). 
         try {

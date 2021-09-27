@@ -18,8 +18,6 @@
  */
 package uk.ngs.ca.certificate;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.restlet.Client;
 import org.restlet.Request;
 import org.restlet.Response;
@@ -90,8 +88,7 @@ public class OnlineHostCertRequest {
      */
     public Pair<Boolean, String> doHostCSR() {
         Response response = this.doInitialRequest();
-        Pair<Boolean, String> result = this.respondToPPPKChallenge(response);
-        return result;
+        return this.respondToPPPKChallenge(response);
     }
 
     /**

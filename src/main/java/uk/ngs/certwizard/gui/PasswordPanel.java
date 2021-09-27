@@ -97,11 +97,7 @@ public class PasswordPanel extends javax.swing.JPanel {
 
         jLabel1.setText("Password:");
 
-        txtPassword.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                txtPasswordActionPerformed(evt);
-            }
-        });
+        txtPassword.addActionListener(this::txtPasswordActionPerformed);
         txtPassword.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyReleased(java.awt.event.KeyEvent evt) {
                 txtPasswordKeyReleased(evt);
@@ -109,19 +105,11 @@ public class PasswordPanel extends javax.swing.JPanel {
         });
 
         okButton.setText("OK");
-        okButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                okButtonActionPerformed(evt);
-            }
-        });
+        okButton.addActionListener(this::okButtonActionPerformed);
 
         jLabel3.setText("Confirm:");
 
-        txtConfirmPassword.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                txtConfirmPasswordActionPerformed(evt);
-            }
-        });
+        txtConfirmPassword.addActionListener(this::txtConfirmPasswordActionPerformed);
         txtConfirmPassword.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyReleased(java.awt.event.KeyEvent evt) {
                 txtConfirmPasswordKeyReleased(evt);
@@ -307,11 +295,7 @@ public class PasswordPanel extends javax.swing.JPanel {
         } else {
             String password = new String(txtPassword.getPassword());
             String confirm = new String(txtConfirmPassword.getPassword());
-            if (password.equals(confirm)) {
-                this.okButton.setEnabled(true);
-            } else {
-                this.okButton.setEnabled(false);
-            }
+            this.okButton.setEnabled(password.equals(confirm));
         }
     }//GEN-LAST:event_txtPasswordKeyReleased
 
@@ -320,11 +304,7 @@ public class PasswordPanel extends javax.swing.JPanel {
         String password = new String(txtPassword.getPassword());
         String confirm = new String(txtConfirmPassword.getPassword());
 
-        if (password.equals(confirm)) {
-            this.okButton.setEnabled(true);
-        } else {
-            this.okButton.setEnabled(false);
-        }
+        this.okButton.setEnabled(password.equals(confirm));
     }//GEN-LAST:event_txtConfirmPasswordKeyReleased
 
     private void txtConfirmPasswordActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtConfirmPasswordActionPerformed

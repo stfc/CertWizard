@@ -106,7 +106,7 @@ public class ResourcesPublicKey {
         } catch (Exception ep) {
             ep.printStackTrace();
         } finally {
-            return isExist;
+            return !isExist;
         }
     }
 

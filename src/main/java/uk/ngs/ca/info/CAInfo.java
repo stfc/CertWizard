@@ -20,7 +20,6 @@ package uk.ngs.ca.info;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.*;
 import org.restlet.Client;
@@ -94,7 +93,7 @@ public class CAInfo {
             XPath xpath = XPathFactory.newInstance().newXPath();
             XPathExpression expr = xpath.compile("/CA/RAlist/ra");
             NodeList raLists = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
-            List<String> RAs = new ArrayList();
+            ArrayList<String> RAs = new ArrayList<>();
             for (int i = 0; i < raLists.getLength(); i++) {
                 Element raElement = (Element) raLists.item(i);
                 NodeList ouLists = raElement.getElementsByTagName("ou");
