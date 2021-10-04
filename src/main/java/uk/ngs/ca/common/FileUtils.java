@@ -58,19 +58,18 @@ public class FileUtils {
      * that the operation will succeed. If the modification operation fails, no
      * indication is provided.
      *
-     * @param srcFile an existing file to copy, must not be <code>null</code>
-     * @param destFile the new file, must not be <code>null</code>
+     * @param srcFile          an existing file to copy, must not be <code>null</code>
+     * @param destFile         the new file, must not be <code>null</code>
      * @param preserveFileDate true if the file date of the copy should be the
-     * same as the original
-     *
+     *                         same as the original
      * @throws NullPointerException if source or destination is
-     * <code>null</code>
-     * @throws IOException if source or destination is invalid
-     * @throws IOException if an IO error occurs during copying
+     *                              <code>null</code>
+     * @throws IOException          if source or destination is invalid
+     * @throws IOException          if an IO error occurs during copying
      * @see #copyFileToDirectory(File, File, boolean)
      */
     public static void copyFile(File srcFile, File destFile,
-            boolean preserveFileDate) throws IOException {
+                                boolean preserveFileDate) throws IOException {
         if (srcFile == null) {
             throw new NullPointerException("Source must not be null");
         }
@@ -101,9 +100,9 @@ public class FileUtils {
     /**
      * Internal copy file method.
      *
-     * @param srcFile the validated source file, must not be <code>null</code>
-     * @param destFile the validated destination file, must not be
-     * <code>null</code>
+     * @param srcFile          the validated source file, must not be <code>null</code>
+     * @param destFile         the validated destination file, must not be
+     *                         <code>null</code>
      * @param preserveFileDate whether to preserve the file date
      * @throws IOException if an error occurs
      */

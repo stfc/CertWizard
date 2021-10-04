@@ -31,10 +31,10 @@ package uk.ngs.certwizard.gui;
 
  *
  */
+
+import javax.swing.*;
 import java.awt.*;
 import java.net.URL;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
 
 /**
  * This class is used to display the Wait Dialog. This Dialog is displayed when
@@ -42,18 +42,17 @@ import javax.swing.JLabel;
  * intialized once and the static methods showDialog/hideDialog, uses this
  * instance to show/hide.
  *
- *
- * @since 1.0
  * @version 1.0
+ * @since 1.0
  */
 public class WaitDialog extends JFrame {
 //  private JLabel jLabel1;
 
-    private static JLabel jLabel2 = new JLabel();
+    private static final JLabel jLabel2 = new JLabel();
     Rectangle bounds;
 
     // single instance of this class, used through out the scope of the application
-    private static WaitDialog dlg = new WaitDialog();
+    private static final WaitDialog dlg = new WaitDialog();
 
     /**
      * The constructor intialises all the GUI controls
@@ -71,7 +70,7 @@ public class WaitDialog extends JFrame {
     /**
      * This method intializes all the GUI controls and adds it to the Panel
      *
-     * @exception Exception if any exception, while creating GUI controls
+     * @throws Exception if any exception, while creating GUI controls
      */
     private void jbInit() {
         this.getContentPane().setLayout(null);
@@ -94,7 +93,6 @@ public class WaitDialog extends JFrame {
     }
 
     /**
-     *
      * This static method hides the wait dialog.
      */
     public static void hideDialog() {

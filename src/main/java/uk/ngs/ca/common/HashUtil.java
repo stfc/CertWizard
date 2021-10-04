@@ -21,7 +21,6 @@ package uk.ngs.ca.common;
 import java.nio.charset.StandardCharsets;
 
 /**
- *
  * @author xw75
  */
 public class HashUtil {

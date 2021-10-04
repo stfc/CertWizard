@@ -18,14 +18,10 @@
  */
 package uk.ngs.certwizard.gui;
 
-import java.awt.Component;
-import java.awt.Dimension;
-import javax.swing.JOptionPane;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
+import javax.swing.*;
+import java.awt.*;
 
 /**
- *
  * @author David Meredith
  */
 public class GeneralMessageDialog {

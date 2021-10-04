@@ -18,18 +18,6 @@
  */
 package uk.ngs.certwizard.gui;
 
-import java.awt.Color;
-import java.awt.Cursor;
-import java.awt.Toolkit;
-import java.io.IOException;
-import java.net.URL;
-import java.security.KeyPair;
-import java.security.KeyStoreException;
-import java.security.PrivateKey;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.util.regex.Pattern;
-import javax.swing.JOptionPane;
 import net.sf.portecle.gui.error.DThrowable;
 import org.apache.commons.validator.routines.DomainValidator;
 import org.apache.commons.validator.routines.EmailValidator;
@@ -44,6 +32,17 @@ import uk.ngs.ca.common.HashUtil;
 import uk.ngs.ca.common.Pair;
 import uk.ngs.ca.info.CAInfo;
 
+import javax.swing.*;
+import java.awt.*;
+import java.io.IOException;
+import java.net.URL;
+import java.security.KeyPair;
+import java.security.KeyStoreException;
+import java.security.PrivateKey;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.regex.Pattern;
+
 /**
  * Modal dialog for requesting new host and user certificates.
  *
@@ -54,7 +53,7 @@ public class Apply extends javax.swing.JDialog {
 
     private final String startInfo = "Please enter all the information";
     private final String readyInfo = "Your input is ready, please click Apply button to request certificate or click Cancel button to cancel";
-    private String[] RAs;
+    private final String[] RAs;
     //private final Pattern emailPattern = Pattern.compile("[-\\.a-zA-Z0-9_]+@[-a-zA-Z0-9\\.]+\\.[a-z]+");
     private String storedAlias;
     private final X509Certificate authCert;
@@ -65,6 +64,7 @@ public class Apply extends javax.swing.JDialog {
     private final javax.swing.ImageIcon acceptIcon = new javax.swing.ImageIcon(getClass().getResource("/help_panel_html/images/accept.png"));
 
     //private ProgressMonitor progressMonitor;
+
     /**
      * Options for the type of certificate application.
      */
@@ -78,13 +78,13 @@ public class Apply extends javax.swing.JDialog {
     /**
      * Create a new Apply dialog.
      *
-     * @param model CertWizard data model
-     * @param certType Apply for either host or user cert
+     * @param model                        CertWizard data model
+     * @param certType                     Apply for either host or user cert
      * @param keyStoreAliasToAuthHostApply If a host cert is requested, this is
-     * the alias of the keyStore entry that will be used to authenticate the
-     * request. Can be null for user cert requests. When requesting host cert,
-     * if this value does not reference a valid user certificate in the
-     * keyStore, then a {@link IllegalArgumentException} is thrown.
+     *                                     the alias of the keyStore entry that will be used to authenticate the
+     *                                     request. Can be null for user cert requests. When requesting host cert,
+     *                                     if this value does not reference a valid user certificate in the
+     *                                     keyStore, then a {@link IllegalArgumentException} is thrown.
      * @throws IOException If an error occurs when contact the remote server.
      */
     public Apply(ClientKeyStoreCaServiceWrapper model, CERT_TYPE certType, String keyStoreAliasToAuthHostApply)
@@ -182,7 +182,6 @@ public class Apply extends javax.swing.JDialog {
 
             } catch (Exception ex) {
                 setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-                System.out.println(ex);
                 DThrowable.showAndWait(this, "Problem Processing CSR Application", ex);
             } finally {
                 setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
@@ -194,7 +193,7 @@ public class Apply extends javax.swing.JDialog {
      * Process a User or a Host CSR application.
      */
     private void processCertApplication(ClientKeyStoreCaServiceWrapper model,
-            CertificateRequestCreator.TYPE type) throws KeyStoreException, IOException, CertificateException {
+                                        CertificateRequestCreator.TYPE type) throws KeyStoreException, IOException, CertificateException {
         String newAlias = this.aliasTextField.getText();
         // Note that same email is value is used to create PKCS#10 request and 
         // specify in the CSR email XML element. This is required otherwise the 
@@ -436,6 +435,7 @@ public class Apply extends javax.swing.JDialog {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 cmbSelectRAMouseEntered(evt);
             }
+
             public void mouseExited(java.awt.event.MouseEvent evt) {
                 cmbSelectRAMouseExited(evt);
             }
@@ -450,6 +450,7 @@ public class Apply extends javax.swing.JDialog {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 txtNameMouseEntered(evt);
             }
+
             public void mouseExited(java.awt.event.MouseEvent evt) {
                 txtNameMouseExited(evt);
             }
@@ -468,6 +469,7 @@ public class Apply extends javax.swing.JDialog {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 txtEmailMouseEntered(evt);
             }
+
             public void mouseExited(java.awt.event.MouseEvent evt) {
                 txtEmailMouseExited(evt);
             }
@@ -498,6 +500,7 @@ public class Apply extends javax.swing.JDialog {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 txtPinMouseEntered(evt);
             }
+
             public void mouseExited(java.awt.event.MouseEvent evt) {
                 txtPinMouseExited(evt);
             }
@@ -506,6 +509,7 @@ public class Apply extends javax.swing.JDialog {
             public void focusGained(java.awt.event.FocusEvent evt) {
                 txtPinFocusGained(evt);
             }
+
             public void focusLost(java.awt.event.FocusEvent evt) {
                 txtPinFocusLost(evt);
             }
@@ -521,6 +525,7 @@ public class Apply extends javax.swing.JDialog {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 txtConfirmMouseEntered(evt);
             }
+
             public void mouseExited(java.awt.event.MouseEvent evt) {
                 txtConfirmMouseExited(evt);
             }
@@ -588,99 +593,99 @@ public class Apply extends javax.swing.JDialog {
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
-            layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(layout.createSequentialGroup()
-                .addContainerGap()
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
-                        .add(btnApply)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(btnCancel))
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 617, Short.MAX_VALUE)
-                    .add(layout.createSequentialGroup()
-                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                            .add(jLabel3)
-                            .add(jLabel4)
-                            .add(jLabel7)
-                            .add(labCN)
-                            .add(labEmail)
-                            .add(jLabel8)
-                            .add(labelRequestorId))
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                            .add(txtDN)
-                            .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
-                                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                                    .add(org.jdesktop.layout.GroupLayout.LEADING, layout.createSequentialGroup()
-                                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
-                                            .add(org.jdesktop.layout.GroupLayout.LEADING, txtPin, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 104, Short.MAX_VALUE)
-                                            .add(org.jdesktop.layout.GroupLayout.LEADING, txtConfirm)
-                                            .add(org.jdesktop.layout.GroupLayout.LEADING, aliasTextField))
-                                        .add(18, 18, 18)
-                                        .add(jLabel6)
-                                        .add(0, 0, Short.MAX_VALUE))
-                                    .add(org.jdesktop.layout.GroupLayout.LEADING, txtEmail)
-                                    .add(org.jdesktop.layout.GroupLayout.LEADING, txtName)
-                                    .add(org.jdesktop.layout.GroupLayout.LEADING, cmbSelectRA, 0, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                        .add(layout.createSequentialGroup()
+                                .addContainerGap()
                                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                                    .add(layout.createSequentialGroup()
-                                        .add(21, 21, 21)
-                                        .add(cnValidLabel))
-                                    .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
-                                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                                            .add(org.jdesktop.layout.GroupLayout.TRAILING, emailValidLabel)
-                                            .add(org.jdesktop.layout.GroupLayout.TRAILING, aliasValidPinLabel)
-                                            .add(org.jdesktop.layout.GroupLayout.TRAILING, raValidLabel)
-                                            .add(org.jdesktop.layout.GroupLayout.TRAILING, pinValidLabel))))))))
-                .addContainerGap())
+                                        .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
+                                                .add(btnApply)
+                                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                                .add(btnCancel))
+                                        .add(org.jdesktop.layout.GroupLayout.TRAILING, jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 617, Short.MAX_VALUE)
+                                        .add(layout.createSequentialGroup()
+                                                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                                                        .add(jLabel3)
+                                                        .add(jLabel4)
+                                                        .add(jLabel7)
+                                                        .add(labCN)
+                                                        .add(labEmail)
+                                                        .add(jLabel8)
+                                                        .add(labelRequestorId))
+                                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                                                        .add(txtDN)
+                                                        .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
+                                                                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                                                                        .add(org.jdesktop.layout.GroupLayout.LEADING, layout.createSequentialGroup()
+                                                                                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
+                                                                                        .add(org.jdesktop.layout.GroupLayout.LEADING, txtPin, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 104, Short.MAX_VALUE)
+                                                                                        .add(org.jdesktop.layout.GroupLayout.LEADING, txtConfirm)
+                                                                                        .add(org.jdesktop.layout.GroupLayout.LEADING, aliasTextField))
+                                                                                .add(18, 18, 18)
+                                                                                .add(jLabel6)
+                                                                                .add(0, 0, Short.MAX_VALUE))
+                                                                        .add(org.jdesktop.layout.GroupLayout.LEADING, txtEmail)
+                                                                        .add(org.jdesktop.layout.GroupLayout.LEADING, txtName)
+                                                                        .add(org.jdesktop.layout.GroupLayout.LEADING, cmbSelectRA, 0, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                                                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                                                                        .add(layout.createSequentialGroup()
+                                                                                .add(21, 21, 21)
+                                                                                .add(cnValidLabel))
+                                                                        .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
+                                                                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                                                                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                                                                                        .add(org.jdesktop.layout.GroupLayout.TRAILING, emailValidLabel)
+                                                                                        .add(org.jdesktop.layout.GroupLayout.TRAILING, aliasValidPinLabel)
+                                                                                        .add(org.jdesktop.layout.GroupLayout.TRAILING, raValidLabel)
+                                                                                        .add(org.jdesktop.layout.GroupLayout.TRAILING, pinValidLabel))))))))
+                                .addContainerGap())
         );
         layout.setVerticalGroup(
-            layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(layout.createSequentialGroup()
-                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, labelRequestorId)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, txtDN, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, raValidLabel)
-                    .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                        .add(cmbSelectRA, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .add(jLabel7)))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(txtName, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(labCN)
-                    .add(cnValidLabel))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(emailValidLabel)
-                    .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                        .add(txtEmail, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .add(labEmail)))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(jLabel3)
-                    .add(txtPin, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(jLabel6)
-                    .add(pinValidLabel))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(jLabel4)
-                    .add(txtConfirm, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(aliasTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                    .add(jLabel8)
-                    .add(aliasValidPinLabel))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(btnCancel)
-                    .add(btnApply))
-                .addContainerGap())
+                layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                        .add(layout.createSequentialGroup()
+                                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                                        .add(org.jdesktop.layout.GroupLayout.TRAILING, labelRequestorId)
+                                        .add(org.jdesktop.layout.GroupLayout.TRAILING, txtDN, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                                        .add(org.jdesktop.layout.GroupLayout.TRAILING, raValidLabel)
+                                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                                                .add(cmbSelectRA, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                                .add(jLabel7)))
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                                        .add(txtName, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                        .add(labCN)
+                                        .add(cnValidLabel))
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                                        .add(emailValidLabel)
+                                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                                                .add(txtEmail, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                                .add(labEmail)))
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                                        .add(jLabel3)
+                                        .add(txtPin, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                        .add(jLabel6)
+                                        .add(pinValidLabel))
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                                        .add(jLabel4)
+                                        .add(txtConfirm, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                                        .add(aliasTextField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                        .add(jLabel8)
+                                        .add(aliasValidPinLabel))
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                                        .add(btnCancel)
+                                        .add(btnApply))
+                                .addContainerGap())
         );
 
         pack();

@@ -18,10 +18,6 @@
  */
 package uk.ngs.ca.info;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.*;
 import org.restlet.Client;
 import org.restlet.Request;
 import org.restlet.Response;
@@ -38,6 +34,11 @@ import uk.ngs.ca.common.ClientHostName;
 import uk.ngs.ca.common.RestletClient;
 import uk.ngs.ca.tools.property.SysProperty;
 
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.*;
+import java.io.IOException;
+import java.util.ArrayList;
+
 /**
  * Retrieves CA information when calling <tt>/CA</tt> Rest resource.
  *
@@ -48,7 +49,7 @@ import uk.ngs.ca.tools.property.SysProperty;
 public class CAInfo {
 
     String CAURL = SysProperty.getValue("uk.ngs.ca.request.ca.url");
-    private Document document;
+    private final Document document;
 
     /**
      * Create a new CAInfo instance and call the CA server.

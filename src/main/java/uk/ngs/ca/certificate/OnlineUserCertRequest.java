@@ -38,8 +38,8 @@ import uk.ngs.ca.tools.property.SysProperty;
  */
 public class OnlineUserCertRequest {
 
-    private String CSRURL = SysProperty.getValue("uk.ngs.ca.request.csr.url");
-    private String USERAGENT = SysProperty.getValue("uk.ngs.ca.request.useragent");
+    private final String CSRURL = SysProperty.getValue("uk.ngs.ca.request.csr.url");
+    private final String USERAGENT = SysProperty.getValue("uk.ngs.ca.request.useragent");
     private String MESSAGE = "";
     private boolean isCSRRequestSuccess = false;
 

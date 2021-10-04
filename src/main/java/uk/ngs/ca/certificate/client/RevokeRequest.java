@@ -44,12 +44,12 @@ import static uk.ngs.ca.common.CertUtil.getPrivateExponent;
  */
 public class RevokeRequest {
 
-    private String REVOKEURL = SysProperty.getValue("uk.ngs.ca.request.revoke.url");
-    private String USERAGENT = SysProperty.getValue("uk.ngs.ca.request.useragent");
+    private final String REVOKEURL = SysProperty.getValue("uk.ngs.ca.request.revoke.url");
+    private final String USERAGENT = SysProperty.getValue("uk.ngs.ca.request.useragent");
     private long cert_id = -1;
     private String reason = null;
     private String MESSAGE = null;
-    private PrivateKey privateKey;
+    private final PrivateKey privateKey;
 
     public RevokeRequest(PrivateKey privateKey, long cert_id, String reason) {
         this.privateKey = privateKey;

@@ -18,14 +18,15 @@
  */
 package uk.ngs.certwizard.gui;
 
-import java.awt.Color;
+import uk.ngs.ca.certificate.client.PingService;
+import uk.ngs.ca.common.GuiExecutor;
+
+import java.awt.*;
 import java.util.Date;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import uk.ngs.ca.certificate.client.PingService;
-import uk.ngs.ca.common.GuiExecutor;
 
 /**
  * Display the current online status of the tool and set the application's
@@ -37,7 +38,7 @@ public class OnlineStatus extends javax.swing.JPanel {
 
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     // Records whether the last ping check completed ok 
-    private AtomicBoolean pingedOK = new AtomicBoolean(false);
+    private final AtomicBoolean pingedOK = new AtomicBoolean(false);
 
     /**
      * Creates new form OnlineStatus
@@ -105,31 +106,31 @@ public class OnlineStatus extends javax.swing.JPanel {
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jLabel1)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(onlineLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGap(79, 79, 79)
-                .addComponent(jLabel2)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(timeoutTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(4, 4, 4)
-                .addComponent(cancelPingButton, javax.swing.GroupLayout.PREFERRED_SIZE, 24, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(2, 2, 2)
-                .addComponent(connectButton, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE))
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                .addContainerGap()
+                                .addComponent(jLabel1)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(onlineLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addGap(79, 79, 79)
+                                .addComponent(jLabel2)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(timeoutTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(4, 4, 4)
+                                .addComponent(cancelPingButton, javax.swing.GroupLayout.PREFERRED_SIZE, 24, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(2, 2, 2)
+                                .addComponent(connectButton, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
         layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(connectButton, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-            .addComponent(cancelPingButton, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE)
-            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                .addComponent(timeoutTextField)
-                .addComponent(jLabel2))
-            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                .addComponent(jLabel1)
-                .addComponent(onlineLabel))
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(connectButton, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                        .addComponent(cancelPingButton, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                .addComponent(timeoutTextField)
+                                .addComponent(jLabel2))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                .addComponent(jLabel1)
+                                .addComponent(onlineLabel))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -138,13 +139,13 @@ public class OnlineStatus extends javax.swing.JPanel {
         this.doPingCheckActionPerformed();
     }//GEN-LAST:event_connectButtonActionPerformed
 
-private void timeoutTextFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_timeoutTextFieldActionPerformed
-    //this.doChangeTimeout();
-}//GEN-LAST:event_timeoutTextFieldActionPerformed
+    private void timeoutTextFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_timeoutTextFieldActionPerformed
+        //this.doChangeTimeout();
+    }//GEN-LAST:event_timeoutTextFieldActionPerformed
 
-private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_timeoutTextFieldFocusLost
-    //this.doChangeTimeout();
-}//GEN-LAST:event_timeoutTextFieldFocusLost
+    private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_timeoutTextFieldFocusLost
+        //this.doChangeTimeout();
+    }//GEN-LAST:event_timeoutTextFieldFocusLost
 
     private void cancelPingButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelPingButtonActionPerformed
         this.updateGUI(false);
@@ -159,7 +160,7 @@ private void timeoutTextFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIR
     private javax.swing.JTextField timeoutTextField;
     // End of variables declaration//GEN-END:variables
 
-    
+
     /**
      * Attempt a ping check and update our global state.
      */

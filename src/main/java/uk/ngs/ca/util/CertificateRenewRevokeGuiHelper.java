@@ -18,21 +18,6 @@
  */
 package uk.ngs.ca.util;
 
-import java.awt.Component;
-import java.awt.Cursor;
-import java.io.IOException;
-import java.security.*;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateExpiredException;
-import java.security.cert.CertificateNotYetValidException;
-import java.security.cert.X509Certificate;
-import java.text.MessageFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.ResourceBundle;
-import java.util.TimeZone;
-import java.util.regex.Pattern;
-import javax.swing.JOptionPane;
 import net.sf.portecle.DGetAlias;
 import net.sf.portecle.FPortecle;
 import net.sf.portecle.gui.SwingHelper;
@@ -46,6 +31,23 @@ import uk.ngs.ca.common.CertUtil;
 import uk.ngs.ca.common.Pair;
 import uk.ngs.certwizard.gui.GeneralMessageDialog;
 
+import javax.swing.*;
+import java.awt.*;
+import java.io.IOException;
+import java.security.KeyPair;
+import java.security.KeyStoreException;
+import java.security.PrivateKey;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.X509Certificate;
+import java.text.MessageFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.ResourceBundle;
+import java.util.TimeZone;
+import java.util.regex.Pattern;
+
 /**
  * Helper class for performing certificate renewals and revocations. The methods
  * invoked by this class present GUI components during their processing.
@@ -54,8 +56,8 @@ import uk.ngs.certwizard.gui.GeneralMessageDialog;
  */
 public class CertificateRenewRevokeGuiHelper {
 
-    private ClientKeyStoreCaServiceWrapper caKeyStoreModel;
-    private Component parentComponent;
+    private final ClientKeyStoreCaServiceWrapper caKeyStoreModel;
+    private final Component parentComponent;
     private final Pattern alphaNumericPattern = Pattern.compile("[0-9A-Za-z\\s_.,]+");
 
     /**
@@ -102,9 +104,9 @@ public class CertificateRenewRevokeGuiHelper {
 
         if (JOptionPane.showConfirmDialog(parentComponent,
                 "Are you sure you want to revoke the selected certificate?\n\n"
-                + "Alias: [" + selectedKSEW.getAlias() + "]\n"
-                + "DN: [" + selectedKSEW.getX500PrincipalName() + "]\n"
-                + "Email: [" + selectedKSEW.getServerCertificateCSRInfo().getUserEmail() + "]",
+                        + "Alias: [" + selectedKSEW.getAlias() + "]\n"
+                        + "DN: [" + selectedKSEW.getX500PrincipalName() + "]\n"
+                        + "Email: [" + selectedKSEW.getServerCertificateCSRInfo().getUserEmail() + "]",
                 "Renew Certificate", JOptionPane.YES_NO_OPTION)
                 != JOptionPane.YES_OPTION) {
             return false;
@@ -212,8 +214,8 @@ public class CertificateRenewRevokeGuiHelper {
         }
         if (JOptionPane.showConfirmDialog(parentComponent,
                 renewMessagePrefix + "Alias: [" + selectedKSEW.getAlias() + "]\n"
-                + "DN: [" + selectedKSEW.getX500PrincipalName() + "]\n"
-                + "Email: [" + selectedKSEW.getServerCertificateCSRInfo().getUserEmail() + "]",
+                        + "DN: [" + selectedKSEW.getX500PrincipalName() + "]\n"
+                        + "Email: [" + selectedKSEW.getServerCertificateCSRInfo().getUserEmail() + "]",
                 "Renew Certificate", JOptionPane.YES_NO_OPTION, messageType)
                 != JOptionPane.YES_OPTION) {
             return null; // user pressed no. 
@@ -343,16 +345,15 @@ public class CertificateRenewRevokeGuiHelper {
      * Gets a new entry alias from user, handling overwrite/unique alias issues.
      * Based on Portecle.
      *
+     * @param sAlias         suggested alias
+     * @param dialogTitleKey message key for dialog titles
+     * @param selectAlias    whether to pre-select alias text in text field
+     * @return alias for new entry, null if user cancels the operation
      * @see FPortecle#getNewEntryAlias(java.security.KeyStore, java.lang.String,
      * java.lang.String, boolean)
-     *
-     * @param sAlias suggested alias
-     * @param dialogTitleKey message key for dialog titles
-     * @param selectAlias whether to pre-select alias text in text field
-     * @return alias for new entry, null if user cancels the operation
      */
     private String getNewEntryAliasHelper(String sAlias, String dialogTitleKey,
-            boolean selectAlias) throws KeyStoreException {
+                                          boolean selectAlias) throws KeyStoreException {
 
         // Get the alias for the new entry
         DGetAlias dGetAlias

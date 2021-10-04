@@ -18,6 +18,13 @@
  */
 package uk.ngs.ca.task;
 
+import uk.ngs.ca.certificate.client.PingService;
+import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
+import uk.ngs.ca.certificate.management.KeyStoreEntryWrapper;
+import uk.ngs.ca.common.SystemStatus;
+import uk.ngs.certwizard.gui.MainWindowPanel;
+
+import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.security.KeyStoreException;
@@ -26,13 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.JOptionPane;
-import javax.swing.SwingWorker;
-import uk.ngs.ca.certificate.client.PingService;
-import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
-import uk.ngs.ca.certificate.management.KeyStoreEntryWrapper;
-import uk.ngs.ca.common.SystemStatus;
-import uk.ngs.certwizard.gui.MainWindowPanel;
 
 /**
  * For all the entries in the given {@link KeyStoreEntryWrapper} map, perform an
@@ -46,10 +46,8 @@ import uk.ngs.certwizard.gui.MainWindowPanel;
  * If you intend to use an Executor to run this SwingWorker, then beware of this
  * top 25 bug (SwingWorker can deadlock if one thread in the swingworker-pool)
  *
- * @see
- * http://bugs.sun.com/view_bug.do;jsessionid=e13cfc6ea10a4ffffffffce8c9244b60e54d?bug_id=6880336
- *
  * @author David Meredith
+ * @see http://bugs.sun.com/view_bug.do;jsessionid=e13cfc6ea10a4ffffffffce8c9244b60e54d?bug_id=6880336
  */
 public class OnlineUpdateKeyStoreEntriesSwingWorker extends SwingWorker<Void, Object[]> {
 
@@ -59,7 +57,7 @@ public class OnlineUpdateKeyStoreEntriesSwingWorker extends SwingWorker<Void, Ob
     private Exception exception = null;
 
     public OnlineUpdateKeyStoreEntriesSwingWorker(final Map<String, KeyStoreEntryWrapper> updateEntriesByAlias,
-            ClientKeyStoreCaServiceWrapper caKeyStoreModel, MainWindowPanel pane) {
+                                                  ClientKeyStoreCaServiceWrapper caKeyStoreModel, MainWindowPanel pane) {
         this.updateEntriesByAlias = updateEntriesByAlias;
         this.caKeyStoreModel = caKeyStoreModel;
         this.pane = pane;
@@ -111,8 +109,8 @@ public class OnlineUpdateKeyStoreEntriesSwingWorker extends SwingWorker<Void, Ob
         if (this.exception != null) {
             JOptionPane.showMessageDialog(null,
                     "Please contact the helpdesk. A backup of your keystore is located in:\n"
-                    + SystemStatus.getInstance().getHomeDir().getAbsolutePath() + File.separator + ".ca\n"
-                    + "Exeption message: " + this.exception.getMessage(),
+                            + SystemStatus.getInstance().getHomeDir().getAbsolutePath() + File.separator + ".ca\n"
+                            + "Exeption message: " + this.exception.getMessage(),
                     "Keystore problem",
                     JOptionPane.WARNING_MESSAGE);
         }

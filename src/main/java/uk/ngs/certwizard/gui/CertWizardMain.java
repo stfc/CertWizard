@@ -18,17 +18,15 @@
  */
 package uk.ngs.certwizard.gui;
 
-import java.awt.BorderLayout;
-import java.awt.Toolkit;
+import uk.ngs.ca.common.SystemStatus;
+import uk.ngs.ca.tools.property.SysProperty;
+
+import javax.swing.*;
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JTabbedPane;
-import uk.ngs.ca.common.SystemStatus;
-import uk.ngs.ca.tools.property.SysProperty;
 
 /**
  * The main frame class.
@@ -38,8 +36,8 @@ import uk.ngs.ca.tools.property.SysProperty;
  */
 public class CertWizardMain extends javax.swing.JFrame {
 
-    private OnlineStatus onlineStatusPanel = new OnlineStatus();
-    private JTabbedPane tabbedPane = new JTabbedPane();
+    private final OnlineStatus onlineStatusPanel = new OnlineStatus();
+    private final JTabbedPane tabbedPane = new JTabbedPane();
 
     /**
      * Creates new form CertWizardMainFrame
@@ -62,7 +60,7 @@ public class CertWizardMain extends javax.swing.JFrame {
 
         this.createGlobusDirIfNotExistsShowWarnings();
         this.setupHomeDir();
-        
+
         try {
             SysProperty.setupTrustStore(); // throws IllegalStateException if prob
             String trustStoreFile = SysProperty.getValue("ngsca.truststore.file");
@@ -152,8 +150,8 @@ public class CertWizardMain extends javax.swing.JFrame {
         if (!writableDir || !isDir) {
             JOptionPane.showMessageDialog(null,
                     "Can't write to 'HOME/.globus' directory. "
-                    + "Globus needs to store configuration in the following dir: \n[" + globusDir.getAbsolutePath() + "]\n"
-                    + "You will not be able to use MyProxy or grid-proxy-init. Please add this directory manually, provide write permissions and restart.",
+                            + "Globus needs to store configuration in the following dir: \n[" + globusDir.getAbsolutePath() + "]\n"
+                            + "You will not be able to use MyProxy or grid-proxy-init. Please add this directory manually, provide write permissions and restart.",
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -167,6 +165,7 @@ public class CertWizardMain extends javax.swing.JFrame {
         final PasswordPanel pp = new PasswordPanel(tabPanelManageCerts);
         tabPanelManageCerts.add(pp);
     }
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -182,12 +181,12 @@ public class CertWizardMain extends javax.swing.JFrame {
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 678, Short.MAX_VALUE)
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGap(0, 678, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 431, Short.MAX_VALUE)
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGap(0, 431, Short.MAX_VALUE)
         );
 
         pack();

@@ -18,16 +18,6 @@
  */
 package uk.ngs.ca.util;
 
-import java.awt.Component;
-import java.awt.Window;
-import java.io.*;
-import java.security.*;
-import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
-import java.text.MessageFormat;
-import java.util.ResourceBundle;
-import javax.swing.JFileChooser;
-import javax.swing.JOptionPane;
 import net.sf.portecle.DExport;
 import net.sf.portecle.FPortecle;
 import net.sf.portecle.FileChooserFactory;
@@ -43,6 +33,15 @@ import org.bouncycastle.openssl.PEMEncryptor;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.openssl.jcajce.JcePEMEncryptorBuilder;
 import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
+
+import javax.swing.*;
+import java.awt.*;
+import java.io.*;
+import java.security.*;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+import java.text.MessageFormat;
+import java.util.ResourceBundle;
 
 /**
  * Helper class for assisting with exporting of certificates from the
@@ -67,7 +66,7 @@ public class CertificateExportGuiHelper {
      */
     public static final ResourceBundle RB = ResourceBundle.getBundle(RB_BASENAME);
     private ClientKeyStoreCaServiceWrapper caKeyStoreModel = null;
-    private Component parentCompoent;
+    private final Component parentCompoent;
 
     public CertificateExportGuiHelper(Component parentCompoent, ClientKeyStoreCaServiceWrapper caKeyStoreModel) {
         this.parentCompoent = parentCompoent;
@@ -87,9 +86,8 @@ public class CertificateExportGuiHelper {
     /**
      * Let the user export the selected entry. Based on Portecle.
      *
-     * @see FPortecle#exportSelectedEntry()
-     *
      * @return True if the export is successful, false otherwise
+     * @see FPortecle#exportSelectedEntry()
      */
     public boolean doExportAction(String sAlias) {
 
@@ -148,9 +146,9 @@ public class CertificateExportGuiHelper {
             if (bSuccess) {
                 // Display success message
                 JOptionPane.showMessageDialog(this.parentCompoent, "Your certificate has been exported successfully.\n"
-                        + "Please ensure that you make a backup of this\n"
-                        + "certificate somewhere away from your computer.\n"
-                        + "E.g. USB dongle, CD/DVD\n",
+                                + "Please ensure that you make a backup of this\n"
+                                + "certificate somewhere away from your computer.\n"
+                                + "E.g. USB dongle, CD/DVD\n",
                         RB.getString("FPortecle.Export.Title"), JOptionPane.INFORMATION_MESSAGE);
             }
         } catch (Exception ex) {
@@ -166,14 +164,14 @@ public class CertificateExportGuiHelper {
     // largely copied verbatum from Portecle. TODO: They could be refactored into
     // a helper class to make this class smaller.
     ////////////////////////////////////////////////////////////////////////////
+
     /**
      * Export the private key and certificates of the keystore entry to a PKCS
      * #12 keystore file. Based on Portecle.
      *
-     * @see FPortecle#exportPrivKeyCertChainPKCS12(java.lang.String)
-     *
      * @param sEntryAlias Entry alias
      * @return True if the export is successful, false otherwise
+     * @see FPortecle#exportPrivKeyCertChainPKCS12(java.lang.String)
      */
     private boolean exportPrivKeyCertChainPKCS12(String sEntryAlias) {
 
@@ -269,10 +267,9 @@ public class CertificateExportGuiHelper {
      * Export the private key and certificates of the keystore entry to a PEM
      * encoded "OpenSSL" format bundle. Based on Portecle.
      *
-     * @see FPortecle#exportPrivKeyCertChainPEM(java.lang.String)
-     *
      * @param sEntryAlias Entry alias
      * @return True if the export is successful, false otherwise
+     * @see FPortecle#exportPrivKeyCertChainPEM(java.lang.String)
      */
     private boolean exportPrivKeyCertChainPEM(String sEntryAlias) {
 
@@ -358,10 +355,9 @@ public class CertificateExportGuiHelper {
      * Export all of the certificates of the keystore entry to a PKCS #7 file.
      * Based on Portecle.
      *
-     * @see FPortecle#exportAllCertsPkcs7(java.lang.String)
-     *
      * @param sEntryAlias Entry alias
      * @return True if the export is successful, false otherwise
+     * @see FPortecle#exportAllCertsPkcs7(java.lang.String)
      */
     private boolean exportAllCertsPkcs7(String sEntryAlias) {
         // Get the certificates
@@ -422,10 +418,9 @@ public class CertificateExportGuiHelper {
      * Export the head certificate of the keystore entry to a PKCS #7 file.
      * Based on Portecle
      *
-     * @see FPortecle#exportHeadCertOnlyPkcs7(java.lang.String)
-     *
      * @param sEntryAlias Entry alias
      * @return True if the export is successful, false otherwise
+     * @see FPortecle#exportHeadCertOnlyPkcs7(java.lang.String)
      */
     private boolean exportHeadCertOnlyPkcs7(String sEntryAlias) {
         X509Certificate cert;
@@ -485,10 +480,9 @@ public class CertificateExportGuiHelper {
      * Export the head certificate of the keystore entry in a PEM encoding.
      * Based on Portecle.
      *
-     * @see FPortecle#exportHeadCertOnlyPem(java.lang.String)
-     *
      * @param sEntryAlias Entry alias
      * @return True if the export is successful, false otherwise
+     * @see FPortecle#exportHeadCertOnlyPem(java.lang.String)
      */
     private boolean exportHeadCertOnlyPem(String sEntryAlias) {
         X509Certificate cert;
@@ -543,10 +537,9 @@ public class CertificateExportGuiHelper {
      * Export the head certificate of the keystore entry in a DER encoding.
      * Based on Portecle.
      *
-     * @see FPortecle#exportHeadCertOnlyDER(java.lang.String)
-     *
      * @param sEntryAlias Entry alias
      * @return True if the export is successful, false otherwise
+     * @see FPortecle#exportHeadCertOnlyDER(java.lang.String)
      */
     private boolean exportHeadCertOnlyDER(String sEntryAlias) {
         X509Certificate cert;
@@ -606,10 +599,9 @@ public class CertificateExportGuiHelper {
      * Export the head certificate of the keystore entry to a PkiPath file.
      * Based on Portecle.
      *
-     * @see FPortecle#exportHeadCertOnlyPkiPath(java.lang.String)
-     *
      * @param sEntryAlias Entry alias
      * @return True if the export is successful, false otherwise
+     * @see FPortecle#exportHeadCertOnlyPkiPath(java.lang.String)
      */
     private boolean exportHeadCertOnlyPkiPath(String sEntryAlias) {
         X509Certificate cert;
@@ -668,10 +660,9 @@ public class CertificateExportGuiHelper {
     /**
      * Let the user choose a PKCS #12 file to export to. Based on Portecle.
      *
-     * @see FPortecle#chooseExportPKCS12File(java.lang.String)
-     *
      * @param basename default filename (without extension)
      * @return The chosen file or null if none was chosen
+     * @see FPortecle#chooseExportPKCS12File(java.lang.String)
      */
     private File chooseExportPKCS12File(String basename) {
         JFileChooser chooser = FileChooserFactory.getPkcs12FileChooser(basename);
@@ -691,10 +682,9 @@ public class CertificateExportGuiHelper {
     /**
      * Let the user choose a PKCS #7 file to export to. Based on Portecle.
      *
-     * @see FPortecle#chooseExportPKCS7File(java.lang.String)
-     *
      * @param basename default filename (without extension)
      * @return The chosen file or null if none was chosen
+     * @see FPortecle#chooseExportPKCS7File(java.lang.String)
      */
     private File chooseExportPKCS7File(String basename) {
         JFileChooser chooser = FileChooserFactory.getPkcs7FileChooser(basename);
@@ -714,10 +704,9 @@ public class CertificateExportGuiHelper {
     /**
      * Let the user choose a PEM file to export to. Based on Portecle.
      *
-     * @see FPortecle#chooseExportPEMFile(java.lang.String)
-     *
      * @param basename default filename (without extension)
      * @return The chosen file or null if none was chosen
+     * @see FPortecle#chooseExportPEMFile(java.lang.String)
      */
     private File chooseExportPEMFile(String basename) {
         JFileChooser chooser = FileChooserFactory.getPEMFileChooser(basename);
@@ -737,10 +726,9 @@ public class CertificateExportGuiHelper {
     /**
      * Let the user choose a PkiPath file to export to. Based on Portecle.
      *
-     * @see FPortecle#chooseExportPkiPathFile(java.lang.String)
-     *
      * @param basename default filename (without extension)
      * @return The chosen file or null if none was chosen
+     * @see FPortecle#chooseExportPkiPathFile(java.lang.String)
      */
     private File chooseExportPkiPathFile(String basename) {
         JFileChooser chooser = FileChooserFactory.getPkiPathFileChooser(basename);
@@ -760,10 +748,9 @@ public class CertificateExportGuiHelper {
     /**
      * Let the user choose a certificate file to export to. Based on Portecle.
      *
-     * @see FPortecle#chooseExportCertFile(java.lang.String)
-     *
      * @param basename default filename (without extension)
      * @return The chosen file or null if none was chosen
+     * @see FPortecle#chooseExportCertFile(java.lang.String)
      */
     private File chooseExportCertFile(String basename) {
         JFileChooser chooser = FileChooserFactory.getX509FileChooser(basename);
@@ -783,11 +770,10 @@ public class CertificateExportGuiHelper {
     /**
      * File overwrite confirmation dialog. Based on Portecle.
      *
-     * @see FPortecle#confirmOverwrite(java.io.File, java.lang.String)
-     *
-     * @param file the file possibly being overwritten
+     * @param file  the file possibly being overwritten
      * @param title window title
      * @return true if the write operation should continue
+     * @see FPortecle#confirmOverwrite(java.io.File, java.lang.String)
      */
     private boolean confirmOverwrite(File file, String title) {
         if (file.isFile()) {
@@ -802,11 +788,10 @@ public class CertificateExportGuiHelper {
     /**
      * Get the keystore entry's head certificate. Based on Portecle.
      *
-     * @see FPortecle#getHeadCert(java.lang.String)
-     *
      * @param sEntryAlias Entry alias
      * @return The keystore entry's head certificate
      * @throws CryptoException Problem getting head certificate
+     * @see FPortecle#getHeadCert(java.lang.String)
      */
     private X509Certificate getHeadCert(String sEntryAlias)
             throws CryptoException {

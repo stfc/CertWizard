@@ -19,12 +19,11 @@
 package uk.ngs.ca.common;
 
 /**
- *
  * @author dawid
  */
-public class Pair< T, U> {
+public class Pair<T, U> {
 
-    public static < T, U> Pair< T, U> create(T first, U second) {
+    public static <T, U> Pair<T, U> create(T first, U second) {
         return new Pair<>(first, second);
     }
 

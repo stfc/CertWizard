@@ -18,22 +18,6 @@
  */
 package uk.ngs.ca.util;
 
-import java.awt.Component;
-import java.awt.Cursor;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.security.Key;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.ResourceBundle;
-import javax.swing.JFileChooser;
-import javax.swing.JOptionPane;
 import net.sf.portecle.DGetAlias;
 import net.sf.portecle.DImportKeyPair;
 import net.sf.portecle.FPortecle;
@@ -51,6 +35,21 @@ import org.bouncycastle.openssl.PasswordFinder;
 import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
 import uk.ngs.ca.certificate.management.KeyStoreEntryWrapper;
 import uk.ngs.ca.common.SystemStatus;
+
+import javax.swing.*;
+import java.awt.*;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.security.Key;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.ResourceBundle;
 
 /**
  * Helper class for assisting users with importing of certificates into the
@@ -73,8 +72,8 @@ public class CertificateImportGuiHelper {
      * Portecle Resource bundle
      */
     public static final ResourceBundle RB = ResourceBundle.getBundle(RB_BASENAME);
-    private Component parentCompoent;
-    private ClientKeyStoreCaServiceWrapper caKeyStoreModel;
+    private final Component parentCompoent;
+    private final ClientKeyStoreCaServiceWrapper caKeyStoreModel;
     //private char[] PASSPHRASE;
 
     public CertificateImportGuiHelper(Component parentCompoent, ClientKeyStoreCaServiceWrapper caKeyStoreModel) {
@@ -118,7 +117,7 @@ public class CertificateImportGuiHelper {
                     // Get the user to enter the private key password
                     DGetPassword dGetPassword
                             = new DGetPassword(null, MessageFormat.format(
-                                    RB.getString("FPortecle.PrivateKeyPassword.Title"),
+                            RB.getString("FPortecle.PrivateKeyPassword.Title"),
                             String.valueOf(passwordNumber)));
                     dGetPassword.setLocationRelativeTo(parentCompoent);
                     SwingHelper.showAndWait(dGetPassword);
@@ -173,8 +172,8 @@ public class CertificateImportGuiHelper {
         if (tempStore == null && !exceptions.isEmpty()) {
             int iSelected
                     = SwingHelper.showConfirmDialog(parentCompoent,
-                            MessageFormat.format(RB.getString("FPortecle.NoOpenKeyPairFile.message"), fKeyPairFile),
-                            RB.getString("FPortecle.ImportKeyPairFile.Title"));
+                    MessageFormat.format(RB.getString("FPortecle.NoOpenKeyPairFile.message"), fKeyPairFile),
+                    RB.getString("FPortecle.ImportKeyPairFile.Title"));
             if (iSelected == JOptionPane.YES_OPTION) {
                 for (Exception e : exceptions) {
                     DThrowable.showAndWait(null, null, e);
@@ -270,8 +269,8 @@ public class CertificateImportGuiHelper {
     /**
      * Let the user choose a file to import from. Based on Portecle.
      *
-     * @see FPortecle#chooseImportFile()
      * @return The chosen file or null if none was chosen
+     * @see FPortecle#chooseImportFile()
      */
     private File chooseImportFileHelper() {
         JFileChooser chooser = FileChooserFactory.getKeyPairFileChooser(null);
@@ -292,16 +291,15 @@ public class CertificateImportGuiHelper {
      * Gets a new entry alias from user, handling overwrite issues. Based on
      * Portecle.
      *
+     * @param sAlias         suggested alias
+     * @param dialogTitleKey message key for dialog titles
+     * @param selectAlias    whether to pre-select alias text in text field
+     * @return alias for new entry, null if user cancels the operation
      * @see FPortecle#getNewEntryAlias(java.security.KeyStore, java.lang.String,
      * java.lang.String, boolean)
-     *
-     * @param sAlias suggested alias
-     * @param dialogTitleKey message key for dialog titles
-     * @param selectAlias whether to pre-select alias text in text field
-     * @return alias for new entry, null if user cancels the operation
      */
     private String getNewEntryAliasHelper(String sAlias, String dialogTitleKey,
-            boolean selectAlias) {
+                                          boolean selectAlias) {
         while (true) {
             // Get the alias for the new entry
             DGetAlias dGetAlias

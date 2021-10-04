@@ -18,11 +18,11 @@
  */
 package uk.ngs.ca.common;
 
-import java.io.File;
 import uk.ngs.ca.tools.property.SysProperty;
 
+import java.io.File;
+
 /**
- *
  * @author xw75 (Xiao Wang)
  */
 public class LocalBackup {

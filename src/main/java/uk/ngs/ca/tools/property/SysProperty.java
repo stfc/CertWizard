@@ -18,6 +18,10 @@
  */
 package uk.ngs.ca.tools.property;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import uk.ngs.ca.common.SystemStatus;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -26,10 +30,6 @@ import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.util.Properties;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import uk.ngs.ca.common.SystemStatus;
 
 /**
  * This class manages the attributes which recorded in the property file.
@@ -41,9 +41,9 @@ public class SysProperty {
     private static final Logger myLogger = LogManager.getLogger(SysProperty.class);
     private static final String PROP_FILE = "/configure.properties";
     private static boolean isInitialized = false;
-    private static Properties properties = new Properties();
+    private static final Properties properties = new Properties();
 
-    private static int timeoutMilliSecs = 5000;
+    private static final int timeoutMilliSecs = 5000;
 
     /**
      * Get the timeout in millisecs for the http(s) connections.
@@ -79,7 +79,7 @@ public class SysProperty {
      * the CA rest server.
      *
      * @throws IllegalStateException if any problem occurs creating and
-     * deploying the trustore.jks file.
+     *                               deploying the trustore.jks file.
      */
     public static void setupTrustStore() {
 
@@ -99,7 +99,6 @@ public class SysProperty {
             keyStore.setCertificateEntry("eScienceRoot", escienceRootCert);
             keyStore.setCertificateEntry("eScienceRoot2B", escience2bCert);
         } catch (Exception ep) {
-            System.out.println(ep);
             throw new IllegalStateException("Error creating a trustStore.", ep);
         }
 

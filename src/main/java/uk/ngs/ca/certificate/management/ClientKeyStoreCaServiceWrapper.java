@@ -75,10 +75,10 @@ public class ClientKeyStoreCaServiceWrapper {
     /**
      * Map.key is keyStore alias and Map.value is a KeyStoreEntryWrapper
      */
-    private Map<String, KeyStoreEntryWrapper> keyStoreEntryMap = new ConcurrentHashMap<>(0);
+    private final Map<String, KeyStoreEntryWrapper> keyStoreEntryMap = new ConcurrentHashMap<>(0);
 
-    private XPathExpression extractCertificateExpr;
-    private XPathExpression exptractCSR_Expr;
+    private final XPathExpression extractCertificateExpr;
+    private final XPathExpression exptractCSR_Expr;
     /**
      * Class is a singleton, so hold internal reference
      */

@@ -36,8 +36,8 @@ public class KeyStoreEntryWrapper {
 
     /* Required fields - not nullable */
     private String alias;
-    private KEYSTORE_ENTRY_TYPE entrytype;
-    private Date creationDate;
+    private final KEYSTORE_ENTRY_TYPE entrytype;
+    private final Date creationDate;
 
     /* Optional fields - nullable */
     private CertificateCSRInfo serverCertificateCSRInfo = null;  // need to replace with better transfer object

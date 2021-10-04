@@ -18,11 +18,11 @@
  */
 package uk.ngs.ca.common;
 
-import java.security.PublicKey;
 import org.apache.commons.codec.binary.Base64;
 
+import java.security.PublicKey;
+
 /**
- *
  * @author xw75
  */
 public class EncryptUtil {

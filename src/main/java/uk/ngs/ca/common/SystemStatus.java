@@ -18,9 +18,10 @@
  */
 package uk.ngs.ca.common;
 
+import uk.ngs.ca.tools.property.SysProperty;
+
 import java.io.File;
 import java.util.Observable;
-import uk.ngs.ca.tools.property.SysProperty;
 
 /**
  * This class is <code>Observable</code>. Registered <code>Observer</code>s will

@@ -18,10 +18,9 @@
  */
 package uk.ngs.certwizard.gui;
 
-import java.awt.Color;
+import java.awt.*;
 
 /**
- *
  * @author kjm22495
  */
 public class PendingColor extends Color {

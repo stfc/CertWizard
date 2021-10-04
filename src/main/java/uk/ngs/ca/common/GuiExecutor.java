@@ -18,7 +18,7 @@
  */
 package uk.ngs.ca.common;
 
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 
 /**
  * Singleton that executes the given <tt>Runnable</tt> in the AWT event

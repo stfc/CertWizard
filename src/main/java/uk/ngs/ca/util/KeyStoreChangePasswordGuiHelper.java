@@ -18,9 +18,6 @@
  */
 package uk.ngs.ca.util;
 
-import java.awt.Component;
-import java.util.ResourceBundle;
-import javax.swing.JOptionPane;
 import net.sf.portecle.FPortecle;
 import net.sf.portecle.gui.SwingHelper;
 import net.sf.portecle.gui.error.DThrowable;
@@ -29,6 +26,10 @@ import net.sf.portecle.gui.password.DGetPassword;
 import uk.ngs.ca.certificate.management.ClientKeyStoreCaServiceWrapper;
 import uk.ngs.ca.tools.property.SysProperty;
 
+import javax.swing.*;
+import java.awt.*;
+import java.util.ResourceBundle;
+
 /**
  * GUI helper class to change the keyStore protection password.
  *
@@ -36,8 +37,8 @@ import uk.ngs.ca.tools.property.SysProperty;
  */
 public class KeyStoreChangePasswordGuiHelper {
 
-    private ClientKeyStoreCaServiceWrapper caKeyStoreModel;
-    private Component parentCompoent;
+    private final ClientKeyStoreCaServiceWrapper caKeyStoreModel;
+    private final Component parentCompoent;
 
     private static final String RB_BASENAME = FPortecle.class.getPackage().getName() + "/resources";
     /**

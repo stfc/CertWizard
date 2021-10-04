@@ -19,7 +19,6 @@
 package uk.ngs.ca.common;
 
 /**
- *
  * @author xw75
  */
 public class ClientHostName {
