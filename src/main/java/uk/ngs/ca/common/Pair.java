@@ -32,7 +32,7 @@ public class Pair<T, U> {
         this.second = second;
     }
 
-    public T first;
-    public U second;
+    public final T first;
+    public final U second;
 
 }

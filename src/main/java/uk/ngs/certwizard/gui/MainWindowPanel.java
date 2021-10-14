@@ -84,7 +84,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
     private ClientKeyStoreCaServiceWrapper caKeyStoreModel = null;
     private final String stringMotDOffline = "You are working offline.\n\nYou will not be able to apply-for, renew or revoke "
             + "your certificates until a connection has been established. "
-            + "Hit the Refresh button to try and reconnect.\n\nTo configure CertWizard's connection see:\nhttp://www.ngs.ac.uk/ukca/certificates/certwizard.html";
+            + "Hit the Refresh button to try and reconnect.\n\nFor more information, see:\nhttps://ca.grid-support.ac.uk/certwizard/";
     /**
      * Portecle Resource bundle base name
      */
@@ -179,7 +179,7 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
                 Semver serverVersion = new Semver(latestVersion);
                 if (serverVersion.isGreaterThan(ourVersion)) {
                     JOptionPane.showMessageDialog(null, "A new version of the Certificate Wizard is available!\n"
-                                    + "Please go to www.ngs.ac.uk in order to obtain the latest version",
+                                    + "Please go to https://ca.grid-support.ac.uk/certwizard/ in order to obtain the latest version",
                             "New Version of Certificate Wizard", JOptionPane.INFORMATION_MESSAGE);
                 }
             });

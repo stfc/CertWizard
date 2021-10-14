@@ -56,10 +56,10 @@ public class OnlineUserCertRequest {
 
         Response response = c.handle(request);
 
-        if (response.getStatus().equals(response.getStatus().SUCCESS_CREATED)) {
+        if (response.getStatus().equals(Status.SUCCESS_CREATED)) {
             MESSAGE = "Your CSR has been submitted to the CA server successfully. \nIt is waiting for the approval and signing by an RA and CA operator.";
             isCSRRequestSuccess = true;
-        } else if (response.getStatus().equals(response.getStatus().SUCCESS_ACCEPTED)) {
+        } else if (response.getStatus().equals(Status.SUCCESS_ACCEPTED)) {
             try {
                 MESSAGE = _getFormattedMessage(response);
                 isCSRRequestSuccess = false;

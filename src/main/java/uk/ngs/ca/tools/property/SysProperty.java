@@ -131,7 +131,7 @@ public class SysProperty {
         } finally {
             try {
                 fos.close();
-            } catch (IOException ex) {
+            } catch (IOException ignored) {
             }
         }
     }

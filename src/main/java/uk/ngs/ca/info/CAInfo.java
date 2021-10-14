@@ -48,7 +48,7 @@ import java.util.ArrayList;
  */
 public class CAInfo {
 
-    String CAURL = SysProperty.getValue("uk.ngs.ca.request.ca.url");
+    final String CAURL = SysProperty.getValue("uk.ngs.ca.request.ca.url");
     private final Document document;
 
     /**
