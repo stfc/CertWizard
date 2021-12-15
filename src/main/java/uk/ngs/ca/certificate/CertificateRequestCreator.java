@@ -110,7 +110,7 @@ public class CertificateRequestCreator {
                 subjectAltNames = new GeneralNames(new GeneralName(GeneralName.rfc822Name, email));
             } else {
                 builder = new JcaPKCS10CertificationRequestBuilder(new X500Name(attrDN), pubkey);
-                subjectAltNames = new GeneralNames(new GeneralName(GeneralName.rfc822Name, "DNS: " + attrCN));
+                subjectAltNames = new GeneralNames(new GeneralName(GeneralName.dNSName, attrCN));
             }
             ContentSigner contentSigner = new JcaContentSignerBuilder(sig_alg).build(privkey);
 
