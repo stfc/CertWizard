@@ -207,6 +207,7 @@
                                         <setupMode>askTheUser</setupMode>
                                         <createDesktopIconTask>true</createDesktopIconTask>
                                         <icoFile>src/main/resources/ngs-icon.ico</icoFile>
+                                        <removeOldLibs>true</removeOldLibs>
                                         <signing>
                                             <storetype>PKCS12</storetype>
                                             <keystore>${codeSignCert}</keystore>
