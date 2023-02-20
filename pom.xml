@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>uk.ngs</groupId>
     <artifactId>CertWizard</artifactId>
-    <version>2.0.1</version>
+    <version>2.1.0</version>
     <dependencies>
         <dependency>
             <groupId>org.bouncycastle</groupId>
@@ -80,7 +80,7 @@
         <maven.compiler.source>1.9</maven.compiler.source>
         <maven.compiler.target>1.9</maven.compiler.target>
         <mainClass>uk.ngs.certwizard.gui.CertWizardMain</mainClass>
-        <codeSignCert>C:\\Users\\fou43474\\OneDrive - Science and Technology Facilities Council\\Documents\\Certs\\ComodoCodeSign-all.p12</codeSignCert>
+        <codeSignCert>C:\\Users\\fou43474\\OneDrive - Science and Technology Facilities Council\\Documents\\Certs\\UKRICodeSign.p12</codeSignCert>
     </properties>
 
     <licenses>
@@ -182,7 +182,7 @@
                         <configuration>
                             <mainClass>${mainClass}</mainClass>
                             <bundleJre>true</bundleJre>
-                            <version>2.0.1</version>
+                            <version>2.1.0</version>
                             <displayName>CertWizard</displayName>
                             <organizationName>STFC</organizationName>
                             <organizationUrl>https://stfc.ukri.org</organizationUrl>
@@ -226,7 +226,7 @@
                                 <configuration>
                                     <platform>mac</platform>
                                     <createZipball>true</createZipball>
-                                    <jdkPath>C:\jdk\mac\jdk-11.0.15+10\Contents\Home</jdkPath>
+                                    <jdkPath>C:\jdk\mac\jdk-11.0.18+10\Contents\Home</jdkPath>
                                     <macConfig>
                                         <icnsFile>src/main/resources/ngs-icon.icns</icnsFile>
                                     </macConfig>

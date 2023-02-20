@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * The main frame class.
@@ -42,12 +43,12 @@ public class CertWizardMain extends javax.swing.JFrame {
     /**
      * Creates new form CertWizardMainFrame
      */
-    public CertWizardMain() {
+    public CertWizardMain(String dataDirectoryLocationOverride) {
         initComponents();
-        setupFrame();
+        setupFrame(dataDirectoryLocationOverride);
     }
 
-    private void setupFrame() {
+    private void setupFrame(String bootstrapDirectoryLocationOverride) {
         this.setLayout(new BorderLayout());
         URL iconURL = CertWizardMain.class.getResource("/ngs-icon.png");
         if (iconURL != null) {
@@ -59,13 +60,12 @@ public class CertWizardMain extends javax.swing.JFrame {
         this.setTitle(title);
 
         this.createGlobusDirIfNotExistsShowWarnings();
-        this.setupHomeDir();
+        this.setupDataDirectory(bootstrapDirectoryLocationOverride);
 
         try {
             SysProperty.setupTrustStore(); // throws IllegalStateException if prob
             String trustStoreFile = SysProperty.getValue("ngsca.truststore.file");
-            String trustStorePath = SystemStatus.getInstance().getHomeDir().getAbsolutePath();
-            trustStorePath = trustStorePath + System.getProperty("file.separator") + ".ca";
+            String trustStorePath = SystemStatus.getInstance().getCwDataDirectory().getAbsolutePath();
             trustStorePath = trustStorePath + System.getProperty("file.separator") + trustStoreFile;
             System.out.println("trustStore file path [" + trustStorePath + "]");
 
@@ -80,6 +80,7 @@ public class CertWizardMain extends javax.swing.JFrame {
             }
 
         } catch (Exception ex) {
+            ex.printStackTrace();
             JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             System.exit(0);
         }
@@ -102,18 +103,16 @@ public class CertWizardMain extends javax.swing.JFrame {
         this.pack();
     }
 
-    private void setupHomeDir() {
-        GetBootstrapDir bootDia = new GetBootstrapDir(this, true, ".ca");
+    private void setupDataDirectory(String bootstrapDirectoryLocationOverride) {
+        Path dataDirectory;
+        GetBootstrapDir bootDia = new GetBootstrapDir(this, true, bootstrapDirectoryLocationOverride);
         bootDia.setLocationRelativeTo(null);
         bootDia.setVisible(true);
-        Path homeDir = bootDia.getBootDir();
-
-        if (homeDir == null) {
+        dataDirectory = bootDia.getBootDir();
+        if (dataDirectory == null) {
             System.exit(0);
-        } else if (homeDir.endsWith(".ca")) {
-            homeDir = homeDir.getParent();
         }
-        SystemStatus.getInstance().setHomeDir(homeDir.toFile());
+        SystemStatus.getInstance().setCwDataDirectory(dataDirectory.toFile());
     }
 
     private void createGlobusDirIfNotExistsShowWarnings() {
@@ -196,6 +195,10 @@ public class CertWizardMain extends javax.swing.JFrame {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
+        String dataDirectoryLocationOverride = "";
+        if (args.length > 0) {
+            dataDirectoryLocationOverride = args[0];
+        }
         /*
          * Set the Nimbus look and feel
          */
@@ -210,8 +213,9 @@ public class CertWizardMain extends javax.swing.JFrame {
         /*
          * Create and display the form
          */
+        String finalDataDirectoryLocationOverride = dataDirectoryLocationOverride;
         java.awt.EventQueue.invokeLater(() -> {
-            CertWizardMain cw = new CertWizardMain();
+            CertWizardMain cw = new CertWizardMain(finalDataDirectoryLocationOverride);
             cw.setLocationRelativeTo(null);
             cw.setVisible(true);
         });

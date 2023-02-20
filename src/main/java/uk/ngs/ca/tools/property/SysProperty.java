@@ -110,8 +110,7 @@ public class SysProperty {
         if (value == null) {
             throw new IllegalStateException("There is no trust store file name. Please check out config.properties.");
         }
-        String homePath = SystemStatus.getInstance().getHomeDir().getAbsolutePath();
-        homePath = homePath + System.getProperty("file.separator") + ".ca";
+        String homePath = SystemStatus.getInstance().getCwDataDirectory().getAbsolutePath();
         homePath = homePath + System.getProperty("file.separator") + value;
 
         String keyStoreFile = homePath; // ~/.ca/truststore.jks

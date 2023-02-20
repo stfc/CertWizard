@@ -31,16 +31,16 @@ import java.util.Observable;
  */
 public class SystemStatus extends Observable {
 
-    private File homeDir = new File(System.getProperty("user.home"));
+    private File cwDataDirectory = new File(System.getProperty("user.home") + File.separator + ".ca");
 
     private boolean isOnline = false;
 
-    public synchronized File getHomeDir() {
-        return new File(this.homeDir.getAbsolutePath());
+    public synchronized File getCwDataDirectory() {
+        return new File(this.cwDataDirectory.getAbsolutePath());
     }
 
-    public synchronized void setHomeDir(File dir) {
-        this.homeDir = dir;
+    public synchronized void setCwDataDirectory(File dir) {
+        this.cwDataDirectory = dir;
     }
 
     public synchronized boolean getIsOnline() {
@@ -87,10 +87,7 @@ public class SystemStatus extends Observable {
     public synchronized boolean isExistKeyStore() {
         String key = "ngsca.key.keystore.file";
         String value = SysProperty.getValue(key);
-        String homePath = SystemStatus.getInstance().getHomeDir().getAbsolutePath();
-        homePath = homePath + System.getProperty("file.separator") + ".ca";
-        homePath = homePath + System.getProperty("file.separator") + value;
-        return new File(homePath).exists();
+        return new File(SystemStatus.getInstance().getCwDataDirectory().getAbsolutePath() + File.separator + value).exists();
     }
 
 }

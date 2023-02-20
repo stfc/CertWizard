@@ -109,8 +109,8 @@ public class OnlineUpdateKeyStoreEntriesSwingWorker extends SwingWorker<Void, Ob
         if (this.exception != null) {
             JOptionPane.showMessageDialog(null,
                     "Please contact the helpdesk. A backup of your keystore is located in:\n"
-                            + SystemStatus.getInstance().getHomeDir().getAbsolutePath() + File.separator + ".ca\n"
-                            + "Exeption message: " + this.exception.getMessage(),
+                            + SystemStatus.getInstance().getCwDataDirectory().getAbsolutePath() + "\n"
+                            + "Exception message: " + this.exception.getMessage(),
                     "Keystore problem",
                     JOptionPane.WARNING_MESSAGE);
         }

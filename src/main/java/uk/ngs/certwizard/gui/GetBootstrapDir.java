@@ -19,6 +19,7 @@
 package uk.ngs.certwizard.gui;
 
 import javax.swing.*;
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -37,7 +38,7 @@ public class GetBootstrapDir extends javax.swing.JDialog {
     private String dirName = ".ca";
     private final String SELECTED_CA_DIR = "<html>Open this keyStore folder&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;OR<br/>"
             + "Browse for another keyStore folder</html>";
-    private final String SELECTED_PAR_DIR = "<html>Create a new '" + dirName + "' keyStore folder in selected folder&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;OR<br/>"
+    private final String SELECTED_PAR_DIR = "<html>Use selected folder as a data directory &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;OR<br/>"
             + "Browse for your keyStore folder</html>";
     private Path bootDir;
 
@@ -46,21 +47,20 @@ public class GetBootstrapDir extends javax.swing.JDialog {
      *
      * @param parent
      * @param modal
-     * @param dirName Search for a folder with this name in the default OS HOME
-     *                locations (varies according to OS).
      */
-    public GetBootstrapDir(java.awt.Frame parent, boolean modal, String dirName) {
+    public GetBootstrapDir(java.awt.Frame parent, boolean modal, String customDataDirectory) {
         super(parent, modal);
         initComponents();
-        if (dirName == null) {
-            throw new RuntimeException("Invalid dirName, must have a value");
-        }
-        this.dirName = dirName;
-        initMyComponents();
+        initMyComponents(customDataDirectory);
     }
 
-    private void initMyComponents() {
-        Path dir = this.getDefaultBootDir();
+    private void initMyComponents(String customDataDirectory) {
+        Path dir;
+        if (customDataDirectory.equals("")) {
+            dir = this.getDefaultBootDir();
+        } else {
+            dir = new File(customDataDirectory).toPath();
+        }
         this.bootDir = dir;
         this.jTextField1.setText(dir.toString());
         this.setLabelText();
@@ -86,32 +86,7 @@ public class GetBootstrapDir extends javax.swing.JDialog {
      * @return
      */
     private Path getDefaultBootDir() {
-        Path findBootDir = new File(System.getProperty("user.home")).toPath();
-        if (Files.isWritable(findBootDir)) {
-            // We can access home dir, so lets see if previous installation exists 
-            Path caDir = Paths.get(findBootDir.toString(), this.dirName);
-            if (Files.isDirectory(caDir) && Files.isWritable(caDir)) {
-                findBootDir = caDir;
-            }
-        } else {
-            // Dont have access to 'user.home' - prob due to the known un-fixed java bug:  
-            // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4787931 
-            // However, before asking the user to select an alternative folder 
-            // first check to see if the JFileChooser will automatically select 
-            // another home dir (e.g. on Win its USERPROFILE) and test to see if 
-            // USERPROFILE/.ca already exists 
-            JFileChooser jf = new JFileChooser(); // does not necessarily use 'user.home'
-            jf.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-            findBootDir = jf.getCurrentDirectory().toPath();
-            if (Files.isWritable(findBootDir)) {
-                // We can access home dir, so lets see if previous installation exists
-                Path caDir = Paths.get(findBootDir.toString(), this.dirName);
-                if (Files.isDirectory(caDir) && Files.isWritable(caDir)) {
-                    findBootDir = caDir;
-                }
-            }
-        }
-        return findBootDir;
+        return new File(System.getProperty("user.home") + File.separator + ".ca").toPath();
     }
 
     /**
@@ -125,7 +100,28 @@ public class GetBootstrapDir extends javax.swing.JDialog {
     }
 
     private boolean setCaDir(Path dir) {
-        if (!Files.isDirectory(dir)) {
+        dir = Paths.get(dir.toString());
+        if (Files.isDirectory(dir) && Files.isWritable(dir)) {
+            // Confirm selection dialog and return true if confirmed
+            int retval = JOptionPane.showConfirmDialog(this, "Open the following keyStore folder?\n"
+                    + dir, "Confirm", JOptionPane.YES_NO_CANCEL_OPTION);
+            if (retval == JOptionPane.OK_OPTION) {
+                this.bootDir = dir;
+                return true;
+            }
+        } else if (!Files.exists(dir)) {
+            int retval = JOptionPane.showConfirmDialog(this, "Create this data directory?",
+                    "Confirm", JOptionPane.YES_NO_CANCEL_OPTION);
+            if (retval == JOptionPane.OK_OPTION) {
+                try {
+                    this.bootDir = Files.createDirectory(dir);
+                    return true;
+                } catch (IOException ex) {
+                    JOptionPane.showMessageDialog(this, "Could not create data directory: " + ex.getMessage(),
+                            "Folder Creation Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        } else if (!Files.isDirectory(dir)) {
             JOptionPane.showMessageDialog(this, "Selected file is not a folder."
                     + "Please select a writable folder.", "Folder Selection Error", JOptionPane.ERROR_MESSAGE);
             return false;
@@ -134,36 +130,6 @@ public class GetBootstrapDir extends javax.swing.JDialog {
             JOptionPane.showMessageDialog(this, "Cannot write to selected folder."
                     + "Please select a writable folder.", "Folder Selection Error", JOptionPane.ERROR_MESSAGE);
             return false;
-        }
-        // We have a writable directory but not a .ca dir  
-        if (!dir.endsWith(this.dirName)) {
-            // check to see that a .ca sub-dir does not already exist 
-            dir = Paths.get(dir.toString(), this.dirName);
-            if (Files.isDirectory(dir) && Files.isWritable(dir)) {
-                // Confirm selection dialog and return true if confirmed
-                int retval = JOptionPane.showConfirmDialog(this, "Open the following keyStore folder?\n"
-                        + dir, "Confirm", JOptionPane.INFORMATION_MESSAGE);
-                if (retval == JOptionPane.OK_OPTION) {
-                    this.bootDir = dir;
-                    return true;
-                }
-            } else if (!Files.exists(dir)) {
-                // Confirm creation of the .ca dir and return true if confirmed/created    
-                int retval = JOptionPane.showConfirmDialog(this, "Create '" + this.dirName + "' keyStore folder in this directory?",
-                        "Confirm", JOptionPane.INFORMATION_MESSAGE);
-                if (retval == JOptionPane.OK_OPTION) {
-                    try {
-                        this.bootDir = Files.createDirectory(dir);
-                        return true;
-                    } catch (IOException ex) {
-                        JOptionPane.showMessageDialog(this, "Could not create '" + this.dirName + "' keyStore folder: " + ex.getMessage(),
-                                "Folder Creation Error", JOptionPane.ERROR_MESSAGE);
-                    }
-                }
-            }
-        } // We have a writable .ca dir 
-        else {
-            return true;
         }
         return false;
     }
@@ -253,7 +219,7 @@ public class GetBootstrapDir extends javax.swing.JDialog {
 
     private void okButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_okButtonActionPerformed
         if (this.setCaDir(this.bootDir)) {
-            // If setCaDir returns true - a writable '.ca' dir was selected/created 
+            // If setCaDir returns true - a writable data dir was selected/created
             // so hide this dialog. 
             this.setVisible(false);
         }
@@ -268,40 +234,6 @@ public class GetBootstrapDir extends javax.swing.JDialog {
         }
     }//GEN-LAST:event_cancelButtonActionPerformed
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ClassNotFoundException | UnsupportedLookAndFeelException | IllegalAccessException | InstantiationException ex) {
-            java.util.logging.Logger.getLogger(GetBootstrapDir.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
-
-        /* Create and display the dialog */
-        java.awt.EventQueue.invokeLater(() -> {
-            GetBootstrapDir dialog = new GetBootstrapDir(new JFrame(), true, ".ca");
-            dialog.addWindowListener(new java.awt.event.WindowAdapter() {
-                @Override
-                public void windowClosing(java.awt.event.WindowEvent e) {
-                    System.exit(0);
-                }
-            });
-            dialog.setVisible(true);
-        });
-    }
-
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton browseButton;
     private javax.swing.JButton cancelButton;
@@ -309,4 +241,26 @@ public class GetBootstrapDir extends javax.swing.JDialog {
     private javax.swing.JTextField jTextField1;
     private javax.swing.JButton okButton;
     // End of variables declaration//GEN-END:variables
+
+    public static void main(String[] args) {
+        /*
+         * Set the Nimbus look and feel
+         */
+        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
+        /*
+         * If Nimbus (introduced in Java SE 6) is not available, stay with the
+         * default look and feel. For details see
+         * http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html
+         */
+        //</editor-fold>
+
+        /*
+         * Create and display the form
+         */
+        java.awt.EventQueue.invokeLater(() -> {
+            GetBootstrapDir cw = new GetBootstrapDir(new Frame(), true, ".ca");
+            cw.setLocationRelativeTo(null);
+            cw.setVisible(true);
+        });
+    }
 }

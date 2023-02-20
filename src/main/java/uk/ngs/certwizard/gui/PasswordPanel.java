@@ -70,8 +70,7 @@ public class PasswordPanel extends javax.swing.JPanel {
         okButton.setEnabled(false);
 
         String keyStoreFile = SysProperty.getValue("ngsca.key.keystore.file");
-        String keyStorePath = SystemStatus.getInstance().getHomeDir().getAbsolutePath();
-        keyStorePath = keyStorePath + System.getProperty("file.separator") + ".ca";
+        String keyStorePath = SystemStatus.getInstance().getCwDataDirectory().getAbsolutePath();
         keyStorePath = keyStorePath + System.getProperty("file.separator") + keyStoreFile;
         jLabel2.setText(keyStorePath);
     }

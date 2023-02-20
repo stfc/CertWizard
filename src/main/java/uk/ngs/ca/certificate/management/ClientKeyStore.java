@@ -103,7 +103,7 @@ public final class ClientKeyStore {
      * @throws IllegalStateException if the KeyStore cannot be initialized.
      */
     private ClientKeyStore(char[] passphrase) throws KeyStoreException, IOException, CertificateException {
-        String caDir = SystemStatus.getInstance().getHomeDir() + File.separator + ".ca";
+        String caDir = SystemStatus.getInstance().getCwDataDirectory().toString();
         this.PASSPHRASE = passphrase;
         this.keyStoreFilePath = caDir + File.separator + SysProperty.getValue("ngsca.key.keystore.file");
         this.backupDir = caDir + File.separator + "backup";
