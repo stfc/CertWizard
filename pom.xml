@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>uk.ngs</groupId>
     <artifactId>CertWizard</artifactId>
-    <version>2.1.0</version>
+    <version>2.1.1</version>
     <dependencies>
         <dependency>
             <groupId>org.bouncycastle</groupId>
@@ -171,7 +171,7 @@
                             <storepass>${codesignpass}</storepass>
                             <!--suppress UnresolvedMavenProperty -->
                             <keypass>${codesignpass}</keypass>
-                            <alias>1</alias>
+                            <alias>000_ukricodesign</alias>
                         </configuration>
                     </plugin>
                     
@@ -182,7 +182,7 @@
                         <configuration>
                             <mainClass>${mainClass}</mainClass>
                             <bundleJre>true</bundleJre>
-                            <version>2.1.0</version>
+                            <version>2.1.1</version>
                             <displayName>CertWizard</displayName>
                             <organizationName>STFC</organizationName>
                             <organizationUrl>https://stfc.ukri.org</organizationUrl>
@@ -212,7 +212,8 @@
                                             <storetype>PKCS12</storetype>
                                             <keystore>${codeSignCert}</keystore>
                                             <!--suppress UnresolvedMavenProperty -->
-                                            <storepass>${codesignpass}</storepass>
+					                        <storepass>${codesignpass}</storepass>
+					                        <alias>000_ukricodesign</alias>
                                         </signing>
                                     </winConfig>
                                 </configuration>
@@ -226,7 +227,7 @@
                                 <configuration>
                                     <platform>mac</platform>
                                     <createZipball>true</createZipball>
-                                    <jdkPath>C:\jdk\mac\jdk-11.0.18+10\Contents\Home</jdkPath>
+                                    <jdkPath>C:\jdk\mac\jdk-17.0.6+10\Contents\Home</jdkPath>
                                     <macConfig>
                                         <icnsFile>src/main/resources/ngs-icon.icns</icnsFile>
                                     </macConfig>
