@@ -29,7 +29,5 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-m2-
 
-      - name: Install dependencies
-        run: mvn install -DskipTests
       - name: Run tests
         run: mvn test
