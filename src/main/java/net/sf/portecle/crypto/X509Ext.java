@@ -876,7 +876,7 @@ public class X509Ext
 		for (int i = 0, len = policyConstraints.size(); i < len; i++)
 		{
 			DERTaggedObject policyConstraint = (DERTaggedObject) policyConstraints.getObjectAt(i);
-			ASN1Integer skipCerts = new ASN1Integer(((DEROctetString) policyConstraint.getObject()).getOctets());
+			ASN1Integer skipCerts = new ASN1Integer(((DEROctetString) policyConstraint.getBaseObject()).getOctets());
 			int iSkipCerts = skipCerts.getValue().intValue();
 
 			switch (policyConstraint.getTagNo())
@@ -1203,18 +1203,18 @@ public class X509Ext
 					sb.append(RB.getString("CommunityLogos"));
 					// TODO
 					sb.append("<br>");
-					sb.append(stringify(derTag.getObject()));
+					sb.append(stringify(derTag.getBaseObject()));
 					break;
 				case 1:
 					sb.append("<ul><li>");
 					sb.append(RB.getString("IssuerLogo"));
-					DERTaggedObject ltInfo = (DERTaggedObject) derTag.getObject();
+					DERTaggedObject ltInfo = (DERTaggedObject) derTag.getBaseObject();
 					switch (ltInfo.getTagNo())
 					{
 						case 0: // LogotypeData
 							sb.append("<ul><li>");
 							sb.append("Data");
-							ASN1Sequence ltData = (ASN1Sequence) ltInfo.getObject();
+							ASN1Sequence ltData = (ASN1Sequence) ltInfo.getBaseObject();
 							if (ltData.size() > 0)
 							{
 								sb.append("<ul><li>");
@@ -1283,7 +1283,7 @@ public class X509Ext
 						case 1: // LogotypeReference
 							// TODO
 							sb.append("Reference: ");
-							sb.append(stringify(ltInfo.getObject()));
+							sb.append(stringify(ltInfo.getBaseObject()));
 							break;
 						default: // Unknown
 							sb.append(stringify(ltInfo));
@@ -1293,13 +1293,13 @@ public class X509Ext
 					sb.append(RB.getString("SubjectLogo"));
 					// TODO
 					sb.append("<br>");
-					sb.append(stringify(derTag.getObject()));
+					sb.append(stringify(derTag.getBaseObject()));
 					break;
 				case 3:
 					sb.append(RB.getString("OtherLogos"));
 					// TODO
 					sb.append("<br>");
-					sb.append(stringify(derTag.getObject()));
+					sb.append(stringify(derTag.getBaseObject()));
 					break;
 				default: // Unknown
 					sb.append(stringify(derTag));
@@ -1357,17 +1357,17 @@ public class X509Ext
 		 */
 
 		// Key quality
-		ASN1Sequence keyq = (ASN1Sequence) ((ASN1TaggedObject) glbs.getObjectAt(0)).getObject();
+		ASN1Sequence keyq = (ASN1Sequence) ((ASN1TaggedObject) glbs.getObjectAt(0)).getBaseObject();
 		sb.append("<li>").append(RB.getString("NovellKeyQuality"));
 		sb.append("<ul>").append(getNovellQualityAttr(keyq)).append("</ul></li>");
 
 		// Crypto process quality
-		ASN1Sequence cpq = (ASN1Sequence) ((ASN1TaggedObject) glbs.getObjectAt(1)).getObject();
+		ASN1Sequence cpq = (ASN1Sequence) ((ASN1TaggedObject) glbs.getObjectAt(1)).getBaseObject();
 		sb.append("<li>").append(RB.getString("NovellCryptoProcessQuality"));
 		sb.append("<ul>").append(getNovellQualityAttr(cpq)).append("</ul></li>");
 
 		// Certificate class
-		ASN1Sequence cclass = (ASN1Sequence) ((ASN1TaggedObject) glbs.getObjectAt(2)).getObject();
+		ASN1Sequence cclass = (ASN1Sequence) ((ASN1TaggedObject) glbs.getObjectAt(2)).getBaseObject();
 		sb.append("<li>").append(RB.getString("NovellCertClass"));
 		sb.append(": ");
 		BigInteger sv = ((ASN1Integer) cclass.getObjectAt(0)).getValue();
@@ -1994,7 +1994,7 @@ public class X509Ext
 		{
 			ASN1TaggedObject tagObj = (ASN1TaggedObject) obj;
 			// Note: "[", _not_ '[' ...
-			return "[" + tagObj.getTagNo() + "] " + stringify(tagObj.getObject());
+			return "[" + tagObj.getTagNo() + "] " + stringify(tagObj.getBaseObject());
 		}
 		else if (obj instanceof ASN1Sequence)
 		{
