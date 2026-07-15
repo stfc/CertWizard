@@ -80,13 +80,13 @@
         <maven.compiler.source>1.9</maven.compiler.source>
         <maven.compiler.target>1.9</maven.compiler.target>
         <mainClass>uk.ngs.certwizard.gui.CertWizardMain</mainClass>
-        <codeSignCert>C:\\Users\\fou43474\\OneDrive - Science and Technology Facilities Council\\Documents\\Certs\\UKRICodeSign.p12</codeSignCert>
     </properties>
 
     <licenses>
         <license>
             <name>GPL-2.0</name>
-            <url>https://www.gnu.org/licenses/old-licenses/gpl-2.0.txt</url>
+            <!--Use Github link to replace old link-->
+            <url>https://github.com/github/choosealicense.com/blob/gh-pages/_licenses/gpl-2.0.txt</url>
         </license>
     </licenses>
 
@@ -152,35 +152,14 @@
                             </execution>
                         </executions>
                     </plugin>
-
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-jarsigner-plugin</artifactId>
-                        <version>3.0.0</version>
-                        <executions>
-                            <execution>
-                                <id>sign</id>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <keystore>${codeSignCert}</keystore>
-                            <!--suppress UnresolvedMavenProperty -->
-                            <storepass>${codesignpass}</storepass>
-                            <!--suppress UnresolvedMavenProperty -->
-                            <keypass>${codesignpass}</keypass>
-                            <alias>000_ukricodesign</alias>
-                        </configuration>
-                    </plugin>
                     
                     <plugin>
                         <groupId>io.github.fvarrui</groupId>
                         <artifactId>javapackager</artifactId>
-                        <version>1.7.5</version>
+                        <version>1.7.6</version>
                         <configuration>
                             <mainClass>${mainClass}</mainClass>
+                            <!-- Global fallback, overridden individually below if needed -->
                             <bundleJre>true</bundleJre>
                             <version>2.1.1</version>
                             <displayName>CertWizard</displayName>
@@ -188,6 +167,7 @@
                             <organizationUrl>https://stfc.ukri.org</organizationUrl>
                             <organizationEmail>support@grid-support.ac.uk</organizationEmail>
                             <name>CertWizard</name>
+                            <licenseFile>${project.basedir}/LICENSE.txt</licenseFile>
                         </configuration>
                         <executions>
                             <execution>
@@ -201,38 +181,31 @@
                                     <createZipball>true</createZipball>
                                     <winConfig>
                                         <generateSetup>true</generateSetup>
-                                        <generateMsi>false</generateMsi>
+                                        <generateMsi>true</generateMsi>
                                         <generateMsm>false</generateMsm>
                                         <originalFilename>CertWizard.exe</originalFilename>
                                         <setupMode>askTheUser</setupMode>
                                         <createDesktopIconTask>true</createDesktopIconTask>
                                         <icoFile>src/main/resources/ngs-icon.ico</icoFile>
                                         <removeOldLibs>true</removeOldLibs>
-                                        <signing>
-                                            <storetype>PKCS12</storetype>
-                                            <keystore>${codeSignCert}</keystore>
-                                            <!--suppress UnresolvedMavenProperty -->
-					                        <storepass>${codesignpass}</storepass>
-					                        <alias>000_ukricodesign</alias>
-                                        </signing>
                                     </winConfig>
                                 </configuration>
                             </execution>
                             <execution>
-                                <id>bundling-for-mac</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>package</goal>
-                                </goals>
-                                <configuration>
-                                    <platform>mac</platform>
-                                    <createZipball>true</createZipball>
-                                    <jdkPath>C:\jdk\mac\jdk-17.0.6+10\Contents\Home</jdkPath>
-                                    <macConfig>
-                                        <icnsFile>src/main/resources/ngs-icon.icns</icnsFile>
-                                    </macConfig>
-                                </configuration>
-                            </execution>
+                            <id>bundling-for-mac</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>package</goal>
+                            </goals>
+                            <configuration>
+                                <platform>mac</platform>
+                                <createZipball>true</createZipball>
+                                <bundleJre>true</bundleJre>
+                                <macConfig>
+                                    <icnsFile>src/main/resources/ngs-icon.icns</icnsFile>
+                                </macConfig>
+                            </configuration>
+                        </execution>
                         </executions>
                     </plugin>
                 </plugins>
