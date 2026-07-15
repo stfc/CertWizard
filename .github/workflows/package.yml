@@ -1,0 +1,77 @@
+name: Package Multiplatform Installers
+
+on:
+  release:
+    types: [ published ]
+  workflow_dispatch: # Allows manual triggering from the Actions tab for any branch
+    inputs:
+      test_mode:
+        description: 'Is this a test run? (Saves files to Action run instead of updating a live Release)'
+        type: boolean
+        required: true
+        default: true
+      version_tag:
+        description: 'Release Tag to attach binaries to (Only used if Test Mode is false)'
+        type: string
+        required: false
+        default: 'v2.1.1'
+
+jobs:
+  build-and-package:
+    name: Package for ${{ matrix.friendly-name }}
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            friendly-name: Windows (EXE & Portable Zip)
+            platform-profile: jar-with-dependencies
+            # Captures both the executable setup installer and the portable zip ball
+            artifact-path: |
+              target/CertWizard_*.exe
+              target/CertWizard_*.msi
+              target/CertWizard-windows.zip
+            artifact-name: CertWizard-Windows
+
+          - os: macos-latest
+            friendly-name: macOS (DMG/PKG/Zip)
+            platform-profile: jar-with-dependencies
+            artifact-path: |
+              target/CertWizard-mac.zip
+              target/*.dmg
+              target/*.pkg
+            artifact-name: CertWizard-Mac-App
+
+          - os: ubuntu-latest
+            friendly-name: Linux (JAR)
+            platform-profile: jar-with-dependencies
+            artifact-path: |
+              target/*-jar-with-dependencies.jar
+            artifact-name: CertWizard-Linux-JAR
+
+    steps:
+      # 1. Checkout repository
+      - name: Checkout Code
+        uses: actions/checkout@v7
+
+      # 2. Set up Java Environment
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'zulu'
+          cache: 'maven'
+
+      # 3. Build and Package
+      - name: Build and Native Package with Maven
+        run: mvn clean package -P ${{ matrix.platform-profile }}
+
+      # 4. Archive and upload the generated artifacts
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: ${{ matrix.artifact-path }}
+          if-no-files-found: error
