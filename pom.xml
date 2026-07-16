@@ -177,6 +177,7 @@
                             <mainClass>${mainClass}</mainClass>
                             <!-- Global fallback, overridden individually below if needed -->
                             <bundleJre>true</bundleJre>
+                            <customizedJre>false</customizedJre>
                             <version>2.1.1</version>
                             <displayName>CertWizard</displayName>
                             <organizationName>STFC</organizationName>
