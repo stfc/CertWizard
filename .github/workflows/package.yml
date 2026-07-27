@@ -14,7 +14,7 @@ on:
         description: 'Release Tag to attach binaries to (Only used if Test Mode is false)'
         type: string
         required: false
-        default: 'v2.1.1'
+        default: 'v2.2.0'
 
 jobs:
   build-and-package:
