@@ -36,13 +36,22 @@ jobs:
             artifact-name: CertWizard-Windows
 
           - os: macos-latest
-            friendly-name: macOS (DMG/PKG/Zip)
+            friendly-name: macOS Apple Silicon (DMG/PKG/Zip)
             platform-profile: jar-with-dependencies
             artifact-path: |
               target/CertWizard-mac.zip
               target/*.dmg
               target/*.pkg
-            artifact-name: CertWizard-Mac-App
+            artifact-name: CertWizard-Mac-ARM64
+
+          - os: macos-26-intel
+            friendly-name: macOS Intel (DMG/PKG/Zip)
+            platform-profile: jar-with-dependencies
+            artifact-path: |
+              target/CertWizard-mac.zip
+              target/*.dmg
+              target/*.pkg
+            artifact-name: CertWizard-Mac-x64
 
           - os: ubuntu-latest
             friendly-name: Linux (JAR)
