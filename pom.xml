@@ -300,41 +300,43 @@
                             </execution>
                             <execution>
                                 <!--
-                                    jpackage lays out the embedded JDK runtime the same way Oracle/OpenJDK
-                                    macOS distributions do, which includes symlinks such as
-                                    Contents/runtime/Contents/MacOS/libjli.dylib -> ../Home/lib/libjli.dylib
-                                    (purely so the runtime folder has a CFBundleExecutable and looks like a
-                                    bundle). rcodesign signs the real file once at its regular path, then
-                                    signs it again through the symlink under a different bundle role (e.g.
-                                    as the runtime bundle's "main executable") - the same physical bytes get
-                                    mutated after the first pass's bundle manifest already hashed them, and
-                                    Apple's notary service rejects it with "The signature of the binary is
-                                    invalid." for that path. Replacing every symlink under Contents/runtime
-                                    with an independent real copy of its target before signing means each
-                                    path is its own file, signed once, self-consistent - no change needed to
-                                    the signing step itself, and no need to enumerate which files are
-                                    symlinks by hand (this varies by JDK vendor/version).
+                                    Contents/runtime/Contents/Info.plist declares libjli.dylib as
+                                    CFBundleExecutable, which is what makes rcodesign treat
+                                    Contents/runtime as a nested bundle with a "main executable" to sign
+                                    specially. That file also gets swept up generically while signing
+                                    Contents/Home/lib/*.dylib, so it ends up processed twice under two
+                                    different roles - and Apple's notary service then rejects it with
+                                    "The signature of the binary is invalid." for that path. This is a
+                                    known, long-standing jpackage quirk independent of any one signing
+                                    tool (OpenJDK JDK-8237490; codesign-based scripts have hit the same
+                                    Contents/runtime/Contents/MacOS/libjli.dylib failure). Stripping
+                                    CFBundleExecutable means rcodesign no longer recognizes
+                                    Contents/runtime as a bundle with a main executable at all - it
+                                    already handles that case gracefully ("bundle has no main executable
+                                    to sign specially", seen earlier in this same pipeline), so
+                                    libjli.dylib just gets signed once, generically, like every other
+                                    dylib in the runtime.
                                 -->
-                                <id>fix-runtime-symlinks</id>
+                                <id>strip-runtime-bundle-executable</id>
                                 <phase>package</phase>
                                 <goals>
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>/bin/sh</executable>
+                                    <executable>python3</executable>
                                     <arguments>
                                         <argument>-c</argument>
                                         <argument>
-                                            set -eu;
-                                            RUNTIME_DIR="${project.build.directory}/CertWizard.app/Contents/runtime";
-                                            if [ -d "$RUNTIME_DIR" ]; then
-                                                find "$RUNTIME_DIR" -type l | while IFS= read -r link; do
-                                                    real=$(python3 -c "import os,sys; print(os.path.realpath(sys.argv[1]))" "$link");
-                                                    rm "$link";
-                                                    cp "$real" "$link";
-                                                done;
-                                            fi
+import plistlib, sys, os
+p = sys.argv[1]
+if os.path.exists(p):
+    with open(p, 'rb') as f:
+        d = plistlib.load(f)
+    d.pop('CFBundleExecutable', None)
+    with open(p, 'wb') as f:
+        plistlib.dump(d, f)
                                         </argument>
+                                        <argument>${project.build.directory}/CertWizard.app/Contents/runtime/Contents/Info.plist</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
