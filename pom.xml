@@ -219,7 +219,12 @@
                                 <createZipball>true</createZipball>
                                 <bundleJre>true</bundleJre>
                                 <macConfig>
-                                    <icnsFile>src/main/resources/ngs-icon.icns</icnsFile>
+                                <icnsFile>src/main/resources/ngs-icon.icns</icnsFile>
+                                <macStartup>UNIVERSAL</macStartup>
+                                <codesignApp>false</codesignApp>
+                                <notarizeApp>false</notarizeApp>
+                                <generateDmg>false</generateDmg>
+                                <generatePkg>false</generatePkg>
                                 </macConfig>
                             </configuration>
                         </execution>
