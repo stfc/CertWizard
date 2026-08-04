@@ -299,6 +299,42 @@
                                 </configuration>
                             </execution>
                             <execution>
+                                <!--
+                                    jpackage lays out the embedded JDK runtime the same way Oracle/OpenJDK
+                                    macOS distributions do: Contents/runtime/Contents/MacOS/libjli.dylib is
+                                    a symlink to Contents/runtime/Contents/Home/lib/libjli.dylib, purely so
+                                    the runtime folder has a CFBundleExecutable and looks like a bundle.
+                                    rcodesign signs the real file once at its Home/lib path, then signs it
+                                    again through the symlink as the runtime bundle's "main executable" -
+                                    the same physical bytes get mutated after the first pass's bundle
+                                    manifest already hashed them, and Apple's notary service rejects it
+                                    with "The signature of the binary is invalid." for that path.
+                                    Replacing the symlink with an independent real copy before signing
+                                    means each path is its own file, signed once, self-consistent - no
+                                    change needed to the signing step itself.
+                                -->
+                                <id>fix-runtime-libjli-symlink</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>/bin/sh</executable>
+                                    <arguments>
+                                        <argument>-c</argument>
+                                        <argument>
+                                            set -eu;
+                                            LINK="${project.build.directory}/CertWizard.app/Contents/runtime/Contents/MacOS/libjli.dylib";
+                                            REAL="${project.build.directory}/CertWizard.app/Contents/runtime/Contents/Home/lib/libjli.dylib";
+                                            if [ -L "$LINK" ]; then
+                                                rm "$LINK";
+                                                cp "$REAL" "$LINK";
+                                            fi
+                                        </argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
                                 <id>zip-mac-app</id>
                                 <phase>package</phase>
                                 <goals>
