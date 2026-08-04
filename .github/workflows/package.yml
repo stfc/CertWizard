@@ -35,14 +35,14 @@ jobs:
 
           - os: macos-latest
             friendly-name: macOS Apple Silicon (DMG/PKG/Zip)
-            platform-profile: jar-with-dependencies
+            platform-profile: jar-with-dependencies,package-mac
             artifact-path: |
               target/CertWizard-mac.zip
             artifact-name: CertWizard-Mac-ARM64-APP
 
           - os: macos-26-intel
             friendly-name: macOS Intel (DMG/PKG/Zip)
-            platform-profile: jar-with-dependencies
+            platform-profile: jar-with-dependencies,package-mac
             artifact-path: |
               target/CertWizard-mac.zip
             artifact-name: CertWizard-Mac-x64-APP

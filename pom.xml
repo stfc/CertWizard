@@ -208,26 +208,113 @@
                                     </winConfig>
                                 </configuration>
                             </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!--
+            macOS packaging uses the JDK's own jpackage instead of fvarrui/javapackager.
+            javapackager's mac launcher (universalJavaApplicationStub) is a shell script,
+            not a Mach-O binary, and rcodesign can't sign a bundle whose CFBundleExecutable
+            isn't Mach-O ("Invalid magic number" errors). jpackage emits a real compiled
+            launcher, which both codesign and rcodesign can sign correctly. This profile
+            is only auto-activated when running on a Mac (jpackage cannot cross-build mac
+            app images from another OS anyway).
+        -->
+        <profile>
+            <id>package-mac</id>
+            <activation>
+                <os>
+                    <family>mac</family>
+                </os>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
                             <execution>
-                            <id>bundling-for-mac</id>
-                            <phase>package</phase>
-                            <goals>
-                                <goal>package</goal>
-                            </goals>
-                            <configuration>
-                                <platform>mac</platform>
-                                <createZipball>true</createZipball>
-                                <bundleJre>true</bundleJre>
-                                <macConfig>
-                                <icnsFile>src/main/resources/ngs-icon.icns</icnsFile>
-                                <macStartup>UNIVERSAL</macStartup>
-                                <codesignApp>false</codesignApp>
-                                <notarizeApp>false</notarizeApp>
-                                <generateDmg>false</generateDmg>
-                                <generatePkg>false</generatePkg>
-                                </macConfig>
-                            </configuration>
-                        </execution>
+                                <id>stage-jpackage-input</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${project.build.directory}/jpackage-input</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.build.directory}</directory>
+                                            <includes>
+                                                <include>${project.build.finalName}-jar-with-dependencies.jar</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.2.0</version>
+                        <executions>
+                            <execution>
+                                <id>jpackage-mac-app-image</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>${java.home}/bin/jpackage</executable>
+                                    <arguments>
+                                        <argument>--type</argument>
+                                        <argument>app-image</argument>
+                                        <argument>--name</argument>
+                                        <argument>CertWizard</argument>
+                                        <argument>--input</argument>
+                                        <argument>${project.build.directory}/jpackage-input</argument>
+                                        <argument>--main-jar</argument>
+                                        <argument>${project.build.finalName}-jar-with-dependencies.jar</argument>
+                                        <argument>--main-class</argument>
+                                        <argument>${mainClass}</argument>
+                                        <argument>--dest</argument>
+                                        <argument>${project.build.directory}</argument>
+                                        <argument>--app-version</argument>
+                                        <argument>${project.version}</argument>
+                                        <argument>--vendor</argument>
+                                        <argument>STFC</argument>
+                                        <argument>--copyright</argument>
+                                        <argument>STFC</argument>
+                                        <argument>--icon</argument>
+                                        <argument>${project.basedir}/src/main/resources/ngs-icon.icns</argument>
+                                        <argument>--mac-package-identifier</argument>
+                                        <argument>uk.ngs.certwizard</argument>
+                                        <argument>--mac-package-name</argument>
+                                        <argument>CertWizard</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>zip-mac-app</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>ditto</executable>
+                                    <arguments>
+                                        <argument>-c</argument>
+                                        <argument>-k</argument>
+                                        <argument>--keepParent</argument>
+                                        <argument>${project.build.directory}/CertWizard.app</argument>
+                                        <argument>${project.build.directory}/CertWizard-mac.zip</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
                         </executions>
                     </plugin>
                 </plugins>
