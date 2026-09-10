@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Locale;
 
 /**
  * The main frame class.
@@ -195,6 +196,11 @@ public class CertWizardMain extends javax.swing.JFrame {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
+        // Force the en_US locale so that date formatting always uses US month
+        // abbreviations (e.g. "Sep"). Under en_GB the month is rendered as
+        // "Sept", which the CA server does not understand in the PPPK challenge.
+        Locale.setDefault(Locale.US);
+
         String dataDirectoryLocationOverride = "";
         if (args.length > 0) {
             dataDirectoryLocationOverride = args[0];
