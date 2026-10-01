@@ -480,7 +480,12 @@ public class MainWindowPanel extends javax.swing.JPanel implements Observer {
             }
 
             Format formatter;
-            formatter = new SimpleDateFormat("EEE MMM dd HH:mm yyyy");
+            // Display only - never parsed, stored or sent, so British rendering
+            // is deliberate even though it writes "Sept" where the certificate
+            // itself says "Sep". Do not "correct" this to Locale.US. Pinned
+            // rather than left to the default so the panel reads the same on a
+            // machine configured for, say, th-TH (Buddhist calendar) or ar-SA.
+            formatter = new SimpleDateFormat("EEE MMM dd HH:mm yyyy", Locale.UK);
             if (selectedKeyStoreEntry.getNotBefore() != null) {
                 this.vFromTo.setText(formatter.format(selectedKeyStoreEntry.getNotBefore())
                         + " / "

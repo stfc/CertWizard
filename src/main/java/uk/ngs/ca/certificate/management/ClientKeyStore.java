@@ -233,8 +233,11 @@ public final class ClientKeyStore {
                 if (this.keyStore.isKeyEntry(alias)) {
                     X509Certificate cert = (X509Certificate) this.keyStore.getCertificate(alias);
                     if (cert.getPublicKey().equals(publicKey)) {
-                        String _alias = this.keyStore.getCertificateAlias(cert);
-                        return (PrivateKey) this.keyStore.getKey(_alias, PASSPHRASE);
+                        // Use the alias we just matched. Re-deriving it with
+                        // getCertificateAlias() returns the *first* alias holding
+                        // this certificate, which need not be this one, and can
+                        // also resolve to a trustedCertEntry that has no key.
+                        return (PrivateKey) this.keyStore.getKey(alias, PASSPHRASE);
                     }
                 }
             }
